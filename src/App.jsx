@@ -13,14 +13,6 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  signInAnonymously 
-} from 'firebase/auth';
-import { 
   getFirestore, 
   collection, 
   doc, 
@@ -63,10 +55,11 @@ import {
   User as UserIcon,
   Mail,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Filter
 } from 'lucide-react';
 
-// --- YOUR LIVE FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyANdR3YT6_4QN8U6pDfi6NSKUEqQ23dyho",
   authDomain: "apex-calisthenics-2996c.firebaseapp.com",
@@ -81,12 +74,12 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- DATA STRUCTURES: PROGRESSION TRACKS ---
 const PROGRESSION_TRACKS = [
   {
     id: 'one_arm_pushup',
     title: 'One-Arm Push-Up Pathway',
     description: 'Master unilateral horizontal pressing, intense rotational core anti-extension, and single-arm lockout.',
+    category: 'Unilateral',
     color: 'amber',
     badge: 'Unilateral Press',
     levels: [
@@ -171,6 +164,7 @@ const PROGRESSION_TRACKS = [
     id: 'dragon_squat',
     title: 'Dragon Squat Masterclass',
     description: 'Master the ultimate single-leg squat: thread non-working leg behind & out sideways while keeping body parallel.',
+    category: 'Legs',
     color: 'rose',
     badge: 'Elite Leg Skill',
     levels: [
@@ -255,6 +249,7 @@ const PROGRESSION_TRACKS = [
     id: 'pulling',
     title: 'Strict Pull-Up Masterclass',
     description: 'Build vertical pulling strength from foundational hangs to advanced L-sit & weighted reps.',
+    category: 'Pulling',
     color: 'emerald',
     badge: 'Pulling Power',
     levels: [
@@ -339,6 +334,7 @@ const PROGRESSION_TRACKS = [
     id: 'pushing',
     title: 'Push-Up & Pushing Variations',
     description: 'Master horizontal pressing mechanics, core tension, and scapular protraction.',
+    category: 'Pushing',
     color: 'blue',
     badge: 'Push Strength',
     levels: [
@@ -423,6 +419,7 @@ const PROGRESSION_TRACKS = [
     id: 'handstand',
     title: 'Handstand & Alignment Skill',
     description: 'Develop shoulder overhead mobility, wall alignment, and finger re-balancing mechanics.',
+    category: 'Balance',
     color: 'amber',
     badge: 'Inversion Balance',
     levels: [
@@ -507,6 +504,7 @@ const PROGRESSION_TRACKS = [
     id: 'pistol_squat',
     title: 'Single-Leg Pistol Squat Track',
     description: 'Master knee resilience, single-leg power, and ankle mobility from air squats to full pistols.',
+    category: 'Legs',
     color: 'rose',
     badge: 'Leg Mastery',
     levels: [
@@ -591,6 +589,7 @@ const PROGRESSION_TRACKS = [
     id: 'muscle_up',
     title: 'Bar Muscle-Up Pathway',
     description: 'Transition from pulling strength to explosive upper body turnover over the bar.',
+    category: 'Pulling',
     color: 'purple',
     badge: 'Explosive Power',
     levels: [
@@ -671,6 +670,7 @@ const PROGRESSION_TRACKS = [
     id: 'lsit_core',
     title: 'L-Sit & Compression Core',
     description: 'Master hip flexor compression, active rectus abdominis strength, and straight-arm support.',
+    category: 'Core',
     color: 'teal',
     badge: 'Core Tension',
     levels: [
@@ -750,25 +750,51 @@ const PROGRESSION_TRACKS = [
   }
 ];
 
-// --- AUTHENTICATION MODAL COMPONENT ---
 function AuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthMessage('');
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+      if (isForgotPassword) {
+        await sendPasswordResetEmail(auth, email);
+        setAuthMessage('Password reset link sent! Check your email inbox.');
+      } else if (isSignUp) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (username.trim()) {
+          await updateProfile(userCredential.user, {
+            displayName: username.trim()
+          });
+        }
+        onClose();
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        onClose();
       }
+    } catch (err) {
+      setAuthError(err.message.replace('Firebase: ', ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthError('');
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
       onClose();
     } catch (err) {
       setAuthError(err.message.replace('Firebase: ', ''));
@@ -783,7 +809,9 @@ function AuthModal({ onClose }) {
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Account Portal</span>
-            <h3 className="text-base font-bold text-slate-100">{isSignUp ? 'Create New Account' : 'Sign In'}</h3>
+            <h3 className="text-base font-bold text-slate-100">
+              {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create New Account' : 'Sign In'}
+            </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
             <X className="w-5 h-5" />
@@ -797,7 +825,30 @@ function AuthModal({ onClose }) {
           </div>
         )}
 
+        {authMessage && (
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{authMessage}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isSignUp && !isForgotPassword && (
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Username (e.g. Gingerbeard99)</label>
+              <div className="relative">
+                <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Gingerbeard99"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address</label>
             <div className="relative">
@@ -813,48 +864,83 @@ function AuthModal({ onClose }) {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
-                required
-                minLength={6}
-              />
+          {!isForgotPassword && (
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="text-right mt-1">
+                <button
+                  type="button"
+                  onClick={() => { setIsForgotPassword(true); setAuthError(''); setAuthMessage(''); }}
+                  className="text-[11px] text-slate-400 hover:text-emerald-400 transition"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-50"
           >
-            {loading ? 'Authenticating...' : isSignUp ? 'Register Account' : 'Sign In'}
+            {loading ? 'Processing...' : isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Register Account' : 'Sign In'}
           </button>
         </form>
 
-        <div className="text-center pt-2">
-          <button
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setAuthError('');
-            }}
-            className="text-xs text-slate-400 hover:text-emerald-400 transition"
-          >
-            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
-          </button>
+        {!isForgotPassword && (
+          <>
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink mx-4 text-slate-500 text-[10px] uppercase font-bold">Or</span>
+              <div className="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2"
+            >
+              <span>Continue with Google</span>
+            </button>
+          </>
+        )}
+
+        <div className="text-center pt-2 space-y-1">
+          {isForgotPassword ? (
+            <button
+              onClick={() => { setIsForgotPassword(false); setAuthError(''); setAuthMessage(''); }}
+              className="text-xs text-slate-400 hover:text-emerald-400 transition block w-full"
+            >
+              Back to Sign In
+            </button>
+          ) : (
+            <button
+              onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); setAuthMessage(''); }}
+              className="text-xs text-slate-400 hover:text-emerald-400 transition block w-full"
+            >
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// --- SET LOGGER & EDIT MODAL COMPONENT ---
 function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose, onSave, onStartTimer }) {
   const [reps, setReps] = useState(initialSetData ? initialSetData.repsOrHold : (levelData?.type === 'hold' ? '30s' : '8'));
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
@@ -969,7 +1055,6 @@ function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose
   );
 }
 
-// --- DISTINCT ANIMATED FORM DEMO COMPONENT ---
 function ExerciseFormVisualizer({ exercise, onClose }) {
   const [phase, setPhase] = useState(0);
 
@@ -1197,7 +1282,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
               <circle cx="100" cy="180" r="5" fill="#3b82f6" />
               <line x1="100" y1="180" x2="100" y2={isPhase1 ? "160" : "130"} stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" />
               <circle cx={isPhase1 ? "80" : "75"} cy={isPhase1 ? "145" : "110"} r="13" fill="#38bdf8" />
-              <line x1="90" y1="85" x2="220" y2={isPhase1 ? "175" : "165"} stroke="#38bdf8" strokeWidth="9" strokeLinecap="round" />
+              <line x1={isPhase1 ? "90" : "85"} y1={isPhase1 ? "152" : "117"} x2="220" y2={isPhase1 ? "175" : "165"} stroke="#38bdf8" strokeWidth="9" strokeLinecap="round" />
               <circle cx="220" cy="180" r="4" fill="#94a3b8" />
             </g>
             <text x="150" y="220" textAnchor="middle" fill="#94a3b8" fontSize="11" fontFamily="sans-serif">
@@ -1261,7 +1346,6 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
   );
 }
 
-// --- ROUTINE BUILDER MODAL COMPONENT ---
 function RoutineBuilderModal({ onClose, onSave }) {
   const [routineName, setRoutineName] = useState('');
   const [restSeconds, setRestSeconds] = useState(90);
@@ -1385,7 +1469,6 @@ function RoutineBuilderModal({ onClose, onSave }) {
   );
 }
 
-// --- MAIN APP COMPONENT ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('roadmap');
   const [user, setUser] = useState(null);
@@ -1434,6 +1517,9 @@ export default function App() {
     }
   ]);
   const [isBuildingRoutine, setIsBuildingRoutine] = useState(false);
+
+  const [pathwaySearch, setPathwaySearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Timer State
   const [timerSeconds, setTimerSeconds] = useState(90);
@@ -1723,6 +1809,28 @@ export default function App() {
     }
   };
 
+  const filteredTracks = PROGRESSION_TRACKS.filter(track => {
+    const matchesCategory = selectedCategory === 'All' || track.category === selectedCategory;
+    const matchesSearch = pathwaySearch.trim() === '' || 
+      track.title.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
+      track.description.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
+      track.levels.some(l => l.name.toLowerCase().includes(pathwaySearch.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  // Group active workout sets by exerciseName
+  const groupedSets = activeWorkout.sets.reduce((acc, set) => {
+    if (!acc[set.exerciseName]) {
+      acc[set.exerciseName] = {
+        trackId: set.trackId,
+        exerciseName: set.exerciseName,
+        sets: []
+      };
+    }
+    acc[set.exerciseName].sets.push(set);
+    return acc;
+  }, {});
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24">
       {/* HEADER */}
@@ -1750,9 +1858,11 @@ export default function App() {
             </button>
 
             {user && !user.isAnonymous ? (
-              <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700 text-xs">
+              <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
                 <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-slate-300 max-w-[100px] truncate">{user.email}</span>
+                <span className="text-slate-300 font-bold max-w-[140px] truncate">
+                  Hello, {user.displayName || user.email.split('@')[0]}
+                </span>
                 <button
                   onClick={() => signOut(auth)}
                   className="p-1 hover:text-rose-400 text-slate-400 ml-1 transition"
@@ -1808,158 +1918,209 @@ export default function App() {
 
         {/* --- TAB 1: ROADMAP & SKILL PATHWAYS --- */}
         {activeTab === 'roadmap' && (
-          <div className="space-y-8">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                Interactive Progression Framework
-              </h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Click any level button (1 to 5) on a discipline card to instantly update the active drill, non-negotiable form cues, and mastery targets.
-              </p>
+          <div className="space-y-6">
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-amber-400" />
+                    Interactive Progression Framework
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Filter by category or search skills to quickly find what you're working on.
+                  </p>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full md:w-72">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Search skills or drills..."
+                    value={pathwaySearch}
+                    onChange={(e) => setPathwaySearch(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                  {pathwaySearch && (
+                    <button onClick={() => setPathwaySearch('')} className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+                {['All', 'Unilateral', 'Legs', 'Pulling', 'Pushing', 'Balance', 'Core'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                      selectedCategory === cat
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/20'
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {PROGRESSION_TRACKS.map((track) => {
-              const currentLevel = userLevels[track.id] || 1;
-              const activeLevelData = track.levels.find(l => l.level === currentLevel) || track.levels[0];
+            {filteredTracks.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+                <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400 font-medium text-sm">No skill tracks matched your search.</p>
+                <button
+                  onClick={() => { setPathwaySearch(''); setSelectedCategory('All'); }}
+                  className="mt-3 text-xs font-bold text-emerald-400 underline"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              filteredTracks.map((track) => {
+                const currentLevel = userLevels[track.id] || 1;
+                const activeLevelData = track.levels.find(l => l.level === currentLevel) || track.levels[0];
 
-              return (
-                <div key={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                  <div className="p-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                          {track.badge}
-                        </span>
-                        <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {track.levels.length}</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
-                      <p className="text-sm text-slate-400 mt-1">{track.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
-                      <span className="text-xs font-semibold text-slate-400 px-2">Set Level:</span>
-                      {track.levels.map((lvl) => (
-                        <button
-                          key={lvl.level}
-                          onClick={() => updateLevel(track.id, lvl.level)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
-                            userLevels[track.id] === lvl.level
-                              ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                          }`}
-                        >
-                          {lvl.level}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-6 bg-slate-900/40">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                return (
+                  <div key={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="p-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80">
                       <div>
-                        <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
-                        <h4 className="text-lg font-bold text-slate-100 mt-1 flex items-center gap-2">
-                          {activeLevelData.name}
-                        </h4>
-                        <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
-                          <Target className="w-3.5 h-3.5" />
-                          Mastery Standard: {activeLevelData.target}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                            {track.badge}
+                          </span>
+                          <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {track.levels.length}</span>
                         </div>
+                        <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
+                        <p className="text-sm text-slate-400 mt-1">{track.description}</p>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedExerciseDemo(activeLevelData)}
-                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
-                        >
-                          <Eye className="w-4 h-4 text-amber-400" />
-                          View Animated Demo
-                        </button>
-
-                        <button
-                          onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
-                          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
-                        >
-                          <Plus className="w-4 h-4 stroke-[3]" />
-                          Log Set
-                        </button>
+                      <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
+                        <span className="text-xs font-semibold text-slate-400 px-2">Set Level:</span>
+                        {track.levels.map((lvl) => (
+                          <button
+                            key={lvl.level}
+                            onClick={() => updateLevel(track.id, lvl.level)}
+                            className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
+                              userLevels[track.id] === lvl.level
+                                ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
+                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            }`}
+                          >
+                            {lvl.level}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 mt-6">
-                      <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          Non-Negotiable Form Cues
+                    <div className="p-6 bg-slate-900/40">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
+                          <h4 className="text-lg font-bold text-slate-100 mt-1 flex items-center gap-2">
+                            {activeLevelData.name}
+                          </h4>
+                          <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
+                            <Target className="w-3.5 h-3.5" />
+                            Mastery Standard: {activeLevelData.target}
+                          </div>
                         </div>
-                        <ul className="space-y-2 text-xs text-slate-300">
-                          {activeLevelData.cues.map((cue, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-emerald-400 font-bold">•</span>
-                              <span>{cue}</span>
-                            </li>
-                          ))}
-                        </ul>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelectedExerciseDemo(activeLevelData)}
+                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                          >
+                            <Eye className="w-4 h-4 text-amber-400" />
+                            View Animated Demo
+                          </button>
+
+                          <button
+                            onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
+                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+                          >
+                            <Plus className="w-4 h-4 stroke-[3]" />
+                            Log Set
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                          <ShieldAlert className="w-4 h-4 text-amber-400" />
-                          Common Pitfalls to Avoid
+                      <div className="grid md:grid-cols-2 gap-4 mt-6">
+                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                          <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            Non-Negotiable Form Cues
+                          </div>
+                          <ul className="space-y-2 text-xs text-slate-300">
+                            {activeLevelData.cues.map((cue, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-emerald-400 font-bold">•</span>
+                                <span>{cue}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <ul className="space-y-2 text-xs text-slate-300">
-                          {activeLevelData.pitfalls.map((pit, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-amber-400 font-bold">•</span>
-                              <span>{pit}</span>
-                            </li>
-                          ))}
-                        </ul>
+
+                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                          <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                            <ShieldAlert className="w-4 h-4 text-amber-400" />
+                            Common Pitfalls to Avoid
+                          </div>
+                          <ul className="space-y-2 text-xs text-slate-300">
+                            {activeLevelData.pitfalls.map((pit, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-amber-400 font-bold">•</span>
+                                <span>{pit}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="mt-6 pt-6 border-t border-slate-800/80">
-                      <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum:</div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                        {track.levels.map((lvl) => {
-                          const isCurrent = lvl.level === currentLevel;
-                          const isPassed = lvl.level < currentLevel;
+                      <div className="mt-6 pt-6 border-t border-slate-800/80">
+                        <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum:</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                          {track.levels.map((lvl) => {
+                            const isCurrent = lvl.level === currentLevel;
+                            const isPassed = lvl.level < currentLevel;
 
-                          return (
-                            <div
-                              key={lvl.level}
-                              onClick={() => updateLevel(track.id, lvl.level)}
-                              className={`p-2.5 rounded-xl border cursor-pointer transition ${
-                                isCurrent
-                                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                  : isPassed
-                                  ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                                  : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedExerciseDemo(lvl);
-                                  }}
-                                  className="text-slate-400 hover:text-amber-300"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </button>
+                            return (
+                              <div
+                                key={lvl.level}
+                                onClick={() => updateLevel(track.id, lvl.level)}
+                                className={`p-2.5 rounded-xl border cursor-pointer transition ${
+                                  isCurrent
+                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                    : isPassed
+                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedExerciseDemo(lvl);
+                                    }}
+                                    className="text-slate-400 hover:text-amber-300"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </button>
+                                </div>
+                                <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                               </div>
-                              <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
 
@@ -2170,7 +2331,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Logged Sets Table */}
+            {/* Grouped Exercise Set Log */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                 <h3 className="font-bold text-slate-200 text-sm">Session Set Log</h3>
@@ -2191,62 +2352,89 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-800/60">
-                  {activeWorkout.sets.map((set, index) => (
-                    <div key={set.id} className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/30 transition">
-                      <div className="flex items-center gap-4">
-                        <span className="w-7 h-7 rounded-full bg-slate-800 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-700">
-                          #{index + 1}
-                        </span>
-                        <div>
-                          <h4 className="font-bold text-slate-100 text-sm">{set.exerciseName}</h4>
-                          <span className="text-xs text-slate-400">Time: {set.timestamp}</span>
-                          {set.notes && (
-                            <p className="text-xs text-amber-300/90 mt-1 flex items-center gap-1">
-                              <MessageSquare className="w-3 h-3" />
-                              {set.notes}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                <div className="divide-y divide-slate-800">
+                  {Object.values(groupedSets).map((group, groupIdx) => {
+                    const track = PROGRESSION_TRACKS.find(t => t.id === group.trackId) || PROGRESSION_TRACKS[0];
+                    const levelData = track.levels.find(l => l.name === group.exerciseName) || track.levels[0];
 
-                      <div className="flex items-center gap-6">
-                        <div className="text-center">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
-                          <span className="text-sm font-bold text-emerald-400">{set.repsOrHold}</span>
-                        </div>
+                    return (
+                      <div key={groupIdx} className="p-5 space-y-3 bg-slate-900/40">
+                        {/* Exercise Group Header with "+ Add Set" button */}
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                          <div>
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
+                            <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
+                          </div>
 
-                        <div className="text-center">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
-                          <span className="text-sm font-bold text-amber-400">{set.rpe}/10</span>
-                        </div>
-
-                        <div className="text-center">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form Quality</span>
-                          <span className="text-xs font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
-                            {set.formRating}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
                           <button
-                            onClick={() => setEditingSet(set)}
-                            className="p-2 text-slate-400 hover:text-emerald-400 rounded-lg transition"
-                            title="Edit Set"
+                            onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                            className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
                           >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => removeSet(set.id)}
-                            className="p-2 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                            title="Delete Set"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            Add Set
                           </button>
                         </div>
+
+                        {/* Sets list for this exercise */}
+                        <div className="space-y-2">
+                          {group.sets.map((set, sIdx) => (
+                            <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
+                                  #{sIdx + 1}
+                                </span>
+                                <div>
+                                  <span className="text-xs text-slate-400">Logged at {set.timestamp}</span>
+                                  {set.notes && (
+                                    <p className="text-xs text-amber-300/90 mt-0.5 flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" />
+                                      {set.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-5">
+                                <div className="text-center">
+                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
+                                  <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
+                                </div>
+
+                                <div className="text-center">
+                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
+                                  <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
+                                </div>
+
+                                <div className="text-center">
+                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
+                                  <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
+                                    {set.formRating}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => setEditingSet(set)}
+                                    className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
+                                    title="Edit Set"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => removeSet(set.id)}
+                                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                                    title="Delete Set"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   <div className="p-4 bg-slate-950/40">
                     <input
