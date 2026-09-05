@@ -6,6 +6,18 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
+  signInAnonymously,
+  GoogleAuthProvider,
+  signInWithPopup,
+  updateProfile,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
   signInAnonymously 
 } from 'firebase/auth';
 import { 
