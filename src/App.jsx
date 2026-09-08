@@ -1607,28 +1607,69 @@ export default function App() {
   const [selectedExerciseDemo, setSelectedExerciseDemo] = useState(null);
   const [loggingExercise, setLoggingExercise] = useState(null);
   const [editingSet, setEditingSet] = useState(null);
+
   const [routines, setRoutines] = useState([
     {
       id: 1,
-      name: 'Push Day Mastery',
-      restDuration: 90,
+      name: 'The "Cindy" (20m AMRAP)',
+      type: 'amrap',
+      duration: 20 * 60, // 20 minutes in seconds
+      restDuration: 60,
       items: [
-        { trackId: 'pushing', level: 2, name: 'Strict Standard Push-Ups', target: '3 x 20 Crisp Reps' },
-        { trackId: 'one_arm_pushup', level: 1, name: 'Incline One-Arm Push-Ups', target: '3 x 10 Clean Reps / Arm' }
+        { name: '5 Pull-ups', completed: false },
+        { name: '10 Push-ups', completed: false },
+        { name: '15 Air Squats', completed: false }
       ]
     },
     {
       id: 2,
-      name: 'Pull & Core Session',
+      name: 'The "Spider-Man Ladder" (Pyramid)',
+      type: 'stopwatch',
+      restDuration: 60,
+      items: [
+        { name: 'Pyramid Ladder (1 up to 10 & back down)', completed: false }
+      ]
+    },
+    {
+      id: 3,
+      name: 'The "Murph" (Full Hero WOD)',
+      type: 'stopwatch',
       restDuration: 90,
       items: [
-        { trackId: 'pulling', level: 4, name: 'Strict Dead-Stop Pull-Ups', target: '3 x 8 Clean Reps' },
-        { trackId: 'lsit_core', level: 2, name: 'Tuck L-Sit Hold (Parallettes / Floor)', target: '3 x 20s Hold' }
+        { name: '1-Mile Run', completed: false },
+        { name: '100 Pull-ups', completed: false },
+        { name: '200 Push-ups', completed: false },
+        { name: '300 Air Squats', completed: false },
+        { name: '1-Mile Run', completed: false }
+      ]
+    },
+    {
+      id: 4,
+      name: '"Around the World" Circuit',
+      type: 'open',
+      restDuration: 90,
+      items: [
+        { name: '5 Pull-ups', completed: false },
+        { name: '10 Dips', completed: false },
+        { name: '15 Push-ups', completed: false },
+        { name: '20 Chin-ups', completed: false }
+      ]
+    },
+    {
+      id: 5,
+      name: 'The "Hannibal for King" Circuit',
+      type: 'open',
+      restDuration: 60,
+      items: [
+        { name: '10-15 Close-grip Pull-ups', completed: false },
+        { name: '20 Dips', completed: false },
+        { name: '20 Diamond Push-ups', completed: false },
+        { name: '15 Hanging Leg Raises', completed: false }
       ]
     }
   ]);
-  const [isBuildingRoutine, setIsBuildingRoutine] = useState(false);
 
+  const [isBuildingRoutine, setIsBuildingRoutine] = useState(false);
   const [pathwaySearch, setPathwaySearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -1637,6 +1678,12 @@ export default function App() {
   const [timerInitial, setTimerInitial] = useState(90);
   const [timerActive, setTimerActive] = useState(false);
   const audioCtxRef = useRef(null);
+
+  // Circuit Tracking State
+  const [activeCircuit, setActiveCircuit] = useState(null);
+  const [roundTally, setRoundTally] = useState(0);
+  const [circuitTimerSeconds, setCircuitTimerSeconds] = useState(0);
+  const [circuitTimerActive, setCircuitTimerActive] = useState(false);
 
   // Auth observer
   useEffect(() => {
@@ -1863,6 +1910,23 @@ export default function App() {
     updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: null });
   };
 
+  const handleToggleCircuitItem = (index) => {
+    if (!activeCircuit) return;
+    const updatedItems = [...activeCircuit.items];
+    updatedItems[index].completed = !updatedItems[index].completed;
+
+    // Check if all items in this round are completed
+    const allCompleted = updatedItems.every(item => item.completed);
+    if (allCompleted) {
+      // Increment round tally
+      setRoundTally(prev => prev + 1);
+      // Reset checkboxes for next round
+      updatedItems.forEach(item => item.completed = false);
+    }
+
+    setActiveCircuit({ ...activeCircuit, items: updatedItems });
+  };
+
   const startRoutineSession = (routine) => {
     const sessionState = {
       date: new Date().toISOString().split('T')[0],
@@ -1977,14 +2041,14 @@ export default function App() {
                 >
                   <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-slate-300 font-bold max-w-[140px] truncate">
-                    {user.displayName || user.email?.split('@')[0] || 'Athlete'}
+                    {user.displayName || user.email?.split('@')[0] || 'Gingerbeard99'}
                   </span>
                 </button>
 
                 <button
                   onClick={async () => {
                     await signOut(auth);
-                    window.location.reload();
+                    window.location.reload(); // Refresh screen instantly upon logout
                   }}
                   className="p-1 hover:text-rose-400 text-slate-400 ml-1 transition border-l border-slate-700 pl-2"
                   title="Sign Out"
