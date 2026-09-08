@@ -752,6 +752,68 @@ const PROGRESSION_TRACKS = [
   }
 ];
 
+// Extracted the default circuit templates out to guarantee they never get overwritten by Firebase
+const DEFAULT_CIRCUITS = [
+  {
+    id: 'def_cindy',
+    name: 'The "Cindy" (20m AMRAP)',
+    type: 'amrap',
+    duration: 20 * 60, // 20 minutes in seconds
+    restDuration: 60,
+    items: [
+      { name: '5 Pull-ups', completed: false, target: '5 Reps' },
+      { name: '10 Push-ups', completed: false, target: '10 Reps' },
+      { name: '15 Air Squats', completed: false, target: '15 Reps' }
+    ]
+  },
+  {
+    id: 'def_spiderman',
+    name: 'The "Spider-Man Ladder" (Pyramid)',
+    type: 'stopwatch',
+    restDuration: 60,
+    items: [
+      { name: 'Pyramid Ladder (1 up to 10 & back down)', completed: false, target: '1-10-1 Reps' }
+    ]
+  },
+  {
+    id: 'def_murph',
+    name: 'The "Murph" (Full Hero WOD)',
+    type: 'stopwatch',
+    restDuration: 90,
+    items: [
+      { name: '1-Mile Run', completed: false, target: 'Distance' },
+      { name: '100 Pull-ups', completed: false, target: '100 Reps' },
+      { name: '200 Push-ups', completed: false, target: '200 Reps' },
+      { name: '300 Air Squats', completed: false, target: '300 Reps' },
+      { name: '1-Mile Run', completed: false, target: 'Distance' }
+    ]
+  },
+  {
+    id: 'def_atw',
+    name: '"Around the World" Circuit',
+    type: 'open',
+    restDuration: 90,
+    items: [
+      { name: '5 Pull-ups', completed: false, target: '5 Reps' },
+      { name: '10 Dips', completed: false, target: '10 Reps' },
+      { name: '15 Push-ups', completed: false, target: '15 Reps' },
+      { name: '20 Chin-ups', completed: false, target: '20 Reps' }
+    ]
+  },
+  {
+    id: 'def_hfk',
+    name: 'The "Hannibal for King" Circuit',
+    type: 'open',
+    restDuration: 60,
+    items: [
+      { name: '10-15 Close-grip Pull-ups', completed: false, target: '10-15 Reps' },
+      { name: '20 Dips', completed: false, target: '20 Reps' },
+      { name: '20 Diamond Push-ups', completed: false, target: '20 Reps' },
+      { name: '15 Hanging Leg Raises', completed: false, target: '15 Reps' }
+    ]
+  }
+];
+
 function AuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -1608,66 +1670,8 @@ export default function App() {
   const [loggingExercise, setLoggingExercise] = useState(null);
   const [editingSet, setEditingSet] = useState(null);
 
-  const [routines, setRoutines] = useState([
-    {
-      id: 1,
-      name: 'The "Cindy" (20m AMRAP)',
-      type: 'amrap',
-      duration: 20 * 60, // 20 minutes in seconds
-      restDuration: 60,
-      items: [
-        { name: '5 Pull-ups', completed: false },
-        { name: '10 Push-ups', completed: false },
-        { name: '15 Air Squats', completed: false }
-      ]
-    },
-    {
-      id: 2,
-      name: 'The "Spider-Man Ladder" (Pyramid)',
-      type: 'stopwatch',
-      restDuration: 60,
-      items: [
-        { name: 'Pyramid Ladder (1 up to 10 & back down)', completed: false }
-      ]
-    },
-    {
-      id: 3,
-      name: 'The "Murph" (Full Hero WOD)',
-      type: 'stopwatch',
-      restDuration: 90,
-      items: [
-        { name: '1-Mile Run', completed: false },
-        { name: '100 Pull-ups', completed: false },
-        { name: '200 Push-ups', completed: false },
-        { name: '300 Air Squats', completed: false },
-        { name: '1-Mile Run', completed: false }
-      ]
-    },
-    {
-      id: 4,
-      name: '"Around the World" Circuit',
-      type: 'open',
-      restDuration: 90,
-      items: [
-        { name: '5 Pull-ups', completed: false },
-        { name: '10 Dips', completed: false },
-        { name: '15 Push-ups', completed: false },
-        { name: '20 Chin-ups', completed: false }
-      ]
-    },
-    {
-      id: 5,
-      name: 'The "Hannibal for King" Circuit',
-      type: 'open',
-      restDuration: 60,
-      items: [
-        { name: '10-15 Close-grip Pull-ups', completed: false },
-        { name: '20 Dips', completed: false },
-        { name: '20 Diamond Push-ups', completed: false },
-        { name: '15 Hanging Leg Raises', completed: false }
-      ]
-    }
-  ]);
+  // Initialize with DEFAULT_CIRCUITS
+  const [routines, setRoutines] = useState(DEFAULT_CIRCUITS);
 
   const [isBuildingRoutine, setIsBuildingRoutine] = useState(false);
   const [pathwaySearch, setPathwaySearch] = useState('');
@@ -1717,44 +1721,22 @@ export default function App() {
       }
     });
 
-// Load Custom Routines
+    // Load Custom Routines
     const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
         
-        // Check if the cloud database already contains our new circuits (e.g. ID 1 or 3)
-        const hasNewCircuits = cloudRoutines.some(r => r.id === 1 || r.id === 3);
+        // Filter out any old legacy ID default integers, keep only huge Date.now() timestamp IDs created by users
+        const customOnly = cloudRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         
-        if (!hasNewCircuits) {
-          // Separate the old defaults from the user's custom-built routines.
-          // Custom routines use Date.now() for IDs, so they are always huge numbers.
-          const userCustomOnly = cloudRoutines.filter(r => r.id > 1000); 
-          
-          // Merge the 5 new hardcoded routines with any custom ones the user built
-          const mergedRoutines = [...routines, ...userCustomOnly];
-          
-          setRoutines(mergedRoutines);
-          
-          // Push this newly merged list back up to Firebase so it remembers for next time
-          try {
-            await setDoc(routinesDocRef, { routines: mergedRoutines }, { merge: true });
-          } catch (err) {
-            console.error("Failed to merge new routines to cloud:", err);
-          }
-        } else {
-          // The cloud is up to date, just use the cloud data!
-          setRoutines(cloudRoutines);
-        }
+        // Always prefix the reliable DEFAULT_CIRCUITS first so they never vanish
+        setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
       } else {
-        // First time saving routines for this user, push the defaults up to the cloud
-        try {
-          await setDoc(routinesDocRef, { routines: routines }, { merge: true });
-        } catch (err) {
-          console.error("Failed to initialize routines in cloud:", err);
-        }
+        setRoutines(DEFAULT_CIRCUITS);
       }
     });
+
     // Load Active Workout State
     const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
     const unsubscribeActiveWorkout = onSnapshot(activeWorkoutDocRef, (docSnap) => {
@@ -1788,7 +1770,9 @@ export default function App() {
     if (user) {
       try {
         const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
-        await setDoc(routinesDocRef, { routines: newRoutines }, { merge: true });
+        // Only save user custom routines (the ones with timestamp IDs) back to cloud, keep defaults completely separate
+        const customOnly = newRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
+        await setDoc(routinesDocRef, { routines: customOnly }, { merge: true });
       } catch (err) {
         console.error("Failed to sync routines:", err);
       }
@@ -1958,11 +1942,23 @@ export default function App() {
   };
 
   const startRoutineSession = (routine) => {
+    // If it's a circuit type, activate circuit mode. Otherwise standard checklist mode.
+    const isCircuit = routine.type === 'amrap' || routine.type === 'stopwatch' || routine.type === 'open';
+    if (isCircuit) {
+      setActiveCircuit({
+        ...routine,
+        items: routine.items.map(i => ({ ...i, completed: false })) // reset checkboxes cleanly
+      });
+      setRoundTally(0);
+    } else {
+      setActiveCircuit(null);
+    }
+
     const sessionState = {
       date: new Date().toISOString().split('T')[0],
       title: routine.name,
       sets: activeWorkout.sets,
-      plannedItems: routine.items,
+      plannedItems: !isCircuit ? routine.items : null, // keep old UI functioning for non-circuits
       restDuration: routine.restDuration
     };
     updateActiveWorkoutInCloud(sessionState);
@@ -1972,12 +1968,13 @@ export default function App() {
   };
 
   const finishWorkout = async () => {
-    if (activeWorkout.sets.length === 0) return;
+    if (activeWorkout.sets.length === 0 && roundTally === 0) return;
 
     const completedSession = {
       date: activeWorkout.date,
       title: activeWorkout.title,
       setsCount: activeWorkout.sets.length,
+      roundsCompleted: roundTally,
       sets: activeWorkout.sets,
       notes: sessionNotes || '',
       createdAt: new Date().toISOString()
@@ -1999,6 +1996,11 @@ export default function App() {
       restDuration: 90,
       plannedItems: null
     });
+    
+    // Clear the active circuit when done
+    setActiveCircuit(null);
+    setRoundTally(0);
+    
     setSessionNotes('');
     setActiveTab('history');
   };
@@ -2375,13 +2377,17 @@ export default function App() {
                         <Play className="w-3.5 h-3.5 fill-current" />
                         Start
                       </button>
-                      <button
-                        onClick={() => deleteRoutine(routine.id)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
-                        title="Delete Routine"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      
+                      {/* Hide trashcan for defaults, only show for user-created ones (IDs > 1,000,000) */}
+                      {typeof routine.id === 'number' && routine.id > 1000000 && (
+                        <button
+                          onClick={() => deleteRoutine(routine.id)}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
+                          title="Delete Routine"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -2414,9 +2420,9 @@ export default function App() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={finishWorkout}
-                  disabled={activeWorkout.sets.length === 0}
+                  disabled={activeWorkout.sets.length === 0 && roundTally === 0}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                    activeWorkout.sets.length > 0
+                    activeWorkout.sets.length > 0 || roundTally > 0
                       ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   }`}
@@ -2478,8 +2484,52 @@ export default function App() {
               </div>
             </div>
 
-            {/* Planned Routine Checklist */}
-            {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && (
+            {/* Active Circuit Tracker UI */}
+            {activeCircuit && (
+              <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                    <CheckSquare className="w-4 h-4" />
+                    Circuit Tracker
+                  </div>
+                  <div className="text-xs text-slate-400 font-bold">
+                    Rounds Completed: <span className="text-emerald-400 text-sm ml-1">{roundTally}</span>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  {activeCircuit.items.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => handleToggleCircuitItem(idx)}
+                      className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                        item.completed 
+                          ? 'bg-emerald-500/10 border-emerald-500/50' 
+                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition ${
+                          item.completed 
+                            ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
+                            : 'border-slate-600'
+                        }`}>
+                          {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+                        <span className={`text-sm font-bold transition ${
+                          item.completed ? 'text-emerald-400 line-through opacity-70' : 'text-slate-200'
+                        }`}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-amber-400">{item.target}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Planned Routine Checklist (for standard workouts) */}
+            {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
@@ -2702,7 +2752,7 @@ export default function App() {
 
                       <div className="flex items-center gap-3">
                         <span className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/20">
-                          {session.setsCount} Sets
+                          {session.roundsCompleted > 0 ? `${session.roundsCompleted} Rounds | ` : ''}{session.setsCount} Sets
                         </span>
                         <button
                           onClick={() => deleteHistorySession(session.id)}
