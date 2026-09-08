@@ -752,13 +752,12 @@ const PROGRESSION_TRACKS = [
   }
 ];
 
-// Extracted the default circuit templates out to guarantee they never get overwritten by Firebase
 const DEFAULT_CIRCUITS = [
   {
     id: 'def_cindy',
     name: 'The "Cindy" (20m AMRAP)',
     type: 'amrap',
-    duration: 20 * 60, // 20 minutes in seconds
+    duration: 20 * 60, // 20 minutes countdown
     restDuration: 60,
     items: [
       { name: '5 Pull-ups', completed: false, target: '5 Reps' },
@@ -768,7 +767,7 @@ const DEFAULT_CIRCUITS = [
   },
   {
     id: 'def_spiderman',
-    name: 'The "Spider-Man Ladder" (Pyramid)',
+    name: 'The "Spider-Man Ladder"',
     type: 'stopwatch',
     restDuration: 60,
     items: [
@@ -777,7 +776,7 @@ const DEFAULT_CIRCUITS = [
   },
   {
     id: 'def_murph',
-    name: 'The "Murph" (Full Hero WOD)',
+    name: 'The "Murph" Hero WOD',
     type: 'stopwatch',
     restDuration: 90,
     items: [
@@ -1520,6 +1519,8 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
 
 function RoutineBuilderModal({ onClose, onSave }) {
   const [routineName, setRoutineName] = useState('');
+  const [routineType, setRoutineType] = useState('open'); // 'open', 'amrap', 'stopwatch'
+  const [durationMinutes, setDurationMinutes] = useState(20);
   const [restSeconds, setRestSeconds] = useState(90);
   const [selectedItems, setSelectedItems] = useState([]);
 
@@ -1528,7 +1529,7 @@ function RoutineBuilderModal({ onClose, onSave }) {
     if (exists) {
       setSelectedItems(selectedItems.filter(i => !(i.trackId === track.id && i.level === level.level)));
     } else {
-      setSelectedItems([...selectedItems, { trackId: track.id, trackTitle: track.title, level: level.level, name: level.name, target: level.target }]);
+      setSelectedItems([...selectedItems, { trackId: track.id, trackTitle: track.title, level: level.level, name: level.name, target: level.target, completed: false }]);
     }
   };
 
@@ -1538,6 +1539,8 @@ function RoutineBuilderModal({ onClose, onSave }) {
     onSave({
       id: Date.now(),
       name: routineName,
+      type: routineType,
+      duration: routineType === 'amrap' ? durationMinutes * 60 : 0,
       restDuration: Number(restSeconds),
       items: selectedItems
     });
@@ -1559,10 +1562,10 @@ function RoutineBuilderModal({ onClose, onSave }) {
 
         <form onSubmit={handleSaveRoutine} className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">Routine Name (e.g. Push Day A, Heavy Pull):</label>
+            <label className="text-xs font-semibold text-slate-300 block mb-1">Routine Name:</label>
             <input
               type="text"
-              placeholder="e.g. Upper Body Hypertrophy"
+              placeholder="e.g. Custom Conditioning Circuit"
               value={routineName}
               onChange={(e) => setRoutineName(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-bold"
@@ -1570,23 +1573,52 @@ function RoutineBuilderModal({ onClose, onSave }) {
             />
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">Default Rest Between Sets:</label>
-            <select
-              value={restSeconds}
-              onChange={(e) => setRestSeconds(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
-            >
-              <option value={45}>45 Seconds (Fast Pace)</option>
-              <option value={60}>60 Seconds (Standard)</option>
-              <option value={90}>90 Seconds (Strength & Hypertrophy)</option>
-              <option value={120}>2 Minutes (Heavy Effort)</option>
-              <option value={180}>3 Minutes (Max Strength / Skill)</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Routine Mode / Style:</label>
+              <select
+                value={routineType}
+                onChange={(e) => setRoutineType(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+              >
+                <option value="open">Standard / Open Circuit</option>
+                <option value="amrap">AMRAP (Timed Countdown + Rounds)</option>
+                <option value="stopwatch">For Time / Stopwatch</option>
+              </select>
+            </div>
+
+            {routineType === 'amrap' ? (
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">AMRAP Duration (Minutes):</label>
+                <input
+                  type="number"
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                  min={1}
+                  max={120}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Default Rest Between Sets:</label>
+                <select
+                  value={restSeconds}
+                  onChange={(e) => setRestSeconds(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                >
+                  <option value={45}>45 Seconds</option>
+                  <option value={60}>60 Seconds</option>
+                  <option value={90}>90 Seconds</option>
+                  <option value={120}>2 Minutes</option>
+                  <option value={180}>3 Minutes</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-2">Select Exercises to Include in Routine:</label>
+            <label className="text-xs font-semibold text-slate-300 block mb-2">Select Exercises / Circuit Stations:</label>
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2 border border-slate-800 rounded-xl p-3 bg-slate-950/60">
               {PROGRESSION_TRACKS.map(track => (
                 <div key={track.id} className="space-y-1.5">
@@ -1632,7 +1664,7 @@ function RoutineBuilderModal({ onClose, onSave }) {
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              Save Routine ({selectedItems.length} exercises)
+              Save Routine ({selectedItems.length} stations)
             </button>
           </div>
         </form>
@@ -1686,8 +1718,6 @@ export default function App() {
   // Circuit Tracking State
   const [activeCircuit, setActiveCircuit] = useState(null);
   const [roundTally, setRoundTally] = useState(0);
-  const [circuitTimerSeconds, setCircuitTimerSeconds] = useState(0);
-  const [circuitTimerActive, setCircuitTimerActive] = useState(false);
 
   // Auth observer
   useEffect(() => {
@@ -1806,16 +1836,31 @@ export default function App() {
 
   useEffect(() => {
     let interval = null;
-    if (timerActive && timerSeconds > 0) {
+    if (timerActive) {
       interval = setInterval(() => {
-        setTimerSeconds(sec => sec - 1);
+        setTimerSeconds(sec => {
+          if (activeCircuit?.type === 'amrap') {
+            if (sec <= 1) {
+              setTimerActive(false);
+              playBeep();
+              return 0;
+            }
+            return sec - 1;
+          } else if (activeCircuit?.type === 'stopwatch') {
+            return sec + 1;
+          } else {
+            if (sec <= 1) {
+              setTimerActive(false);
+              playBeep();
+              return 0;
+            }
+            return sec - 1;
+          }
+        });
       }, 1000);
-    } else if (timerSeconds === 0 && timerActive) {
-      setTimerActive(false);
-      playBeep();
     }
     return () => clearInterval(interval);
-  }, [timerActive, timerSeconds]);
+  }, [timerActive, activeCircuit]);
 
   const startTimer = (seconds) => {
     setTimerInitial(seconds);
@@ -1929,12 +1974,9 @@ export default function App() {
     const updatedItems = [...activeCircuit.items];
     updatedItems[index].completed = !updatedItems[index].completed;
 
-    // Check if all items in this round are completed
     const allCompleted = updatedItems.every(item => item.completed);
     if (allCompleted) {
-      // Increment round tally
       setRoundTally(prev => prev + 1);
-      // Reset checkboxes for next round
       updatedItems.forEach(item => item.completed = false);
     }
 
@@ -1942,12 +1984,11 @@ export default function App() {
   };
 
   const startRoutineSession = (routine) => {
-    // If it's a circuit type, activate circuit mode. Otherwise standard checklist mode.
     const isCircuit = routine.type === 'amrap' || routine.type === 'stopwatch' || routine.type === 'open';
     if (isCircuit) {
       setActiveCircuit({
         ...routine,
-        items: routine.items.map(i => ({ ...i, completed: false })) // reset checkboxes cleanly
+        items: routine.items.map(i => ({ ...i, completed: false }))
       });
       setRoundTally(0);
     } else {
@@ -1958,12 +1999,25 @@ export default function App() {
       date: new Date().toISOString().split('T')[0],
       title: routine.name,
       sets: activeWorkout.sets,
-      plannedItems: !isCircuit ? routine.items : null, // keep old UI functioning for non-circuits
+      plannedItems: !isCircuit ? routine.items : null,
       restDuration: routine.restDuration
     };
     updateActiveWorkoutInCloud(sessionState);
-    setTimerInitial(routine.restDuration);
-    setTimerSeconds(routine.restDuration);
+
+    if (routine.type === 'amrap') {
+      setTimerInitial(routine.duration);
+      setTimerSeconds(routine.duration);
+      setTimerActive(true);
+    } else if (routine.type === 'stopwatch') {
+      setTimerInitial(0);
+      setTimerSeconds(0);
+      setTimerActive(true);
+    } else {
+      setTimerInitial(routine.restDuration);
+      setTimerSeconds(routine.restDuration);
+      setTimerActive(false);
+    }
+
     setActiveTab('workout');
   };
 
@@ -2484,46 +2538,55 @@ export default function App() {
               </div>
             </div>
 
-            {/* Active Circuit Tracker UI */}
+            {/* Active Circuit Tracker & Fractional Round Calculator */}
             {activeCircuit && (
-              <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    <CheckSquare className="w-4 h-4" />
-                    Circuit Tracker
+              <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
+                    <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
                   </div>
-                  <div className="text-xs text-slate-400 font-bold">
-                    Rounds Completed: <span className="text-emerald-400 text-sm ml-1">{roundTally}</span>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
+                    <span>Completed Rounds:</span>
+                    <span className="text-base font-black text-emerald-300">
+                      {(roundTally + (activeCircuit.items.filter(i => i.completed).length / activeCircuit.items.length)).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-                <div className="grid gap-2">
+
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
                   {activeCircuit.items.map((item, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       onClick={() => handleToggleCircuitItem(idx)}
-                      className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                        item.completed 
-                          ? 'bg-emerald-500/10 border-emerald-500/50' 
-                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                      className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                        item.completed
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
+                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition ${
-                          item.completed 
-                            ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
-                            : 'border-slate-600'
-                        }`}>
-                          {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                        </div>
-                        <span className={`text-sm font-bold transition ${
-                          item.completed ? 'text-emerald-400 line-through opacity-70' : 'text-slate-200'
-                        }`}>
-                          {item.name}
-                        </span>
+                      <span className="text-xs font-bold">{item.name}</span>
+                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
+                        {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                       </div>
-                      <span className="text-xs text-amber-400">{item.target}</span>
                     </div>
                   ))}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setRoundTally(prev => prev + 1)}
+                    className="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/40 transition"
+                  >
+                    + Manual Round Tally
+                  </button>
+                  <button
+                    onClick={() => setActiveCircuit(null)}
+                    className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
+                  >
+                    Close Circuit
+                  </button>
                 </div>
               </div>
             )}
