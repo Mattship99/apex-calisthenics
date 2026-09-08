@@ -1717,14 +1717,44 @@ export default function App() {
       }
     });
 
-    // Load Custom Routines
+// Load Custom Routines
     const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
-    const unsubscribeRoutines = onSnapshot(routinesDocRef, (docSnap) => {
+    const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
-        setRoutines(docSnap.data().routines);
+        const cloudRoutines = docSnap.data().routines;
+        
+        // Check if the cloud database already contains our new circuits (e.g. ID 1 or 3)
+        const hasNewCircuits = cloudRoutines.some(r => r.id === 1 || r.id === 3);
+        
+        if (!hasNewCircuits) {
+          // Separate the old defaults from the user's custom-built routines.
+          // Custom routines use Date.now() for IDs, so they are always huge numbers.
+          const userCustomOnly = cloudRoutines.filter(r => r.id > 1000); 
+          
+          // Merge the 5 new hardcoded routines with any custom ones the user built
+          const mergedRoutines = [...routines, ...userCustomOnly];
+          
+          setRoutines(mergedRoutines);
+          
+          // Push this newly merged list back up to Firebase so it remembers for next time
+          try {
+            await setDoc(routinesDocRef, { routines: mergedRoutines }, { merge: true });
+          } catch (err) {
+            console.error("Failed to merge new routines to cloud:", err);
+          }
+        } else {
+          // The cloud is up to date, just use the cloud data!
+          setRoutines(cloudRoutines);
+        }
+      } else {
+        // First time saving routines for this user, push the defaults up to the cloud
+        try {
+          await setDoc(routinesDocRef, { routines: routines }, { merge: true });
+        } catch (err) {
+          console.error("Failed to initialize routines in cloud:", err);
+        }
       }
     });
-
     // Load Active Workout State
     const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
     const unsubscribeActiveWorkout = onSnapshot(activeWorkoutDocRef, (docSnap) => {
