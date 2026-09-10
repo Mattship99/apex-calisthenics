@@ -768,10 +768,14 @@ const DEFAULT_CIRCUITS = [
   {
     id: 'def_spiderman',
     name: 'The "Spider-Man Ladder"',
-    type: 'stopwatch',
+    type: 'ladder',
     restDuration: 60,
     items: [
-      { name: 'Pyramid Ladder (1 up to 10 & back down)', completed: false, target: '1-10-1 Reps' }
+      { name: 'Pull-ups', completed: false },
+      { name: 'Dips', completed: false },
+      { name: 'Push-ups', completed: false },
+      { name: 'Sit-ups', completed: false },
+      { name: 'Air Squats', completed: false }
     ]
   },
   {
@@ -812,6 +816,8 @@ const DEFAULT_CIRCUITS = [
     ]
   }
 ];
+
+const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
 function AuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -898,14 +904,14 @@ function AuthModal({ onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && !isForgotPassword && (
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Username (e.g. Gingerbeard99)</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Username (e.g. Matt)</label>
               <div className="relative">
                 <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Gingerbeard99"
+                  placeholder="Matt"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
@@ -1072,7 +1078,7 @@ function AccountSettingsModal({ user, onClose }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
-              placeholder="Gingerbeard99"
+              placeholder="Matt"
             />
           </div>
 
@@ -1519,7 +1525,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
 
 function RoutineBuilderModal({ onClose, onSave }) {
   const [routineName, setRoutineName] = useState('');
-  const [routineType, setRoutineType] = useState('open'); // 'open', 'amrap', 'stopwatch'
+  const [routineType, setRoutineType] = useState('open'); // 'open', 'amrap', 'stopwatch', 'ladder'
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [restSeconds, setRestSeconds] = useState(90);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -1582,8 +1588,9 @@ function RoutineBuilderModal({ onClose, onSave }) {
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
               >
                 <option value="open">Standard / Open Circuit</option>
-                <option value="amrap">AMRAP (Timed Countdown + Rounds)</option>
+                <option value="amrap">AMRAP (Timed Countdown)</option>
                 <option value="stopwatch">For Time / Stopwatch</option>
+                <option value="ladder">Pyramid Ladder (1-10-1)</option>
               </select>
             </div>
 
@@ -1679,6 +1686,10 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
+  // Accordion UI State
+  const [expandedPathway, setExpandedPathway] = useState(null);
+  const [expandedRoutine, setExpandedRoutine] = useState(null);
+
   const [userLevels, setUserLevels] = useState({
     one_arm_pushup: 1,
     dragon_squat: 1,
@@ -1719,6 +1730,9 @@ export default function App() {
   const [activeCircuit, setActiveCircuit] = useState(null);
   const [roundTally, setRoundTally] = useState(0);
 
+  // Spider-Man Ladder Configuration
+  const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
   // Auth observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -1756,11 +1770,8 @@ export default function App() {
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
-        
         // Filter out any old legacy ID default integers, keep only huge Date.now() timestamp IDs created by users
         const customOnly = cloudRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
-        
-        // Always prefix the reliable DEFAULT_CIRCUITS first so they never vanish
         setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
       } else {
         setRoutines(DEFAULT_CIRCUITS);
@@ -1800,7 +1811,6 @@ export default function App() {
     if (user) {
       try {
         const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
-        // Only save user custom routines (the ones with timestamp IDs) back to cloud, keep defaults completely separate
         const customOnly = newRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         await setDoc(routinesDocRef, { routines: customOnly }, { merge: true });
       } catch (err) {
@@ -1846,7 +1856,7 @@ export default function App() {
               return 0;
             }
             return sec - 1;
-          } else if (activeCircuit?.type === 'stopwatch') {
+          } else if (activeCircuit?.type === 'stopwatch' || activeCircuit?.type === 'ladder') {
             return sec + 1;
           } else {
             if (sec <= 1) {
@@ -1983,8 +1993,15 @@ export default function App() {
     setActiveCircuit({ ...activeCircuit, items: updatedItems });
   };
 
+  const handleCompleteRoundFastForward = () => {
+    if (!activeCircuit) return;
+    setRoundTally(prev => prev + 1);
+    const resetItems = activeCircuit.items.map(item => ({ ...item, completed: false }));
+    setActiveCircuit({ ...activeCircuit, items: resetItems });
+  };
+
   const startRoutineSession = (routine) => {
-    const isCircuit = routine.type === 'amrap' || routine.type === 'stopwatch' || routine.type === 'open';
+    const isCircuit = routine.type === 'amrap' || routine.type === 'stopwatch' || routine.type === 'open' || routine.type === 'ladder';
     if (isCircuit) {
       setActiveCircuit({
         ...routine,
@@ -2008,7 +2025,7 @@ export default function App() {
       setTimerInitial(routine.duration);
       setTimerSeconds(routine.duration);
       setTimerActive(true);
-    } else if (routine.type === 'stopwatch') {
+    } else if (routine.type === 'stopwatch' || routine.type === 'ladder') {
       setTimerInitial(0);
       setTimerSeconds(0);
       setTimerActive(true);
@@ -2079,7 +2096,6 @@ export default function App() {
     return matchesCategory && matchesSearch;
   });
 
-  // Group active workout sets by exerciseName
   const groupedSets = activeWorkout.sets.reduce((acc, set) => {
     if (!acc[set.exerciseName]) {
       acc[set.exerciseName] = {
@@ -2127,14 +2143,14 @@ export default function App() {
                 >
                   <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-slate-300 font-bold max-w-[140px] truncate">
-                    {user.displayName || user.email?.split('@')[0] || 'Gingerbeard99'}
+                    {user.displayName || user.email?.split('@')[0] || 'Matt'}
                   </span>
                 </button>
 
                 <button
                   onClick={async () => {
                     await signOut(auth);
-                    window.location.reload(); // Refresh screen instantly upon logout
+                    window.location.reload(); 
                   }}
                   className="p-1 hover:text-rose-400 text-slate-400 ml-1 transition border-l border-slate-700 pl-2"
                   title="Sign Out"
@@ -2202,7 +2218,6 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Search Bar */}
                 <div className="relative w-full md:w-72">
                   <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                   <input
@@ -2220,7 +2235,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Category Filter Pills */}
               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
                 {['All', 'Unilateral', 'Legs', 'Pulling', 'Pushing', 'Balance', 'Core'].map((cat) => (
                   <button
@@ -2253,10 +2267,16 @@ export default function App() {
               filteredTracks.map((track) => {
                 const currentLevel = userLevels[track.id] || 1;
                 const activeLevelData = track.levels.find(l => l.level === currentLevel) || track.levels[0];
+                const isExpanded = expandedPathway === track.id;
 
                 return (
                   <div key={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                    <div className="p-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80">
+                    
+                    {/* Collapsible Header */}
+                    <div 
+                      onClick={() => setExpandedPathway(isExpanded ? null : track.id)}
+                      className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 cursor-pointer hover:bg-slate-800/50 transition"
+                    >
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
@@ -2265,129 +2285,137 @@ export default function App() {
                           <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {track.levels.length}</span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
-                        <p className="text-sm text-slate-400 mt-1">{track.description}</p>
+                        {!isExpanded && <p className="text-sm text-slate-400 mt-1 truncate max-w-lg">{track.description}</p>}
                       </div>
 
-                      <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
-                        <span className="text-xs font-semibold text-slate-400 px-2">Set Level:</span>
-                        {track.levels.map((lvl) => (
-                          <button
-                            key={lvl.level}
-                            onClick={() => updateLevel(track.id, lvl.level)}
-                            className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
-                              userLevels[track.id] === lvl.level
-                                ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                            }`}
-                          >
-                            {lvl.level}
-                          </button>
-                        ))}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
+                          {track.levels.map((lvl) => (
+                            <button
+                              key={lvl.level}
+                              onClick={() => updateLevel(track.id, lvl.level)}
+                              className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
+                                userLevels[track.id] === lvl.level
+                                  ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
+                                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                              }`}
+                            >
+                              {lvl.level}
+                            </button>
+                          ))}
+                        </div>
+                        <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                       </div>
                     </div>
 
-                    <div className="p-6 bg-slate-900/40">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
-                          <h4 className="text-lg font-bold text-slate-100 mt-1 flex items-center gap-2">
-                            {activeLevelData.name}
-                          </h4>
-                          <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
-                            <Target className="w-3.5 h-3.5" />
-                            Mastery Standard: {activeLevelData.target}
+                    {/* Collapsible Content Body */}
+                    {isExpanded && (
+                      <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
+                        <p className="text-sm text-slate-400 mb-6">{track.description}</p>
+                        
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
+                            <h4 className="text-lg font-bold text-slate-100 mt-1 flex items-center gap-2">
+                              {activeLevelData.name}
+                            </h4>
+                            <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
+                              <Target className="w-3.5 h-3.5" />
+                              Mastery Standard: {activeLevelData.target}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setSelectedExerciseDemo(activeLevelData)}
+                              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                            >
+                              <Eye className="w-4 h-4 text-amber-400" />
+                              View Animated Demo
+                            </button>
+
+                            <button
+                              onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
+                              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+                            >
+                              <Plus className="w-4 h-4 stroke-[3]" />
+                              Log Set
+                            </button>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setSelectedExerciseDemo(activeLevelData)}
-                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
-                          >
-                            <Eye className="w-4 h-4 text-amber-400" />
-                            View Animated Demo
-                          </button>
-
-                          <button
-                            onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
-                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
-                          >
-                            <Plus className="w-4 h-4 stroke-[3]" />
-                            Log Set
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-4 mt-6">
-                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                          <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                            Non-Negotiable Form Cues
+                        <div className="grid md:grid-cols-2 gap-4 mt-6">
+                          <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                            <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                              Non-Negotiable Form Cues
+                            </div>
+                            <ul className="space-y-2 text-xs text-slate-300">
+                              {activeLevelData.cues.map((cue, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-emerald-400 font-bold">•</span>
+                                  <span>{cue}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <ul className="space-y-2 text-xs text-slate-300">
-                            {activeLevelData.cues.map((cue, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-emerald-400 font-bold">•</span>
-                                <span>{cue}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
 
-                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                          <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                            <ShieldAlert className="w-4 h-4 text-amber-400" />
-                            Common Pitfalls to Avoid
+                          <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                            <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                              <ShieldAlert className="w-4 h-4 text-amber-400" />
+                              Common Pitfalls to Avoid
+                            </div>
+                            <ul className="space-y-2 text-xs text-slate-300">
+                              {activeLevelData.pitfalls.map((pit, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-amber-400 font-bold">•</span>
+                                  <span>{pit}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <ul className="space-y-2 text-xs text-slate-300">
-                            {activeLevelData.pitfalls.map((pit, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-amber-400 font-bold">•</span>
-                                <span>{pit}</span>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
-                      </div>
 
-                      <div className="mt-6 pt-6 border-t border-slate-800/80">
-                        <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum:</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                          {track.levels.map((lvl) => {
-                            const isCurrent = lvl.level === currentLevel;
-                            const isPassed = lvl.level < currentLevel;
+                        <div className="mt-6 pt-6 border-t border-slate-800/80">
+                          <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum:</div>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            {track.levels.map((lvl) => {
+                              const isCurrent = lvl.level === currentLevel;
+                              const isPassed = lvl.level < currentLevel;
 
-                            return (
-                              <div
-                                key={lvl.level}
-                                onClick={() => updateLevel(track.id, lvl.level)}
-                                className={`p-2.5 rounded-xl border cursor-pointer transition ${
-                                  isCurrent
-                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                    : isPassed
-                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedExerciseDemo(lvl);
-                                    }}
-                                    className="text-slate-400 hover:text-amber-300"
-                                  >
-                                    <Eye className="w-3 h-3" />
-                                  </button>
+                              return (
+                                <div
+                                  key={lvl.level}
+                                  onClick={() => updateLevel(track.id, lvl.level)}
+                                  className={`p-2.5 rounded-xl border cursor-pointer transition ${
+                                    isCurrent
+                                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                      : isPassed
+                                      ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                                      : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedExerciseDemo(lvl);
+                                      }}
+                                      className="text-slate-400 hover:text-amber-300"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                  <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                                 </div>
-                                <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })
@@ -2416,48 +2444,57 @@ export default function App() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {routines.map((routine) => (
-                <div key={routine.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-100">{routine.name}</h3>
-                      <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s between sets</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => startRoutineSession(routine)}
-                        className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs font-bold transition"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        Start
-                      </button>
-                      
-                      {/* Hide trashcan for defaults, only show for user-created ones (IDs > 1,000,000) */}
-                      {typeof routine.id === 'number' && routine.id > 1000000 && (
-                        <button
-                          onClick={() => deleteRoutine(routine.id)}
-                          className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
-                          title="Delete Routine"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+              {routines.map((routine) => {
+                const isExpanded = expandedRoutine === routine.id;
 
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Planned Exercises:</span>
-                    <div className="space-y-1.5">
-                      {routine.items.map((item, idx) => (
-                        <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-                          <span className="font-bold text-slate-200">{item.name}</span>
-                          <span className="text-amber-400 font-medium">{item.target}</span>
-                        </div>
-                      ))}
+                return (
+                  <div key={routine.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <div 
+                      onClick={() => setExpandedRoutine(isExpanded ? null : routine.id)}
+                      className="p-6 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
+                    >
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-100">{routine.name}</h3>
+                        <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s | {routine.type.toUpperCase()}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startRoutineSession(routine); }}
+                          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs font-bold transition"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          Start
+                        </button>
+                        
+                        {typeof routine.id === 'number' && routine.id > 1000000 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteRoutine(routine.id); }}
+                            className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
+                            title="Delete Routine"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
                     </div>
+
+                    {isExpanded && (
+                      <div className="px-6 pb-6 pt-2 border-t border-slate-800/50 bg-slate-900/40">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 mt-2">Planned Exercises:</span>
+                        <div className="space-y-1.5">
+                          {routine.items.map((item, idx) => (
+                            <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                              <span className="font-bold text-slate-200">{item.name}</span>
+                              <span className="text-amber-400 font-medium">{item.target}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -2554,36 +2591,56 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
-                  {activeCircuit.items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleToggleCircuitItem(idx)}
-                      className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                        item.completed
-                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
-                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
-                      }`}
+                {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
+                  <div className="text-center py-8">
+                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                    <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
+                    <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleCompleteRoundFastForward}
+                      className="w-full py-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20"
                     >
-                      <span className="text-xs font-bold">{item.name}</span>
-                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
-                        {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                      </div>
+                      Complete Full Round Fast-Forward
+                    </button>
+                    
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
+                      {activeCircuit.items.map((item, idx) => {
+                        const isLadder = activeCircuit.type === 'ladder';
+                        const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
+                        const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => handleToggleCircuitItem(idx)}
+                            className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                              item.completed
+                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
+                                : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="text-xs font-bold">{item.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-amber-400">{displayTarget}</span>
+                              <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
+                                {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => setRoundTally(prev => prev + 1)}
-                    className="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/40 transition"
-                  >
-                    + Manual Round Tally
-                  </button>
-                  <button
                     onClick={() => setActiveCircuit(null)}
-                    className="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
+                    className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
                   >
                     Close Circuit
                   </button>
