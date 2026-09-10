@@ -1979,6 +1979,40 @@ export default function App() {
     updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: null });
   };
 
+  // Automatically generates individual set records and pushes them into the active workout session
+  const logCircuitRound = (currentRoundIndex) => {
+    if (!activeCircuit) return;
+
+    const isLadder = activeCircuit.type === 'ladder';
+    const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(currentRoundIndex, LADDER_RUNGS.length - 1)] : null;
+
+    const newSets = activeCircuit.items.map((item, idx) => {
+      const displayTarget = isLadder ? `${currentRungReps} Reps` : (item.target || 'Completed');
+      return {
+        id: Date.now() + Math.floor(Math.random() * 1000) + idx, 
+        trackId: 'circuit_custom', // generic flag so it groups cleanly
+        exerciseName: item.name,
+        repsOrHold: displayTarget,
+        rpe: '-',
+        formRating: 'Circuit',
+        notes: `Round ${currentRoundIndex + 1}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    });
+
+    setActiveWorkout(prev => {
+      const nextState = {
+        ...prev,
+        sets: [...prev.sets, ...newSets]
+      };
+      if (user) {
+        const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
+        setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
+      }
+      return nextState;
+    });
+  };
+
   const handleToggleCircuitItem = (index) => {
     if (!activeCircuit) return;
     const updatedItems = [...activeCircuit.items];
@@ -1986,6 +2020,7 @@ export default function App() {
 
     const allCompleted = updatedItems.every(item => item.completed);
     if (allCompleted) {
+      logCircuitRound(roundTally);
       setRoundTally(prev => prev + 1);
       updatedItems.forEach(item => item.completed = false);
     }
@@ -1995,6 +2030,7 @@ export default function App() {
 
   const handleCompleteRoundFastForward = () => {
     if (!activeCircuit) return;
+    logCircuitRound(roundTally);
     setRoundTally(prev => prev + 1);
     const resetItems = activeCircuit.items.map(item => ({ ...item, completed: false }));
     setActiveCircuit({ ...activeCircuit, items: resetItems });
@@ -2068,10 +2104,8 @@ export default function App() {
       plannedItems: null
     });
     
-    // Clear the active circuit when done
     setActiveCircuit(null);
     setRoundTally(0);
-    
     setSessionNotes('');
     setActiveTab('history');
   };
@@ -2739,25 +2773,28 @@ export default function App() {
               ) : (
                 <div className="divide-y divide-slate-800">
                   {Object.values(groupedSets).map((group, groupIdx) => {
-                    const track = PROGRESSION_TRACKS.find(t => t.id === group.trackId) || PROGRESSION_TRACKS[0];
-                    const levelData = track.levels.find(l => l.name === group.exerciseName) || track.levels[0];
+                    const track = PROGRESSION_TRACKS.find(t => t.id === group.trackId);
+                    const trackTitle = track ? track.title : 'Circuit Station';
+                    const levelData = track ? track.levels.find(l => l.name === group.exerciseName) : null;
 
                     return (
                       <div key={groupIdx} className="p-5 space-y-3 bg-slate-900/40">
                         {/* Exercise Group Header with "+ Add Set" button */}
                         <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                           <div>
-                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{trackTitle}</span>
                             <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
                           </div>
 
-                          <button
-                            onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                            className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
-                          >
-                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                            Add Set
-                          </button>
+                          {levelData && track && (
+                            <button
+                              onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                              className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                            >
+                              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                              Add Set
+                            </button>
+                          )}
                         </div>
 
                         {/* Sets list for this exercise */}
@@ -2894,7 +2931,7 @@ export default function App() {
                         {session.sets.map((s, idx) => (
                           <div key={idx} className="text-xs bg-slate-950 p-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
                             <span className="font-bold text-slate-200">{s.exerciseName}</span>
-                            <span className="text-emerald-400 font-bold">{s.repsOrHold} reps</span>
+                            <span className="text-emerald-400 font-bold">{s.repsOrHold}</span>
                             <span className="text-amber-400">RPE {s.rpe}</span>
                             <span className="text-slate-400">{s.formRating}</span>
                             {s.notes && <span className="text-amber-300 italic">"{s.notes}"</span>}
