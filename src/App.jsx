@@ -59,8 +59,19 @@ import {
   Lock,
   AlertCircle,
   Search,
-  Filter
+  HeartPulse,
+  Send,
+  Lock as LockIcon,
+  Unlock
 } from 'lucide-react';
+
+// IMPORTING YOUR DATA ARRAYS FROM YOUR NEW FILE
+import { 
+  MASTER_PATHWAYS, 
+  MOBILITY_RECOVERY_MODULE, 
+  DEFAULT_CIRCUITS, 
+  LADDER_RUNGS 
+} from './data/constants';
 
 const firebaseConfig = {
   apiKey: "AIzaSyANdR3YT6_4QN8U6pDfi6NSKUEqQ23dyho",
@@ -76,748 +87,45 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const PROGRESSION_TRACKS = [
-  {
-    id: 'one_arm_pushup',
-    title: 'One-Arm Push-Up Pathway',
-    description: 'Master unilateral horizontal pressing, intense rotational core anti-extension, and single-arm lockout.',
-    category: 'Unilateral',
-    color: 'amber',
-    badge: 'Unilateral Press',
-    levels: [
-      {
-        level: 1,
-        id: 'oapu_1',
-        name: 'Incline One-Arm Push-Ups',
-        target: '3 x 10 Clean Reps / Arm',
-        primaryMuscles: ['Chest', 'Anterior Deltoid', 'Core Obliques'],
-        cues: [
-          'Place working hand on elevated bench or bar at shoulder height',
-          'Feet set wide (double shoulder-width) to form a stable tripod base',
-          'Keep hips and shoulders square to the surface (resist twisting)'
-        ],
-        pitfalls: ['Twisting hips open toward non-working side', 'Flaring working elbow 90 degrees'],
-        type: 'reps',
-        animationType: 'one_arm_pushup'
-      },
-      {
-        level: 2,
-        id: 'oapu_2',
-        name: 'Archer Push-Ups (Floor)',
-        target: '3 x 8 Reps / Arm',
-        primaryMuscles: ['Chest (Unilateral Focus)', 'Triceps', 'Serratus Anterior'],
-        cues: [
-          'Start with wide hand stance on floor',
-          'Lower body towards working arm while straightening the assist arm sideways',
-          'Assist arm only balances on fingertips'
-        ],
-        pitfalls: ['Bending assist arm heavily', 'Dropping hips below parallel'],
-        type: 'reps',
-        animationType: 'pushup_archer'
-      },
-      {
-        level: 3,
-        id: 'oapu_3',
-        name: 'Assisted One-Arm Push-Ups (Offset Hand/Ball)',
-        target: '3 x 6 Reps / Arm',
-        primaryMuscles: ['Chest', 'Triceps', 'Core Stabilizers'],
-        cues: [
-          'Place non-working hand on an elevated ball or block 12 inches to the side',
-          'Working arm bears 85% of bodyweight through full range',
-          'Tuck working elbow 45 degrees toward the ribcage'
-        ],
-        pitfalls: ['Pushing primarily with elevated assist hand'],
-        type: 'reps',
-        animationType: 'one_arm_pushup'
-      },
-      {
-        level: 4,
-        id: 'oapu_4',
-        name: 'One-Arm Push-Up Negatives',
-        target: '3 x 4 Reps / Arm (4-second descent)',
-        primaryMuscles: ['Chest', 'Anterior Deltoid', 'Anti-Rotation Obliques'],
-        cues: [
-          'Wide foot stance, single hand centered under sternum/collarbone',
-          'Control descent for 4 slow seconds until chest taps floor',
-          'Reset with both hands to push back up'
-        ],
-        pitfalls: ['Plummeting through bottom 2 inches', 'Hips sagging into lumbar extension'],
-        type: 'reps',
-        animationType: 'one_arm_pushup'
-      },
-      {
-        level: 5,
-        id: 'oapu_5',
-        name: 'Full Freestanding One-Arm Push-Up',
-        target: '3 x 3 Clean Lockout Reps / Arm',
-        primaryMuscles: ['Unilateral Pectoral Chain', 'Triceps Brachii', 'Deep Core'],
-        cues: [
-          'Single working hand directly under chest, non-working arm tucked behind lower back',
-          'Lower chest 1 inch off floor without rotating hips',
-          'Drive through working palm to complete lockout'
-        ],
-        pitfalls: ['Extreme hip twisting / corkscrewing', 'Incomplete range of motion'],
-        type: 'reps',
-        animationType: 'one_arm_pushup'
-      }
-    ]
-  },
-  {
-    id: 'dragon_squat',
-    title: 'Dragon Squat Masterclass',
-    description: 'Master the ultimate single-leg squat: thread non-working leg behind & out sideways while keeping body parallel.',
-    category: 'Legs',
-    color: 'rose',
-    badge: 'Elite Leg Skill',
-    levels: [
-      {
-        level: 1,
-        id: 'dragon_1',
-        name: 'Deep Curtsy Squats',
-        target: '3 x 12 Reps / Leg',
-        primaryMuscles: ['Glute Medius', 'Quads', 'Ankle Mobility'],
-        cues: [
-          'Step rear foot diagonally back and across behind front leg',
-          'Keep front heel glued to floor and torso facing forward',
-          'Lower rear knee toward outer heel of front foot'
-        ],
-        pitfalls: ['Collapsing front knee inward', 'Lifting front heel'],
-        type: 'reps',
-        animationType: 'dragon_squat'
-      },
-      {
-        level: 2,
-        id: 'dragon_2',
-        name: 'Elevated Shrimp Squats',
-        target: '3 x 8 Reps / Leg',
-        primaryMuscles: ['Quads', 'Glutes', 'Patellar Stability'],
-        cues: [
-          'Hold rear ankle behind back with same-side hand',
-          'Descend on working leg until rear knee touches floor gently',
-          'Keep working heel pressed firmly down'
-        ],
-        pitfalls: ['Plummeting rear knee onto hard floor', 'Rounding back'],
-        type: 'reps',
-        animationType: 'dragon_squat'
-      },
-      {
-        level: 3,
-        id: 'dragon_3',
-        name: 'Assisted Dragon Squat (Pole / Rings)',
-        target: '3 x 6 Reps / Leg',
-        primaryMuscles: ['Hip External Rotators', 'Glutes', 'Ankles'],
-        cues: [
-          'Hold pole or resistance band for light balance support',
-          'Reach non-working leg behind and sweep it out laterally to side',
-          'Hinge torso forward parallel to floor as counter-balance'
-        ],
-        pitfalls: ['Pulling heavily with arms instead of driving through leg'],
-        type: 'reps',
-        animationType: 'dragon_squat'
-      },
-      {
-        level: 4,
-        id: 'dragon_4',
-        name: 'Box / Bench Dragon Squat Negatives',
-        target: '3 x 5 Reps / Leg (4-second descent)',
-        primaryMuscles: ['Quads', 'Glute Max/Medius', 'Ankle Flexion'],
-        cues: [
-          'Stand on low box to allow extended rear leg room to clear floor',
-          'Control descent for 4 seconds, sweeping rear leg out sideways',
-          'Touch seat softly before standing back up'
-        ],
-        pitfalls: ['Dropping too fast in bottom 2 inches'],
-        type: 'reps',
-        animationType: 'dragon_squat'
-      },
-      {
-        level: 5,
-        id: 'dragon_5',
-        name: 'Full Freestanding Dragon Squat',
-        target: '3 x 3 Clean Reps / Leg',
-        primaryMuscles: ['Full Lower Body Chain', 'Hip Rotators', 'Core Obliques'],
-        cues: [
-          'Unassisted deep single-leg squat',
-          'Thread rear leg behind working leg and extend it straight out sideways',
-          'Torso dips parallel to floor, perpendicular to side-extended leg'
-        ],
-        pitfalls: ['Working heel popping up', 'Trailing leg touching floor'],
-        type: 'reps',
-        animationType: 'dragon_squat'
-      }
-    ]
-  },
-  {
-    id: 'pulling',
-    title: 'Strict Pull-Up Masterclass',
-    description: 'Build vertical pulling strength from foundational hangs to advanced L-sit & weighted reps.',
-    category: 'Pulling',
-    color: 'emerald',
-    badge: 'Pulling Power',
-    levels: [
-      {
-        level: 1,
-        id: 'pull_1',
-        name: 'Dead Hang & Scapular Pulls',
-        target: '3 x 45s Hang / 3 x 12 Scap Pulls',
-        primaryMuscles: ['Lower Traps', 'Lats', 'Grip/Forearms'],
-        cues: [
-          'Active shoulders: Pull shoulder blades down and back without bending elbows',
-          'Full grip (knuckles over bar), core braced',
-          'Keep legs straight and squeezed together in hollow body position'
-        ],
-        pitfalls: ['Shrugging shoulders into neck', 'Bending elbows during scapular pulls', 'Arching lower back'],
-        type: 'reps_and_hold',
-        animationType: 'scapular_pull'
-      },
-      {
-        level: 2,
-        id: 'pull_2',
-        name: 'Australian / Inverted Rows',
-        target: '3 x 12 Reps (Bar at chest height)',
-        primaryMuscles: ['Rhomboids', 'Mid Traps', 'Biceps', 'Core'],
-        cues: [
-          'Keep body in a rigid straight plank from head to heels',
-          'Pull chest directly to bar/rings with controlled tempo',
-          'Squeeze shoulder blades together at top lock-out for 1 second'
-        ],
-        pitfalls: ['Sagging hips (lack of glute engagement)', 'Leading with chin/neck', 'Half reps'],
-        type: 'reps',
-        animationType: 'inverted_row'
-      },
-      {
-        level: 3,
-        id: 'pull_3',
-        name: 'Eccentric Pull-Up Negatives',
-        target: '3 x 5 Reps (5-second descent)',
-        primaryMuscles: ['Lats', 'Brachialis', 'Core'],
-        cues: [
-          'Jump/step to top position with chin clearly over the bar',
-          'Control descent at an even tempo through the entire range',
-          'Achieve a full dead-hang lock at the bottom before resetting'
-        ],
-        pitfalls: ['Dropping quickly through the mid-range', 'Not reaching full arm extension at bottom'],
-        type: 'reps',
-        animationType: 'pullup_negative'
-      },
-      {
-        level: 4,
-        id: 'pull_4',
-        name: 'Strict Dead-Stop Pull-Ups',
-        target: '3 x 8 Clean Reps',
-        primaryMuscles: ['Lats', 'Biceps', 'Rear Delts', 'Abs'],
-        cues: [
-          'Dead stop at bottom, initiate movement using scapular depression',
-          'Pull chest up to bar (drive elbows toward hips)',
-          'No leg swinging, kicking, or kipping momentum'
-        ],
-        pitfalls: ['Kipping or swinging legs', 'Passing chin over bar by reaching neck out'],
-        type: 'reps',
-        animationType: 'strict_pullup'
-      },
-      {
-        level: 5,
-        id: 'pull_5',
-        name: 'L-Sit / Chest-To-Bar Pull-Ups',
-        target: '3 x 5 Reps',
-        primaryMuscles: ['Upper Lats', 'Abs & Hip Flexors', 'Upper Back'],
-        cues: [
-          'Maintain 90-degree leg extension throughout pull',
-          'Touch upper chest/collarbone cleanly to the bar',
-          'Controlled 2-second negative back to dead hang'
-        ],
-        pitfalls: ['Dropping legs below horizontal', 'Bouncing off bottom position'],
-        type: 'reps',
-        animationType: 'lsit_pullup'
-      }
-    ]
-  },
-  {
-    id: 'pushing',
-    title: 'Push-Up & Pushing Variations',
-    description: 'Master horizontal pressing mechanics, core tension, and scapular protraction.',
-    category: 'Pushing',
-    color: 'blue',
-    badge: 'Push Strength',
-    levels: [
-      {
-        level: 1,
-        id: 'push_1',
-        name: 'Incline / Hollow Plank Push-Ups',
-        target: '3 x 15 Reps',
-        primaryMuscles: ['Pectorals', 'Anterior Delts', 'Serratus'],
-        cues: [
-          'Posterior Pelvic Tilt (PPT): Tuck tailbone, squeeze glutes hard',
-          'Protract scaps at top (push floor away to round upper back slightly)',
-          'Elbows tucked back at ~45-degree angle to body'
-        ],
-        pitfalls: ['Flaring elbows 90 degrees', 'Pike or sagging lower back'],
-        type: 'reps',
-        animationType: 'pushup_standard'
-      },
-      {
-        level: 2,
-        id: 'push_2',
-        name: 'Strict Standard Push-Ups',
-        target: '3 x 20 Crisp Reps',
-        primaryMuscles: ['Chest', 'Triceps', 'Core / Abs'],
-        cues: [
-          'Full depth: Chest touches 1 inch off floor without resting',
-          'Lock elbows at top into full scapular protraction',
-          'Rigid hollow body alignment throughout'
-        ],
-        pitfalls: ['Snake/worming off floor', 'Incomplete lockout at top'],
-        type: 'reps',
-        animationType: 'pushup_standard'
-      },
-      {
-        level: 3,
-        id: 'push_3',
-        name: 'Diamond & Close-Grip Push-Ups',
-        target: '3 x 12 Reps',
-        primaryMuscles: ['Triceps Brachii', 'Inner Chest', 'Anterior Deltoid'],
-        cues: [
-          'Hands close under chest, index fingers and thumbs touching',
-          'Keep elbows tucked close to ribcage',
-          'Focus tension on triceps and inner chest lockout'
-        ],
-        pitfalls: ['Elbow flared outward', 'Hips dropping'],
-        type: 'reps',
-        animationType: 'pushup_diamond'
-      },
-      {
-        level: 4,
-        id: 'push_4',
-        name: 'Pseudo Planche Push-Ups (PPPU)',
-        target: '3 x 8 Reps (Slight Forward Lean)',
-        primaryMuscles: ['Anterior Delts', 'Upper Chest', 'Serratus Anterior'],
-        cues: [
-          'Hands turned outward 45-90 degrees',
-          'Lean shoulders forward past wrists before descending',
-          'Maintain strong hollow body and scapular protraction throughout'
-        ],
-        pitfalls: ['Losing lean during descent', 'Arching lower back'],
-        type: 'reps',
-        animationType: 'pushup_pppu'
-      },
-      {
-        level: 5,
-        id: 'push_5',
-        name: 'Archer & Decline Elevated Push-Ups',
-        target: '3 x 8 Reps (Per side for archer)',
-        primaryMuscles: ['Chest (Unilateral)', 'Triceps', 'Obliques'],
-        cues: [
-          'Extend non-working arm straight sideways',
-          'Lower body towards working hand while keeping core tight',
-          'Smooth transition across reps without twisting hips'
-        ],
-        pitfalls: ['Twisting hips off square', 'Shortening range of motion'],
-        type: 'reps',
-        animationType: 'pushup_archer'
-      }
-    ]
-  },
-  {
-    id: 'handstand',
-    title: 'Handstand & Alignment Skill',
-    description: 'Develop shoulder overhead mobility, wall alignment, and finger re-balancing mechanics.',
-    category: 'Balance',
-    color: 'amber',
-    badge: 'Inversion Balance',
-    levels: [
-      {
-        level: 1,
-        id: 'hs_1',
-        name: 'Wrist Conditioning & Hollow Body Hold',
-        target: '3 x 60s Hollow Hold / Wrist Warmup',
-        primaryMuscles: ['Rectus Abdominis', 'Wrist Flexors/Extensors'],
-        cues: [
-          'Press lower back flat into floor (no gap under lumbar spine)',
-          'Reach arms overhead, legs extended 6 inches off ground',
-          'Active wrist extensions and finger flexions on floor'
-        ],
-        pitfalls: ['Lower back arching off floor', 'Bending knees/elbows'],
-        type: 'hold',
-        animationType: 'hollow_body'
-      },
-      {
-        level: 2,
-        id: 'hs_2',
-        name: 'Crow Pose / Frog Stand Balance',
-        target: '3 x 30s Hold',
-        primaryMuscles: ['Wrist Stabilizers', 'Triceps', 'Core'],
-        cues: [
-          'Grip ground with fingers spread wide (Spider-Man hands)',
-          'Knees resting on back of triceps above elbows',
-          'Gaze forward 1 foot on floor, lean shoulders past wrists'
-        ],
-        pitfalls: ['Looking back between feet', 'Slipping off wet arms'],
-        type: 'hold',
-        animationType: 'crow_pose'
-      },
-      {
-        level: 3,
-        id: 'hs_3',
-        name: 'Chest-To-Wall Handstand Hold',
-        target: '3 x 45s Alignment Hold',
-        primaryMuscles: ['Trapezius (Elevation)', 'Anterior Delts', 'Glutes'],
-        cues: [
-          'Walk feet up wall with hands close (4-8 inches from wall)',
-          'Point toes, elevate shoulders into ears (push earth away)',
-          'Tuck chin slightly, gaze at thumbs/wrists'
-        ],
-        pitfalls: ['Banana arch (back arched away from wall)', 'Bent elbows'],
-        type: 'hold',
-        animationType: 'hs_wall'
-      },
-      {
-        level: 4,
-        id: 'hs_4',
-        name: 'Wall Toe/Heel Taps & Finger Kick Drills',
-        target: '3 x 10 Taps / 30s Soft Holds',
-        primaryMuscles: ['Fingertip Flexors', 'Shoulder Girdle', 'Core'],
-        cues: [
-          'In chest-to-wall position, press fingertips into floor to float feet off',
-          'Alternate subtle toe taps against wall without bending hips',
-          'Learn to use fingers as brakes when over-balancing'
-        ],
-        pitfalls: ['Piking at hips to pull off wall', 'Panicking on bailouts'],
-        type: 'hold',
-        animationType: 'hs_wall_taps'
-      },
-      {
-        level: 5,
-        id: 'hs_5',
-        name: 'Freestanding Kick-Up & Balance Hold',
-        target: '3 x 15s Freestanding Hold',
-        primaryMuscles: ['Full Body Chain', 'Wrists/Fingers', 'Shoulders'],
-        cues: [
-          'Lunge kick-up entry with straight arms locked out before feet leave floor',
-          'Re-balance using wrist flexing (fingers for over-balance, heel of hand for under-balance)',
-          'Keep glutes and legs squeezed tight into single pencil line'
-        ],
-        pitfalls: ['Bending elbows upon landing', 'Relaxing core mid-hold'],
-        type: 'hold',
-        animationType: 'hs_freestanding'
-      }
-    ]
-  },
-  {
-    id: 'pistol_squat',
-    title: 'Single-Leg Pistol Squat Track',
-    description: 'Master knee resilience, single-leg power, and ankle mobility from air squats to full pistols.',
-    category: 'Legs',
-    color: 'rose',
-    badge: 'Leg Mastery',
-    levels: [
-      {
-        level: 1,
-        id: 'leg_1',
-        name: 'Deep Bodyweight Air Squats',
-        target: '3 x 20 Full Range Reps',
-        primaryMuscles: ['Quads', 'Glutes', 'Calves'],
-        cues: [
-          'Knees tracking in line with toes',
-          'Hips descend below knee crease',
-          'Keep heels glued to floor and chest tall'
-        ],
-        pitfalls: ['Heels lifting off ground', 'Knees caving inward'],
-        type: 'reps',
-        animationType: 'pistol_squat'
-      },
-      {
-        level: 2,
-        id: 'leg_2',
-        name: 'Assisted Single-Leg Step-Downs',
-        target: '3 x 10 Reps / Leg',
-        primaryMuscles: ['Vastus Medialis (VMO)', 'Glute Medius'],
-        cues: [
-          'Stand on box/step, lower trailing leg with a slow 3-second descent',
-          'Touch trailing heel softly to floor without bouncing',
-          'Keep knee aligned straight over toe'
-        ],
-        pitfalls: ['Plummeting down quickly', 'Knee collapsing inward'],
-        type: 'reps',
-        animationType: 'pistol_squat'
-      },
-      {
-        level: 3,
-        id: 'leg_3',
-        name: 'Bench / Chair Pistol Squats',
-        target: '3 x 8 Reps / Leg',
-        primaryMuscles: ['Quads', 'Hip Flexors', 'Core'],
-        cues: [
-          'Extend non-working leg straight out in front',
-          'Lower hips gently to seat without rocking momentum',
-          'Drive through working heel to stand up'
-        ],
-        pitfalls: ['Bouncing off bench', 'Dropping non-working leg'],
-        type: 'reps',
-        animationType: 'pistol_squat'
-      },
-      {
-        level: 4,
-        id: 'leg_4',
-        name: 'Counter-Weighted Pistol Squats',
-        target: '3 x 6 Reps / Leg',
-        primaryMuscles: ['Quads', 'Ankle Mobility', 'Glutes'],
-        cues: [
-          'Hold light weight or shoe out in front as a counter-balance',
-          'Sit deep into bottom position with full ankle flexion',
-          'Keep extended leg elevated off floor'
-        ],
-        pitfalls: ['Rounding lower back excessively', 'Heel popping up'],
-        type: 'reps',
-        animationType: 'pistol_squat'
-      },
-      {
-        level: 5,
-        id: 'leg_5',
-        name: 'Full Freestanding Pistol Squat',
-        target: '3 x 5 Unassisted Reps / Leg',
-        primaryMuscles: ['Quads', 'Full Leg Chain', 'Ankle Mobility'],
-        cues: [
-          'Full depth single leg squat without holding any weights',
-          'Reach arms forward to assist balance',
-          'Drive up smoothly through mid-foot and heel'
-        ],
-        pitfalls: ['Heel coming off ground', 'Losing balance at bottom'],
-        type: 'reps',
-        animationType: 'pistol_squat'
-      }
-    ]
-  },
-  {
-    id: 'muscle_up',
-    title: 'Bar Muscle-Up Pathway',
-    description: 'Transition from pulling strength to explosive upper body turnover over the bar.',
-    category: 'Pulling',
-    color: 'purple',
-    badge: 'Explosive Power',
-    levels: [
-      {
-        level: 1,
-        id: 'mu_1',
-        name: 'High Chest-To-Bar Pull-Ups',
-        target: '3 x 8 Explosive Reps',
-        primaryMuscles: ['Lats', 'Upper Back', 'Core'],
-        cues: [
-          'Pull aggressively past chin to touch chest/nipples to bar',
-          'Drive elbows back aggressively'
-        ],
-        pitfalls: ['Pulling only to chin level'],
-        type: 'reps',
-        animationType: 'strict_pullup'
-      },
-      {
-        level: 2,
-        id: 'mu_2',
-        name: 'Straight Bar Dips',
-        target: '3 x 10 Full Lockout Reps',
-        primaryMuscles: ['Triceps', 'Lower Chest', 'Serratus'],
-        cues: [
-          'Lean shoulders forward over bar during descent',
-          'Touch lower chest/stomach to bar before pressing to lockout'
-        ],
-        pitfalls: ['Incomplete lockout at top'],
-        type: 'reps',
-        animationType: 'pushup_standard'
-      },
-      {
-        level: 3,
-        id: 'mu_3',
-        name: 'Kipping Cast & Knee Drive Drills',
-        target: '3 x 5 Swing Transitions',
-        primaryMuscles: ['Core', 'Lats', 'Hip Flexors'],
-        cues: [
-          'Cast outward away from bar into arch position',
-          'Drive knees up and pull bar down toward hips'
-        ],
-        pitfalls: ['Pulling straight up instead of around bar'],
-        type: 'reps',
-        animationType: 'muscle_up'
-      },
-      {
-        level: 4,
-        id: 'mu_4',
-        name: 'Band-Assisted Bar Muscle-Up',
-        target: '3 x 5 Assisted Transitions',
-        primaryMuscles: ['Full Upper Body Chain'],
-        cues: [
-          'Loop resistance band around foot/knee',
-          'Lean chest forward over bar as soon as pull reaches chest height'
-        ],
-        pitfalls: ['One-arm chicken-winging over bar'],
-        type: 'reps',
-        animationType: 'muscle_up'
-      },
-      {
-        level: 5,
-        id: 'mu_5',
-        name: 'Strict / Clean Bar Muscle-Up',
-        target: '3 x 3 Strict Reps',
-        primaryMuscles: ['Lats', 'Chest', 'Triceps', 'Core'],
-        cues: [
-          'Explosive pull to chest',
-          'Rapid forward wrist flip and shoulder lean over bar',
-          'Press to full arm extension'
-        ],
-        pitfalls: ['Uneven arm transition', 'Kicking legs wildly'],
-        type: 'reps',
-        animationType: 'muscle_up'
-      }
-    ]
-  },
-  {
-    id: 'lsit_core',
-    title: 'L-Sit & Compression Core',
-    description: 'Master hip flexor compression, active rectus abdominis strength, and straight-arm support.',
-    category: 'Core',
-    color: 'teal',
-    badge: 'Core Tension',
-    levels: [
-      {
-        level: 1,
-        id: 'lsit_1',
-        name: 'Seated Pike Compression Lifts',
-        target: '3 x 15 Reps',
-        primaryMuscles: ['Hip Flexors', 'Lower Abs'],
-        cues: [
-          'Sit on floor with legs straight out in front',
-          'Place hands on floor by knees, flex feet, and lift heels off floor',
-          'Keep spine upright without leaning back'
-        ],
-        pitfalls: ['Leaning backward to cheat lift'],
-        type: 'reps',
-        animationType: 'seated_pike_compression'
-      },
-      {
-        level: 2,
-        id: 'lsit_2',
-        name: 'Tuck L-Sit Hold (Parallettes / Floor)',
-        target: '3 x 20s Hold',
-        primaryMuscles: ['Abs', 'Triceps', 'Serratus'],
-        cues: [
-          'Push hands into parallettes or floor to depress shoulders',
-          'Pull knees tight into chest with knees bent 90 degrees'
-        ],
-        pitfalls: ['Shoulders shrugging into ears'],
-        type: 'hold',
-        animationType: 'lsit_support'
-      },
-      {
-        level: 3,
-        id: 'lsit_3',
-        name: 'Single-Leg Extended L-Sit',
-        target: '3 x 15s Hold / Leg',
-        primaryMuscles: ['Hip Flexors', 'Quads', 'Core'],
-        cues: [
-          'Extend one leg completely straight while keeping other knee tucked',
-          'Lock elbows straight'
-        ],
-        pitfalls: ['Extended leg dipping below horizontal'],
-        type: 'hold',
-        animationType: 'lsit_support'
-      },
-      {
-        level: 4,
-        id: 'lsit_4',
-        name: 'Full Freestanding L-Sit Hold',
-        target: '3 x 15s Hold',
-        primaryMuscles: ['Rectus Abdominis', 'Quads', 'Triceps'],
-        cues: [
-          'Both legs extended straight out parallel to ground',
-          'Squeeze quads tight, point toes',
-          'Push ground away aggressively'
-        ],
-        pitfalls: ['Legs sagging toward floor'],
-        type: 'hold',
-        animationType: 'lsit_support'
-      },
-      {
-        level: 5,
-        id: 'lsit_5',
-        name: 'V-Sit / High Compression L-Sit',
-        target: '3 x 10s Hold',
-        primaryMuscles: ['Upper/Lower Abs', 'Hip Flexors', 'Quads'],
-        cues: [
-          'Drive feet upward toward ceiling past 90 degrees',
-          'Maintain straight elbows and intense core compression'
-        ],
-        pitfalls: ['Bending knees'],
-        type: 'hold',
-        animationType: 'vsit_compression'
-      }
-    ]
-  }
-];
 
-const DEFAULT_CIRCUITS = [
-  {
-    id: 'def_cindy',
-    name: 'The "Cindy" (20m AMRAP)',
-    type: 'amrap',
-    duration: 20 * 60, // 20 minutes countdown
-    restDuration: 60,
-    items: [
-      { name: '5 Pull-ups', completed: false, target: '5 Reps' },
-      { name: '10 Push-ups', completed: false, target: '10 Reps' },
-      { name: '15 Air Squats', completed: false, target: '15 Reps' }
-    ]
-  },
-  {
-    id: 'def_spiderman',
-    name: 'The "Spider-Man Ladder"',
-    type: 'ladder',
-    restDuration: 60,
-    items: [
-      { name: 'Pull-ups', completed: false },
-      { name: 'Dips', completed: false },
-      { name: 'Push-ups', completed: false },
-      { name: 'Sit-ups', completed: false },
-      { name: 'Air Squats', completed: false }
-    ]
-  },
-  {
-    id: 'def_murph',
-    name: 'The "Murph" Hero WOD',
-    type: 'stopwatch',
-    restDuration: 90,
-    items: [
-      { name: '1-Mile Run', completed: false, target: 'Distance' },
-      { name: '100 Pull-ups', completed: false, target: '100 Reps' },
-      { name: '200 Push-ups', completed: false, target: '200 Reps' },
-      { name: '300 Air Squats', completed: false, target: '300 Reps' },
-      { name: '1-Mile Run', completed: false, target: 'Distance' }
-    ]
-  },
-  {
-    id: 'def_atw',
-    name: '"Around the World" Circuit',
-    type: 'open',
-    restDuration: 90,
-    items: [
-      { name: '5 Pull-ups', completed: false, target: '5 Reps' },
-      { name: '10 Dips', completed: false, target: '10 Reps' },
-      { name: '15 Push-ups', completed: false, target: '15 Reps' },
-      { name: '20 Chin-ups', completed: false, target: '20 Reps' }
-    ]
-  },
-  {
-    id: 'def_hfk',
-    name: 'The "Hannibal for King" Circuit',
-    type: 'open',
-    restDuration: 60,
-    items: [
-      { name: '10-15 Close-grip Pull-ups', completed: false, target: '10-15 Reps' },
-      { name: '20 Dips', completed: false, target: '20 Reps' },
-      { name: '20 Diamond Push-ups', completed: false, target: '20 Reps' },
-      { name: '15 Hanging Leg Raises', completed: false, target: '15 Reps' }
-    ]
-  }
-];
+function UnlockConfirmModal({ trackTitle, onConfirm, onClose }) {
+  const [step, setStep] = useState(1);
 
-const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Unlock className="w-4 h-4 text-amber-400" /> Unlock Phase 2?
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200"><X className="w-5 h-5" /></button>
+        </div>
+
+        {step === 1 ? (
+          <>
+            <p className="text-xs text-slate-300">
+              Phase 2 for <strong>{trackTitle}</strong> is locked until Level 5 is mastered. Are you sure you're able to complete the previous foundation levels cleanly?
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button onClick={onClose} className="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition hover:bg-slate-700">Nevermind</button>
+              <button onClick={() => setStep(2)} className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold transition">Yes, I'm Ready</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+              🚨 <em>Hold up!</em> Are your joints truly forged in iron, or are you just eager to skip ahead and cry under a heavy barbell? No shame if so, but double check!
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setStep(1)} className="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition hover:bg-slate-700">Go Back</button>
+              <button onClick={onConfirm} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold transition">I Accept the Risk, Unlock!</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -1136,7 +444,7 @@ function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose
       notes: setNote,
       timestamp: initialSetData ? initialSetData.timestamp : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
-    if (!initialSetData) {
+    if (!initialSetData && onStartTimer) {
       onStartTimer(restDuration);
     }
     onClose();
@@ -1503,7 +811,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-2">Non-Negotiable Execution Cues</span>
             <ul className="space-y-2 text-xs text-slate-300">
-              {exercise.cues.map((cue, idx) => (
+              {exercise.cues?.map((cue, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>{cue}</span>
@@ -1525,7 +833,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
 
 function RoutineBuilderModal({ onClose, onSave }) {
   const [routineName, setRoutineName] = useState('');
-  const [routineType, setRoutineType] = useState('open'); // 'open', 'amrap', 'stopwatch', 'ladder'
+  const [routineType, setRoutineType] = useState('open'); 
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [restSeconds, setRestSeconds] = useState(90);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -1627,15 +935,32 @@ function RoutineBuilderModal({ onClose, onSave }) {
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-2">Select Exercises / Circuit Stations:</label>
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2 border border-slate-800 rounded-xl p-3 bg-slate-950/60">
-              {PROGRESSION_TRACKS.map(track => (
+              {MASTER_PATHWAYS.map(track => (
                 <div key={track.id} className="space-y-1.5">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
                   <div className="grid gap-1">
-                    {track.levels.map(lvl => {
+                    {track.levels1to5.map(lvl => {
                       const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
                       return (
                         <div
-                          key={lvl.level}
+                          key={`l1-${lvl.level}`}
+                          onClick={() => handleToggleExercise(track, lvl)}
+                          className={`text-xs p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                            isSelected
+                              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200 font-bold'
+                              : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          <span>Lvl {lvl.level}: {lvl.name}</span>
+                          <span className="text-[10px] text-slate-400">{lvl.target}</span>
+                        </div>
+                      );
+                    })}
+                    {track.levels6to10?.map(lvl => {
+                      const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
+                      return (
+                        <div
+                          key={`l6-${lvl.level}`}
                           onClick={() => handleToggleExercise(track, lvl)}
                           className={`text-xs p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition ${
                             isSelected
@@ -1686,20 +1011,26 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  // Accordion UI State
   const [expandedPathway, setExpandedPathway] = useState(null);
   const [expandedRoutine, setExpandedRoutine] = useState(null);
+  
+  const [expandedActiveLogs, setExpandedActiveLogs] = useState({});
+  const [expandedHistoryLogs, setExpandedHistoryLogs] = useState({});
 
   const [userLevels, setUserLevels] = useState({
-    one_arm_pushup: 1,
-    dragon_squat: 1,
-    pulling: 2,
-    pushing: 2,
-    handstand: 1,
-    pistol_squat: 1,
-    muscle_up: 1,
-    lsit_core: 1
+    'inversion-master': 1,
+    'dragon-flag': 1,
+    'one_arm_pushup': 1,
+    'pulling': 2,
+    'pushing': 2,
+    'dragon_squat': 1,
+    'pistol_squat': 1,
+    'muscle_up': 1,
+    'lsit_core': 1
   });
+
+  const [unlockedPhases, setUnlockedPhases] = useState({});
+  const [pendingUnlockTrack, setPendingUnlockTrack] = useState(null);
 
   const [activeWorkout, setActiveWorkout] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -1713,43 +1044,35 @@ export default function App() {
   const [loggingExercise, setLoggingExercise] = useState(null);
   const [editingSet, setEditingSet] = useState(null);
 
-  // Initialize with DEFAULT_CIRCUITS
   const [routines, setRoutines] = useState(DEFAULT_CIRCUITS);
 
   const [isBuildingRoutine, setIsBuildingRoutine] = useState(false);
   const [pathwaySearch, setPathwaySearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activePhaseTab, setActivePhaseTab] = useState('1-5');
 
-  // Timer State
+  const [suggestionText, setSuggestionText] = useState('');
+  const [suggestionSubmitted, setSuggestionSubmitted] = useState(false);
+
   const [timerSeconds, setTimerSeconds] = useState(90);
   const [timerInitial, setTimerInitial] = useState(90);
   const [timerActive, setTimerActive] = useState(false);
   const audioCtxRef = useRef(null);
 
-  // Circuit Tracking State
   const [activeCircuit, setActiveCircuit] = useState(null);
   const [roundTally, setRoundTally] = useState(0);
 
-  // Spider-Man Ladder Configuration
-  const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-
-  // Auth observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        signInAnonymously(auth).catch(() => {});
-      }
+      if (currentUser) setUser(currentUser);
+      else signInAnonymously(auth).catch(() => {});
     });
     return () => unsubscribe();
   }, []);
 
-  // Sync with Firestore per authenticated user
   useEffect(() => {
     if (!user) return;
 
-    // Load History
     const sessionsRef = collection(db, 'users', user.uid, 'sessions');
     const unsubscribeSessions = onSnapshot(sessionsRef, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1757,20 +1080,20 @@ export default function App() {
       setWorkoutHistory(docs);
     });
 
-    // Load Level Progress
     const levelsDocRef = doc(db, 'users', user.uid, 'settings', 'userLevels');
     const unsubscribeLevels = onSnapshot(levelsDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setUserLevels(prev => ({ ...prev, ...docSnap.data() }));
-      }
+      if (docSnap.exists()) setUserLevels(prev => ({ ...prev, ...docSnap.data() }));
     });
 
-    // Load Custom Routines
+    const phasesDocRef = doc(db, 'users', user.uid, 'settings', 'unlockedPhases');
+    const unsubscribePhases = onSnapshot(phasesDocRef, (docSnap) => {
+      if (docSnap.exists()) setUnlockedPhases(prev => ({ ...prev, ...docSnap.data() }));
+    });
+
     const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
-        // Filter out any old legacy ID default integers, keep only huge Date.now() timestamp IDs created by users
         const customOnly = cloudRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
       } else {
@@ -1778,7 +1101,6 @@ export default function App() {
       }
     });
 
-    // Load Active Workout State
     const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
     const unsubscribeActiveWorkout = onSnapshot(activeWorkoutDocRef, (docSnap) => {
       if (docSnap.exists() && docSnap.data().session) {
@@ -1789,6 +1111,7 @@ export default function App() {
     return () => {
       unsubscribeSessions();
       unsubscribeLevels();
+      unsubscribePhases();
       unsubscribeRoutines();
       unsubscribeActiveWorkout();
     };
@@ -1891,32 +1214,44 @@ export default function App() {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const updateLevel = async (trackId, newLevel) => {
-    const updated = {
-      ...userLevels,
-      [trackId]: Math.max(1, Math.min(5, newLevel))
-    };
-    setUserLevels(updated);
-
-    if (user) {
-      try {
-        const levelsDocRef = doc(db, 'users', user.uid, 'settings', 'userLevels');
-        await setDoc(levelsDocRef, updated, { merge: true });
-      } catch (err) {
-        console.error("Failed to sync level:", err);
-      }
+  const updateLevel = async (trackId, newLevel, has10Levels) => {
+    if (has10Levels && newLevel > 5 && !unlockedPhases[trackId]) {
+      const track = MASTER_PATHWAYS.find(t => t.id === trackId);
+      setPendingUnlockTrack(track);
+      return;
     }
+    const updated = { ...userLevels, [trackId]: Math.max(1, Math.min(10, newLevel)) };
+    setUserLevels(updated);
+    if (user) {
+      await setDoc(doc(db, 'users', user.uid, 'settings', 'userLevels'), updated, { merge: true });
+    }
+  };
+
+  const handleConfirmUnlock = async () => {
+    if (!pendingUnlockTrack) return;
+    const trackId = pendingUnlockTrack.id;
+    const updatedPhases = { ...unlockedPhases, [trackId]: true };
+    setUnlockedPhases(updatedPhases);
+    if (user) {
+      await setDoc(doc(db, 'users', user.uid, 'settings', 'unlockedPhases'), updatedPhases, { merge: true });
+    }
+    setPendingUnlockTrack(null);
+    updateLevel(trackId, 6, true);
   };
 
   const adjustPlannedItemLevel = (itemIndex, direction) => {
     if (!activeWorkout.plannedItems) return;
     const items = [...activeWorkout.plannedItems];
     const currentItem = items[itemIndex];
-    const track = PROGRESSION_TRACKS.find(t => t.id === currentItem.trackId);
+    const track = MASTER_PATHWAYS.find(t => t.id === currentItem.trackId);
     if (!track) return;
 
-    const newLevelNum = Math.max(1, Math.min(5, currentItem.level + direction));
-    const newLevelData = track.levels.find(l => l.level === newLevelNum);
+    let maxLevel = track.levels6to10 ? 10 : 5;
+    const newLevelNum = Math.max(1, Math.min(maxLevel, currentItem.level + direction));
+    
+    const newLevelData = track.levels1to5.find(l => l.level === newLevelNum) || 
+                         track.levels6to10?.find(l => l.level === newLevelNum);
+                         
     if (!newLevelData) return;
 
     items[itemIndex] = {
@@ -1958,6 +1293,8 @@ export default function App() {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
         setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
+      
+      setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
       return nextState;
     });
@@ -1979,7 +1316,6 @@ export default function App() {
     updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: null });
   };
 
-  // Automatically generates individual set records and pushes them into the active workout session
   const logCircuitRound = (currentRoundIndex) => {
     if (!activeCircuit) return;
 
@@ -1990,7 +1326,7 @@ export default function App() {
       const displayTarget = isLadder ? `${currentRungReps} Reps` : (item.target || 'Completed');
       return {
         id: Date.now() + Math.floor(Math.random() * 1000) + idx, 
-        trackId: 'circuit_custom', // generic flag so it groups cleanly
+        trackId: 'circuit_custom', 
         exerciseName: item.name,
         repsOrHold: displayTarget,
         rpe: '-',
@@ -2121,13 +1457,23 @@ export default function App() {
     }
   };
 
-  const filteredTracks = PROGRESSION_TRACKS.filter(track => {
-    const matchesCategory = selectedCategory === 'All' || track.category === selectedCategory;
-    const matchesSearch = pathwaySearch.trim() === '' || 
-      track.title.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
-      track.description.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
-      track.levels.some(l => l.name.toLowerCase().includes(pathwaySearch.toLowerCase()));
-    return matchesCategory && matchesSearch;
+  const handleSendSuggestion = async (e) => {
+    e.preventDefault();
+    if (!suggestionText.trim()) return;
+    await addDoc(collection(db, 'suggestions'), {
+      text: suggestionText.trim(),
+      user: user ? (user.displayName || user.email || 'Anonymous') : 'Anonymous',
+      createdAt: new Date().toISOString()
+    });
+    setSuggestionSubmitted(true);
+    setSuggestionText('');
+    setTimeout(() => setSuggestionSubmitted(false), 4000);
+  };
+
+  const filteredPathways = MASTER_PATHWAYS.filter(t => {
+    const matchesCat = selectedFilter === 'All' || t.category === selectedFilter;
+    const matchesSearch = !pathwaySearch.trim() || t.title.toLowerCase().includes(pathwaySearch.toLowerCase());
+    return matchesCat && matchesSearch;
   });
 
   const groupedSets = activeWorkout.sets.reduce((acc, set) => {
@@ -2141,6 +1487,14 @@ export default function App() {
     acc[set.exerciseName].sets.push(set);
     return acc;
   }, {});
+
+  const toggleActiveLogGroup = (name) => {
+    setExpandedActiveLogs(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const toggleHistorySessionDetails = (id) => {
+    setExpandedHistoryLogs(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24">
@@ -2210,6 +1564,7 @@ export default function App() {
         <div className="max-w-5xl mx-auto flex overflow-x-auto space-x-1 scrollbar-none py-2">
           {[
             { id: 'roadmap', label: 'Skill Pathways', icon: Target },
+            { id: 'mobility', label: 'Mobility & Recovery', icon: HeartPulse },
             { id: 'routines', label: 'Routines', icon: Layers },
             { id: 'workout', label: 'Active Workout', icon: Activity },
             { id: 'history', label: 'Log History', icon: BarChart3 }
@@ -2270,7 +1625,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
-                {['All', 'Unilateral', 'Legs', 'Pulling', 'Pushing', 'Balance', 'Core'].map((cat) => (
+                {['All', 'Beginner', 'Intermediate', 'Advanced', 'Elite', 'Unilateral', 'Legs', 'Pulling', 'Pushing', 'Balance', 'Core'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
@@ -2286,7 +1641,7 @@ export default function App() {
               </div>
             </div>
 
-            {filteredTracks.length === 0 ? (
+            {filteredPathways.length === 0 ? (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
                 <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
                 <p className="text-slate-400 font-medium text-sm">No skill tracks matched your search.</p>
@@ -2298,10 +1653,17 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              filteredTracks.map((track) => {
+              filteredPathways.map((track) => {
                 const currentLevel = userLevels[track.id] || 1;
-                const activeLevelData = track.levels.find(l => l.level === currentLevel) || track.levels[0];
                 const isExpanded = expandedPathway === track.id;
+                
+                const has10Levels = track.levels6to10 && track.levels6to10.length > 0;
+                const isPhase2Unlocked = !has10Levels || unlockedPhases[track.id] || currentLevel > 5;
+                const activeList = has10Levels && activePhaseTab === '6-10' ? track.levels6to10 : track.levels1to5;
+                
+                const activeLevelData = track.levels1to5.find(l => l.level === currentLevel) || 
+                                        track.levels6to10?.find(l => l.level === currentLevel) || 
+                                        track.levels1to5[0];
 
                 return (
                   <div key={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
@@ -2316,7 +1678,7 @@ export default function App() {
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
                             {track.badge}
                           </span>
-                          <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {track.levels.length}</span>
+                          <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {has10Levels ? 10 : 5}</span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
                         {!isExpanded && <p className="text-sm text-slate-400 mt-1 truncate max-w-lg">{track.description}</p>}
@@ -2325,19 +1687,27 @@ export default function App() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
                           <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
-                          {track.levels.map((lvl) => (
-                            <button
-                              key={lvl.level}
-                              onClick={() => updateLevel(track.id, lvl.level)}
-                              className={`w-8 h-8 rounded-lg text-xs font-bold transition ${
-                                userLevels[track.id] === lvl.level
-                                  ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                              }`}
-                            >
-                              {lvl.level}
-                            </button>
-                          ))}
+                          {activeList.map((lvl) => {
+                            const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                            return (
+                              <button
+                                key={lvl.level}
+                                onClick={() => {
+                                  if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                                  else setPendingUnlockTrack(track);
+                                }}
+                                className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
+                                  userLevels[track.id] === lvl.level
+                                    ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
+                                    : isLocked 
+                                    ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
+                                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                }`}
+                              >
+                                {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
+                              </button>
+                            );
+                          })}
                         </div>
                         <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                       </div>
@@ -2347,6 +1717,29 @@ export default function App() {
                     {isExpanded && (
                       <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
                         <p className="text-sm text-slate-400 mb-6">{track.description}</p>
+
+                        {has10Levels && (
+                          <div className="flex gap-2 mb-6 border-b border-slate-800 pb-4">
+                            <button 
+                              onClick={() => setActivePhaseTab('1-5')} 
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePhaseTab === '1-5' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
+                            >
+                              {track.levels1to5Title || 'Phase 1 (1-5)'}
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (!isPhase2Unlocked) {
+                                  setPendingUnlockTrack(track);
+                                } else {
+                                  setActivePhaseTab('6-10');
+                                }
+                              }} 
+                              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${activePhaseTab === '6-10' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
+                            >
+                              {!isPhase2Unlocked && <LockIcon className="w-3.5 h-3.5 text-amber-400" />} {track.levels6to10Title || 'Phase 2 (6-10)'}
+                            </button>
+                          </div>
+                        )}
                         
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
@@ -2386,7 +1779,7 @@ export default function App() {
                               Non-Negotiable Form Cues
                             </div>
                             <ul className="space-y-2 text-xs text-slate-300">
-                              {activeLevelData.cues.map((cue, idx) => (
+                              {activeLevelData.cues?.map((cue, idx) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-emerald-400 font-bold">•</span>
                                   <span>{cue}</span>
@@ -2401,7 +1794,7 @@ export default function App() {
                               Common Pitfalls to Avoid
                             </div>
                             <ul className="space-y-2 text-xs text-slate-300">
-                              {activeLevelData.pitfalls.map((pit, idx) => (
+                              {activeLevelData.pitfalls?.map((pit, idx) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-amber-400 font-bold">•</span>
                                   <span>{pit}</span>
@@ -2412,18 +1805,24 @@ export default function App() {
                         </div>
 
                         <div className="mt-6 pt-6 border-t border-slate-800/80">
-                          <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum:</div>
+                          <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            {track.levels.map((lvl) => {
+                            {activeList.map((lvl) => {
+                              const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
                               const isCurrent = lvl.level === currentLevel;
                               const isPassed = lvl.level < currentLevel;
 
                               return (
                                 <div
                                   key={lvl.level}
-                                  onClick={() => updateLevel(track.id, lvl.level)}
-                                  className={`p-2.5 rounded-xl border cursor-pointer transition ${
-                                    isCurrent
+                                  onClick={() => {
+                                    if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                                    else setPendingUnlockTrack(track);
+                                  }}
+                                  className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                                    isLocked 
+                                      ? 'opacity-50 bg-slate-950 border-slate-800'
+                                      : isCurrent
                                       ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
                                       : isPassed
                                       ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
@@ -2432,15 +1831,19 @@ export default function App() {
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedExerciseDemo(lvl);
-                                      }}
-                                      className="text-slate-400 hover:text-amber-300"
-                                    >
-                                      <Eye className="w-3 h-3" />
-                                    </button>
+                                    {isLocked ? (
+                                      <LockIcon className="w-3 h-3 text-amber-400" />
+                                    ) : (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedExerciseDemo(lvl);
+                                        }}
+                                        className="text-slate-400 hover:text-amber-300"
+                                      >
+                                        <Eye className="w-3 h-3" />
+                                      </button>
+                                    )}
                                   </div>
                                   <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                                 </div>
@@ -2454,6 +1857,52 @@ export default function App() {
                 );
               })
             )}
+
+            {/* Suggestion Box */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mt-12 space-y-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-100">Send App Feedback or Suggestions</h3>
+              </div>
+              {suggestionSubmitted ? (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-medium">Thank you! Your feedback has been sent directly to our Firebase backend.</div>
+              ) : (
+                <form onSubmit={handleSendSuggestion} className="space-y-3">
+                  <textarea rows={3} placeholder="Type your feature request, bug report, or new exercise pathway idea here..." value={suggestionText} onChange={e => setSuggestionText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" required />
+                  <div className="flex justify-end">
+                    <button type="submit" className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/20">
+                      <Send className="w-3.5 h-3.5" /> Submit Feedback
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB: MOBILITY & RECOVERY --- */}
+        {activeTab === 'mobility' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-slate-100"><HeartPulse className="w-6 h-6 text-emerald-400" /> Mobility & Recovery Protocols</h2>
+              <p className="text-sm text-slate-400 mt-2">Joint health and tissue resilience are the true limits of calisthenics progression. Incorporate these into your off-days or warm-ups.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {MOBILITY_RECOVERY_MODULE.map(mod => (
+                <div key={mod.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+                  <h3 className="text-lg font-bold text-slate-100">{mod.title}</h3>
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    {mod.exercises.map((ex, i) => (
+                      <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                        <div className="font-bold text-slate-200">{ex.name}</div>
+                        <div className="text-amber-400 font-medium">Target: {ex.target}</div>
+                        <div className="text-slate-500 mt-1">Focus: {ex.focus}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -2676,7 +2125,7 @@ export default function App() {
                     onClick={() => setActiveCircuit(null)}
                     className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
                   >
-                    Close Circuit
+                    Close Circuit Without Saving
                   </button>
                 </div>
               </div>
@@ -2703,25 +2152,22 @@ export default function App() {
                 </div>
                 <div className="grid gap-2">
                   {activeWorkout.plannedItems.map((item, idx) => {
-                    const track = PROGRESSION_TRACKS.find(t => t.id === item.trackId);
-                    const levelData = track?.levels.find(l => l.level === item.level);
+                    const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
+                    const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
+                    
                     return (
                       <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col gap-0.5">
                             <button
                               onClick={() => adjustPlannedItemLevel(idx, 1)}
-                              disabled={item.level >= 5}
-                              className={`p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition ${item.level >= 5 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                              title="Make Harder (Level Up)"
+                              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
                             >
                               <ChevronUp className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => adjustPlannedItemLevel(idx, -1)}
-                              disabled={item.level <= 1}
-                              className={`p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition ${item.level <= 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                              title="Make Easier (Level Down)"
+                              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
                             >
                               <ChevronDown className="w-3 h-3" />
                             </button>
@@ -2750,7 +2196,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Grouped Exercise Set Log */}
+            {/* Grouped Exercise Set Log (Accordion UI) */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                 <h3 className="font-bold text-slate-200 text-sm">Session Set Log</h3>
@@ -2773,87 +2219,103 @@ export default function App() {
               ) : (
                 <div className="divide-y divide-slate-800">
                   {Object.values(groupedSets).map((group, groupIdx) => {
-                    const track = PROGRESSION_TRACKS.find(t => t.id === group.trackId);
+                    const track = MASTER_PATHWAYS.find(t => t.id === group.trackId);
                     const trackTitle = track ? track.title : 'Circuit Station';
-                    const levelData = track ? track.levels.find(l => l.name === group.exerciseName) : null;
+                    const levelData = track ? (track.levels1to5?.find(l => l.name === group.exerciseName) || track.levels6to10?.find(l => l.name === group.exerciseName)) : null;
+                    const isExpanded = expandedActiveLogs[group.exerciseName];
 
                     return (
-                      <div key={groupIdx} className="p-5 space-y-3 bg-slate-900/40">
-                        {/* Exercise Group Header with "+ Add Set" button */}
-                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                      <div key={groupIdx} className="bg-slate-900/40 transition">
+                        {/* Collapsible Header */}
+                        <div 
+                          onClick={() => toggleActiveLogGroup(group.exerciseName)}
+                          className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
+                        >
                           <div>
                             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{trackTitle}</span>
                             <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
                           </div>
 
-                          {levelData && track && (
-                            <button
-                              onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                              className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
-                            >
-                              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                              Add Set
-                            </button>
-                          )}
+                          <div className="flex items-center gap-4">
+                            <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full">
+                              {group.sets.length} Sets Logged
+                            </span>
+                            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
                         </div>
 
-                        {/* Sets list for this exercise */}
-                        <div className="space-y-2">
-                          {group.sets.map((set, sIdx) => (
-                            <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
-                                  #{sIdx + 1}
-                                </span>
-                                <div>
-                                  <span className="text-xs text-slate-400">Logged at {set.timestamp}</span>
-                                  {set.notes && (
-                                    <p className="text-xs text-amber-300/90 mt-0.5 flex items-center gap-1">
-                                      <MessageSquare className="w-3 h-3" />
-                                      {set.notes}
-                                    </p>
-                                  )}
-                                </div>
+                        {/* Collapsed Body */}
+                        {isExpanded && (
+                          <div className="px-5 pb-5 space-y-3 pt-2 border-t border-slate-800/50">
+                            {levelData && track && (
+                              <div className="flex justify-end mb-2">
+                                <button
+                                  onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                                  className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                                >
+                                  <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Manual Set
+                                </button>
                               </div>
+                            )}
+                            
+                            <div className="space-y-2">
+                              {group.sets.map((set, sIdx) => (
+                                <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
+                                      #{sIdx + 1}
+                                    </span>
+                                    <div>
+                                      <span className="text-xs text-slate-400">Logged at {set.timestamp}</span>
+                                      {set.notes && (
+                                        <p className="text-xs text-amber-300/90 mt-0.5 flex items-center gap-1">
+                                          <MessageSquare className="w-3 h-3" />
+                                          {set.notes}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
 
-                              <div className="flex items-center gap-5">
-                                <div className="text-center">
-                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
-                                  <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
-                                </div>
+                                  <div className="flex items-center gap-5">
+                                    <div className="text-center">
+                                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
+                                      <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
+                                    </div>
 
-                                <div className="text-center">
-                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
-                                  <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
-                                </div>
+                                    <div className="text-center">
+                                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
+                                      <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
+                                    </div>
 
-                                <div className="text-center">
-                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
-                                  <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
-                                    {set.formRating}
-                                  </span>
-                                </div>
+                                    <div className="text-center">
+                                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
+                                      <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
+                                        {set.formRating}
+                                      </span>
+                                    </div>
 
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => setEditingSet(set)}
-                                    className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
-                                    title="Edit Set"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => removeSet(set.id)}
-                                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                                    title="Delete Set"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => setEditingSet(set)}
+                                        className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
+                                        title="Edit Set"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => removeSet(set.id)}
+                                        className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                                        title="Delete Set"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -2899,48 +2361,83 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-4">
-                {workoutHistory.map((session) => (
-                  <div key={session.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div>
-                        <h3 className="font-bold text-slate-100">{session.title}</h3>
-                        <span className="text-xs text-slate-400">{session.date}</span>
-                      </div>
+                {workoutHistory.map((session) => {
+                  const isExpanded = expandedHistoryLogs[session.id];
+                  
+                  // Generate quick summary map of { "Pull-ups": 19, "Dips": 19 }
+                  const sessionSummary = session.sets?.reduce((acc, s) => {
+                    acc[s.exerciseName] = (acc[s.exerciseName] || 0) + 1;
+                    return acc;
+                  }, {});
 
-                      <div className="flex items-center gap-3">
-                        <span className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/20">
-                          {session.roundsCompleted > 0 ? `${session.roundsCompleted} Rounds | ` : ''}{session.setsCount} Sets
-                        </span>
-                        <button
-                          onClick={() => deleteHistorySession(session.id)}
-                          className="p-1.5 text-slate-500 hover:text-rose-400 transition"
+                  return (
+                    <div key={session.id} className="bg-slate-900 border border-slate-800 rounded-2xl hover:border-slate-700 transition overflow-hidden shadow-lg">
+                      <div className="p-5 border-b border-slate-800 pb-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h3 className="font-bold text-slate-100">{session.title}</h3>
+                            <span className="text-xs text-slate-400">{session.date}</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/20">
+                              {session.roundsCompleted > 0 ? `${session.roundsCompleted} Rounds | ` : ''}{session.setsCount} Sets Total
+                            </span>
+                            <button
+                              onClick={() => deleteHistorySession(session.id)}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 transition bg-slate-950 rounded-lg border border-slate-800"
+                              title="Delete Entire Session"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Clean summary pills showing total volume */}
+                        {sessionSummary && Object.keys(sessionSummary).length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {Object.entries(sessionSummary).map(([exName, count]) => (
+                              <span key={exName} className="bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold px-2 py-1 rounded-md">
+                                {count}x {exName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {session.notes && (
+                          <p className="text-xs text-slate-400 mb-3 bg-slate-950 p-3 rounded-xl border border-slate-800/80 italic">
+                            "{session.notes}"
+                          </p>
+                        )}
+
+                        <button 
+                          onClick={() => toggleHistorySessionDetails(session.id)}
+                          className="text-xs font-bold text-emerald-400 flex items-center gap-1 hover:text-emerald-300 transition"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {isExpanded ? 'Hide Full Set Log' : 'View Detailed Set Log'}
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
                       </div>
+
+                      {/* Expanded huge list of sets (only shown when requested) */}
+                      {isExpanded && session.sets && (
+                        <div className="p-5 bg-slate-900/40 space-y-2 max-h-96 overflow-y-auto">
+                          {session.sets.map((s, idx) => (
+                            <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-lg border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <span className="font-bold text-slate-200">{s.exerciseName}</span>
+                              <div className="flex gap-4">
+                                <span className="text-emerald-400 font-bold w-16 text-right">{s.repsOrHold}</span>
+                                <span className="text-amber-400 w-12 text-right">RPE {s.rpe}</span>
+                                <span className="text-slate-400 w-16 text-right">{s.formRating}</span>
+                              </div>
+                              {s.notes && <span className="text-amber-300 italic sm:ml-2">"{s.notes}"</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-
-                    {session.notes && (
-                      <p className="text-xs text-slate-400 mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800/80 italic">
-                        "{session.notes}"
-                      </p>
-                    )}
-
-                    {session.sets && (
-                      <div className="mt-3 space-y-2">
-                        {session.sets.map((s, idx) => (
-                          <div key={idx} className="text-xs bg-slate-950 p-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
-                            <span className="font-bold text-slate-200">{s.exerciseName}</span>
-                            <span className="text-emerald-400 font-bold">{s.repsOrHold}</span>
-                            <span className="text-amber-400">RPE {s.rpe}</span>
-                            <span className="text-slate-400">{s.formRating}</span>
-                            {s.notes && <span className="text-amber-300 italic">"{s.notes}"</span>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -2948,7 +2445,9 @@ export default function App() {
 
       </main>
 
-      {/* MODAL: AUTHENTICATION */}
+      {/* MODALS */}
+      {pendingUnlockTrack && <UnlockConfirmModal trackTitle={pendingUnlockTrack.title} onConfirm={handleConfirmUnlock} onClose={() => setPendingUnlockTrack(null)} />}
+      
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
@@ -2957,7 +2456,6 @@ export default function App() {
         <AccountSettingsModal user={user} onClose={() => setShowAccountModal(false)} />
       )}
   
-      {/* MODAL: ANIMATED FORM DEMO */}
       {selectedExerciseDemo && (
         <ExerciseFormVisualizer 
           exercise={selectedExerciseDemo} 
@@ -2965,7 +2463,6 @@ export default function App() {
         />
       )}
 
-      {/* MODAL: ROUTINE BUILDER */}
       {isBuildingRoutine && (
         <RoutineBuilderModal
           onClose={() => setIsBuildingRoutine(false)}
@@ -2973,7 +2470,6 @@ export default function App() {
         />
       )}
 
-      {/* MODAL: CUSTOM SET REP LOGGER */}
       {loggingExercise && (
         <LogSetModal
           levelData={loggingExercise.levelData}
@@ -2985,7 +2481,6 @@ export default function App() {
         />
       )}
 
-      {/* MODAL: EDIT SET */}
       {editingSet && (
         <LogSetModal
           initialSetData={editingSet}
