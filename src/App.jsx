@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getApps, initializeApp } from 'firebase/app';
+import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -27,7 +27,7 @@ import {
   Dumbbell, 
   Trophy, 
   Timer as TimerIcon, 
-  CheckCircle, 
+  CheckCircle2, 
   ChevronRight, 
   Play, 
   Pause, 
@@ -76,8 +76,7 @@ const firebaseConfig = {
   measurementId: "G-5FHHDQ0JGR"
 };
 
-// ANTI-CRASH FIX: Prevents Firebase from initializing twice during hot-reloads
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -265,7 +264,7 @@ const DEFAULT_CIRCUITS = [
     id: 'def_cindy',
     name: 'The "Cindy" (20m AMRAP)',
     type: 'amrap',
-    duration: 20 * 60, 
+    duration: 20 * 60,
     restDuration: 60,
     items: [
       { name: '5 Pull-ups', completed: false, target: '5 Reps' },
@@ -443,7 +442,7 @@ function AuthModal({ onClose }) {
 
         {authMessage && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{authMessage}</span>
           </div>
         )}
@@ -451,14 +450,14 @@ function AuthModal({ onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && !isForgotPassword && (
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Username (e.g. Matt)</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Username</label>
               <div className="relative">
                 <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Matt"
+                  placeholder="Athlete Name"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
@@ -612,7 +611,7 @@ function AccountSettingsModal({ user, onClose }) {
 
         {message && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{message}</span>
           </div>
         )}
@@ -625,7 +624,7 @@ function AccountSettingsModal({ user, onClose }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
-              placeholder="Matt"
+              placeholder="Athlete Name"
             />
           </div>
 
@@ -1309,6 +1308,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
+    // Load History safely
     const sessionsRef = collection(db, 'users', user.uid, 'sessions');
     const unsubscribeSessions = onSnapshot(sessionsRef, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1316,6 +1316,7 @@ export default function App() {
       setWorkoutHistory(docs || []);
     });
 
+    // Load Level Progress safely
     const levelsDocRef = doc(db, 'users', user.uid, 'settings', 'userLevels');
     const unsubscribeLevels = onSnapshot(levelsDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -1323,6 +1324,7 @@ export default function App() {
       }
     });
 
+    // Load Unlocked Phases safely
     const phasesDocRef = doc(db, 'users', user.uid, 'settings', 'unlockedPhases');
     const unsubscribePhases = onSnapshot(phasesDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -1330,10 +1332,12 @@ export default function App() {
       }
     });
 
+    // Load Custom Routines safely
     const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
+        // Bulletproof check: Ensure cloudRoutines is an array before filtering
         const validRoutines = Array.isArray(cloudRoutines) ? cloudRoutines : [];
         const customOnly = validRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
@@ -1342,6 +1346,7 @@ export default function App() {
       }
     });
 
+    // Load Active Workout State safely
     const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
     const unsubscribeActiveWorkout = onSnapshot(activeWorkoutDocRef, (docSnap) => {
       if (docSnap.exists() && docSnap.data().session) {
@@ -1542,6 +1547,7 @@ export default function App() {
         setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
       
+      // Auto-expand the log group for this new set so they can see it instantly
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
       return nextState;
@@ -1723,7 +1729,15 @@ export default function App() {
 
   const filteredPathways = MASTER_PATHWAYS.filter(t => {
     const matchesCat = selectedFilter === 'All' || t.category === selectedFilter;
-    const matchesSearch = !pathwaySearch.trim() || t.title?.toLowerCase().includes(pathwaySearch.toLowerCase());
+    const searchLower = pathwaySearch.trim().toLowerCase();
+    
+    // Safely check titles, descriptions, and all levels in both phases for the search term
+    const matchesSearch = !searchLower || 
+      t.title?.toLowerCase().includes(searchLower) ||
+      t.description?.toLowerCase().includes(searchLower) ||
+      t.levels1to5?.some(l => l.name?.toLowerCase().includes(searchLower)) ||
+      t.levels6to10?.some(l => l.name?.toLowerCase().includes(searchLower));
+      
     return matchesCat && matchesSearch;
   });
 
@@ -2028,7 +2042,7 @@ export default function App() {
                         <div className="grid md:grid-cols-2 gap-4 mt-6">
                           <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                              <CheckCircle className="w-4 h-4 text-emerald-400" />
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                               Non-Negotiable Form Cues
                             </div>
                             <ul className="space-y-2 text-xs text-slate-300">
@@ -2330,7 +2344,7 @@ export default function App() {
 
                 {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
                   <div className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                     <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
                     <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
                   </div>
