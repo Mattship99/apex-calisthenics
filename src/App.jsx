@@ -59,6 +59,7 @@ import {
   Lock,
   AlertCircle,
   Search,
+  Filter,
   HeartPulse,
   Send,
   Lock as LockIcon,
@@ -324,6 +325,7 @@ const DEFAULT_CIRCUITS = [
 ];
 
 const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
 
 function UnlockConfirmModal({ trackTitle, onConfirm, onClose }) {
   const [step, setStep] = useState(1);
@@ -674,7 +676,7 @@ function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose
     onSave({
       id: initialSetData ? initialSetData.id : Date.now(),
       trackId: trackId || (initialSetData ? initialSetData.trackId : ''),
-      exerciseName: levelData ? levelData.name : initialSetData.exerciseName,
+      exerciseName: levelData?.name || initialSetData?.exerciseName || 'Custom Exercise',
       repsOrHold: reps,
       rpe,
       formRating: formQuality,
@@ -693,7 +695,7 @@ function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{initialSetData ? 'Edit Set' : 'Log Set & Start Rest'}</span>
-            <h3 className="text-base font-bold text-slate-100">{levelData ? levelData.name : initialSetData?.exerciseName}</h3>
+            <h3 className="text-base font-bold text-slate-100">{levelData?.name || initialSetData?.exerciseName}</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
             <X className="w-5 h-5" />
@@ -790,7 +792,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
   const renderAnimation = () => {
     const isPhase1 = phase === 1;
 
-    switch (exercise.animationType) {
+    switch (exercise?.animationType) {
       case 'one_arm_pushup':
         return (
           <svg className="w-full h-64 bg-slate-950 rounded-xl border border-slate-800" viewBox="0 0 300 240">
@@ -951,10 +953,10 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
               <line x1="126" y1="170" x2="126" y2="120" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" />
               <circle cx="126" cy="105" r="13" fill="#38bdf8" />
               <line x1="126" y1="118" x2="126" y2="160" stroke="#38bdf8" strokeWidth="8" strokeLinecap="round" />
-              <line x1="126" y1="160" x2="215" y2={exercise.animationType === 'vsit_compression' ? (isPhase1 ? "90" : "110") : (isPhase1 ? "150" : "160")} stroke="#10b981" strokeWidth="7" strokeLinecap="round" />
+              <line x1="126" y1="160" x2="215" y2={exercise?.animationType === 'vsit_compression' ? (isPhase1 ? "90" : "110") : (isPhase1 ? "150" : "160")} stroke="#10b981" strokeWidth="7" strokeLinecap="round" />
             </g>
             <text x="150" y="225" textAnchor="middle" fill="#94a3b8" fontSize="11" fontFamily="sans-serif">
-              {exercise.animationType === 'vsit_compression' ? "▲ V-Sit Compression: Legs Driven Past 90°" : "► Full L-Sit Parallel Leg Hold"}
+              {exercise?.animationType === 'vsit_compression' ? "▲ V-Sit Compression: Legs Driven Past 90°" : "► Full L-Sit Parallel Leg Hold"}
             </text>
           </svg>
         );
@@ -1023,7 +1025,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
               Biomechanical Visualizer
             </span>
-            <h3 className="text-lg font-bold text-slate-100 mt-1">{exercise.name}</h3>
+            <h3 className="text-lg font-bold text-slate-100 mt-1">{exercise?.name}</h3>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-200 rounded-xl hover:bg-slate-800 transition">
             <X className="w-5 h-5" />
@@ -1036,7 +1038,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
           <div>
             <span className="text-xs font-semibold text-slate-400 block mb-2">Targeted Muscle Groups:</span>
             <div className="flex flex-wrap gap-2">
-              {exercise.primaryMuscles?.map((m, i) => (
+              {exercise?.primaryMuscles?.map((m, i) => (
                 <span key={i} className="text-xs bg-slate-800 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 font-medium flex items-center gap-1.5">
                   <Sparkles className="w-3 h-3 text-amber-400" />
                   {m}
@@ -1048,7 +1050,7 @@ function ExerciseFormVisualizer({ exercise, onClose }) {
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-2">Non-Negotiable Execution Cues</span>
             <ul className="space-y-2 text-xs text-slate-300">
-              {exercise.cues?.map((cue, idx) => (
+              {exercise?.cues?.map((cue, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>{cue}</span>
@@ -1176,7 +1178,6 @@ function RoutineBuilderModal({ onClose, onSave }) {
                 <div key={track.id} className="space-y-1.5">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
                   <div className="grid gap-1">
-                    {/* Map through levels 1-5 */}
                     {track.levels1to5?.map(lvl => {
                       const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
                       return (
@@ -1194,7 +1195,6 @@ function RoutineBuilderModal({ onClose, onSave }) {
                         </div>
                       );
                     })}
-                    {/* Map through levels 6-10 if they exist */}
                     {track.levels6to10?.map(lvl => {
                       const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
                       return (
@@ -1258,18 +1258,7 @@ export default function App() {
   const [expandedActiveLogs, setExpandedActiveLogs] = useState({});
   const [expandedHistoryLogs, setExpandedHistoryLogs] = useState({});
 
-  const [userLevels, setUserLevels] = useState({
-    'inversion-master': 1,
-    'dragon-flag': 1,
-    'one_arm_pushup': 1,
-    'pulling': 2,
-    'pushing': 2,
-    'dragon_squat': 1,
-    'pistol_squat': 1,
-    'muscle_up': 1,
-    'lsit_core': 1
-  });
-
+  const [userLevels, setUserLevels] = useState({});
   const [unlockedPhases, setUnlockedPhases] = useState({});
   const [pendingUnlockTrack, setPendingUnlockTrack] = useState(null);
 
@@ -1308,11 +1297,8 @@ export default function App() {
   // Auth observer
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        signInAnonymously(auth).catch(() => {});
-      }
+      if (currentUser) setUser(currentUser);
+      else signInAnonymously(auth).catch(() => {});
     });
     return () => unsubscribe();
   }, []);
@@ -1350,7 +1336,6 @@ export default function App() {
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
-        // Bulletproof check: Ensure cloudRoutines is an array before filtering
         const validRoutines = Array.isArray(cloudRoutines) ? cloudRoutines : [];
         const customOnly = validRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
@@ -1480,7 +1465,7 @@ export default function App() {
   };
 
   const updateLevel = async (trackId, newLevel, has10Levels) => {
-    if (has10Levels && newLevel > 5 && !unlockedPhases[trackId]) {
+    if (has10Levels && newLevel > 5 && !(unlockedPhases || {})[trackId]) {
       const track = MASTER_PATHWAYS.find(t => t.id === trackId);
       setPendingUnlockTrack(track);
       return;
@@ -1742,12 +1727,12 @@ export default function App() {
 
   const filteredPathways = MASTER_PATHWAYS.filter(t => {
     const matchesCat = selectedFilter === 'All' || t.category === selectedFilter;
-    const matchesSearch = !pathwaySearch.trim() || t.title.toLowerCase().includes(pathwaySearch.toLowerCase());
+    const matchesSearch = !pathwaySearch.trim() || t.title?.toLowerCase().includes(pathwaySearch.toLowerCase());
     return matchesCat && matchesSearch;
   });
 
-  // Bulletproof the grouped sets calculation
   const groupedSets = (activeWorkout.sets || []).reduce((acc, set) => {
+    if (!set) return acc;
     if (!acc[set.exerciseName]) {
       acc[set.exerciseName] = {
         trackId: set.trackId,
@@ -1802,7 +1787,7 @@ export default function App() {
                 >
                   <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-slate-300 font-bold max-w-[140px] truncate">
-                    {user.displayName || user.email?.split('@')[0] || 'Matt'}
+                    {user.displayName || user.email?.split('@')[0] || 'Athlete'}
                   </span>
                 </button>
 
@@ -1925,11 +1910,11 @@ export default function App() {
               </div>
             ) : (
               filteredPathways.map((track) => {
-                const currentLevel = userLevels[track.id] || 1;
+                const currentLevel = (userLevels || {})[track.id] || 1;
                 const isExpanded = expandedPathway === track.id;
                 
                 const has10Levels = track.levels6to10 && track.levels6to10.length > 0;
-                const isPhase2Unlocked = !has10Levels || unlockedPhases[track.id] || currentLevel > 5;
+                const isPhase2Unlocked = !has10Levels || (unlockedPhases || {})[track.id] || currentLevel > 5;
                 const activeList = has10Levels && activePhaseTab === '6-10' ? track.levels6to10 : track.levels1to5;
                 
                 const activeLevelData = track.levels1to5?.find(l => l.level === currentLevel) || 
@@ -1958,7 +1943,7 @@ export default function App() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
                           <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
-                          {activeList.map((lvl) => {
+                          {activeList?.map((lvl) => {
                             const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
                             return (
                               <button
@@ -1968,7 +1953,7 @@ export default function App() {
                                   else setPendingUnlockTrack(track);
                                 }}
                                 className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
-                                  userLevels[track.id] === lvl.level
+                                  (userLevels || {})[track.id] === lvl.level
                                     ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
                                     : isLocked 
                                     ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
@@ -1985,7 +1970,7 @@ export default function App() {
                     </div>
 
                     {/* Collapsible Content Body */}
-                    {isExpanded && (
+                    {isExpanded && activeLevelData && (
                       <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
                         <p className="text-sm text-slate-400 mb-6">{track.description}</p>
 
@@ -2079,7 +2064,7 @@ export default function App() {
                         <div className="mt-6 pt-6 border-t border-slate-800/80">
                           <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            {activeList.map((lvl) => {
+                            {activeList?.map((lvl) => {
                               const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
                               const isCurrent = lvl.level === currentLevel;
                               const isPassed = lvl.level < currentLevel;
@@ -2210,7 +2195,7 @@ export default function App() {
                     >
                       <div>
                         <h3 className="font-bold text-lg text-slate-100">{routine.name}</h3>
-                        <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s | {routine.type.toUpperCase()}</span>
+                        <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s | {(routine.type || 'open').toUpperCase()}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <button
@@ -2239,7 +2224,7 @@ export default function App() {
                       <div className="px-6 pb-6 pt-2 border-t border-slate-800/50 bg-slate-900/40">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 mt-2">Planned Exercises:</span>
                         <div className="space-y-1.5">
-                          {routine.items.map((item, idx) => (
+                          {(routine.items || []).map((item, idx) => (
                             <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
                               <span className="font-bold text-slate-200">{item.name}</span>
                               <span className="text-amber-400 font-medium">{item.target}</span>
@@ -2342,7 +2327,7 @@ export default function App() {
                   <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
                     <span>Completed Rounds:</span>
                     <span className="text-base font-black text-emerald-300">
-                      {(roundTally + (activeCircuit.items.filter(i => i.completed).length / activeCircuit.items.length)).toFixed(2)}
+                      {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -2637,9 +2622,11 @@ export default function App() {
                 {workoutHistory.map((session) => {
                   const isExpanded = expandedHistoryLogs[session.id];
                   
-                  // Generate quick summary map of { "Pull-ups": 19, "Dips": 19 } safely
+                  // Generate quick summary map safely
                   const sessionSummary = (session.sets || []).reduce((acc, s) => {
-                    acc[s.exerciseName] = (acc[s.exerciseName] || 0) + 1;
+                    if (s && s.exerciseName) {
+                      acc[s.exerciseName] = (acc[s.exerciseName] || 0) + 1;
+                    }
                     return acc;
                   }, {});
 
