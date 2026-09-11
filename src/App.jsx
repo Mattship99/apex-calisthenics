@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
+import { getApps, initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -27,7 +27,7 @@ import {
   Dumbbell, 
   Trophy, 
   Timer as TimerIcon, 
-  CheckCircle2, 
+  CheckCircle, 
   ChevronRight, 
   Play, 
   Pause, 
@@ -76,7 +76,8 @@ const firebaseConfig = {
   measurementId: "G-5FHHDQ0JGR"
 };
 
-const app = initializeApp(firebaseConfig);
+// ANTI-CRASH FIX: Prevents Firebase from initializing twice during hot-reloads
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -264,7 +265,7 @@ const DEFAULT_CIRCUITS = [
     id: 'def_cindy',
     name: 'The "Cindy" (20m AMRAP)',
     type: 'amrap',
-    duration: 20 * 60, // 20 minutes countdown
+    duration: 20 * 60, 
     restDuration: 60,
     items: [
       { name: '5 Pull-ups', completed: false, target: '5 Reps' },
@@ -325,7 +326,6 @@ const DEFAULT_CIRCUITS = [
 ];
 
 const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-
 
 function UnlockConfirmModal({ trackTitle, onConfirm, onClose }) {
   const [step, setStep] = useState(1);
@@ -443,7 +443,7 @@ function AuthModal({ onClose }) {
 
         {authMessage && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <CheckCircle className="w-4 h-4 shrink-0" />
             <span>{authMessage}</span>
           </div>
         )}
@@ -612,7 +612,7 @@ function AccountSettingsModal({ user, onClose }) {
 
         {message && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <CheckCircle className="w-4 h-4 shrink-0" />
             <span>{message}</span>
           </div>
         )}
@@ -1178,6 +1178,7 @@ function RoutineBuilderModal({ onClose, onSave }) {
                 <div key={track.id} className="space-y-1.5">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
                   <div className="grid gap-1">
+                    {/* Map through levels 1-5 */}
                     {track.levels1to5?.map(lvl => {
                       const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
                       return (
@@ -1195,6 +1196,7 @@ function RoutineBuilderModal({ onClose, onSave }) {
                         </div>
                       );
                     })}
+                    {/* Map through levels 6-10 if they exist */}
                     {track.levels6to10?.map(lvl => {
                       const isSelected = selectedItems.some(i => i.trackId === track.id && i.level === lvl.level);
                       return (
@@ -1307,7 +1309,6 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
-    // Load History safely
     const sessionsRef = collection(db, 'users', user.uid, 'sessions');
     const unsubscribeSessions = onSnapshot(sessionsRef, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1315,7 +1316,6 @@ export default function App() {
       setWorkoutHistory(docs || []);
     });
 
-    // Load Level Progress safely
     const levelsDocRef = doc(db, 'users', user.uid, 'settings', 'userLevels');
     const unsubscribeLevels = onSnapshot(levelsDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -1323,7 +1323,6 @@ export default function App() {
       }
     });
 
-    // Load Unlocked Phases safely
     const phasesDocRef = doc(db, 'users', user.uid, 'settings', 'unlockedPhases');
     const unsubscribePhases = onSnapshot(phasesDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -1331,7 +1330,6 @@ export default function App() {
       }
     });
 
-    // Load Custom Routines safely
     const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
@@ -1344,7 +1342,6 @@ export default function App() {
       }
     });
 
-    // Load Active Workout State safely
     const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
     const unsubscribeActiveWorkout = onSnapshot(activeWorkoutDocRef, (docSnap) => {
       if (docSnap.exists() && docSnap.data().session) {
@@ -1545,7 +1542,6 @@ export default function App() {
         setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
       
-      // Auto-expand the log group for this new set so they can see it instantly
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
       return nextState;
@@ -1732,7 +1728,7 @@ export default function App() {
   });
 
   const groupedSets = (activeWorkout.sets || []).reduce((acc, set) => {
-    if (!set) return acc;
+    if (!set || !set.exerciseName) return acc;
     if (!acc[set.exerciseName]) {
       acc[set.exerciseName] = {
         trackId: set.trackId,
@@ -2032,7 +2028,7 @@ export default function App() {
                         <div className="grid md:grid-cols-2 gap-4 mt-6">
                           <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                              <CheckCircle className="w-4 h-4 text-emerald-400" />
                               Non-Negotiable Form Cues
                             </div>
                             <ul className="space-y-2 text-xs text-slate-300">
@@ -2334,7 +2330,7 @@ export default function App() {
 
                 {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
                   <div className="text-center py-8">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                    <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                     <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
                     <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
                   </div>
