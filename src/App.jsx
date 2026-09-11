@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
+import { getApps, initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -27,7 +27,7 @@ import {
   Dumbbell, 
   Trophy, 
   Timer as TimerIcon, 
-  CheckCircle2, 
+  CheckCircle, 
   ChevronRight, 
   Play, 
   Pause, 
@@ -76,7 +76,8 @@ const firebaseConfig = {
   measurementId: "G-5FHHDQ0JGR"
 };
 
-const app = initializeApp(firebaseConfig);
+// ANTI-CRASH FIX: Prevents Firebase from initializing twice during hot-reloads
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -264,7 +265,7 @@ const DEFAULT_CIRCUITS = [
     id: 'def_cindy',
     name: 'The "Cindy" (20m AMRAP)',
     type: 'amrap',
-    duration: 20 * 60,
+    duration: 20 * 60, // 20 minutes countdown
     restDuration: 60,
     items: [
       { name: '5 Pull-ups', completed: false, target: '5 Reps' },
@@ -442,7 +443,7 @@ function AuthModal({ onClose }) {
 
         {authMessage && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <CheckCircle className="w-4 h-4 shrink-0" />
             <span>{authMessage}</span>
           </div>
         )}
@@ -450,14 +451,14 @@ function AuthModal({ onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && !isForgotPassword && (
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Username</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Username (e.g. Matt)</label>
               <div className="relative">
                 <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Athlete Name"
+                  placeholder="Matt"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
@@ -611,7 +612,7 @@ function AccountSettingsModal({ user, onClose }) {
 
         {message && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <CheckCircle className="w-4 h-4 shrink-0" />
             <span>{message}</span>
           </div>
         )}
@@ -624,7 +625,7 @@ function AccountSettingsModal({ user, onClose }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
-              placeholder="Athlete Name"
+              placeholder="Matt"
             />
           </div>
 
@@ -1728,7 +1729,7 @@ export default function App() {
   };
 
   const filteredPathways = MASTER_PATHWAYS.filter(t => {
-    const matchesCat = selectedFilter === 'All' || t.category === selectedFilter;
+    const matchesCat = selectedCategory === 'All' || t.category === selectedCategory;
     const searchLower = pathwaySearch.trim().toLowerCase();
     
     // Safely check titles, descriptions, and all levels in both phases for the search term
@@ -2042,7 +2043,7 @@ export default function App() {
                         <div className="grid md:grid-cols-2 gap-4 mt-6">
                           <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                              <CheckCircle className="w-4 h-4 text-emerald-400" />
                               Non-Negotiable Form Cues
                             </div>
                             <ul className="space-y-2 text-xs text-slate-300">
@@ -2344,7 +2345,7 @@ export default function App() {
 
                 {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
                   <div className="text-center py-8">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                    <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                     <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
                     <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
                   </div>
