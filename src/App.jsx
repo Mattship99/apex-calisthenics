@@ -753,26 +753,26 @@ export default function App() {
                         </div>
                         <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
                         {!isExpanded && <p className="text-sm text-slate-400 mt-1 truncate max-w-lg">{track.description}</p>}
-                    </div>
+                      </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
-                        {activeList?.map((lvl) => {
-                          const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                          return (
-                            <button
-                              key={lvl.level}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
+                          {activeList?.map((lvl) => {
+                            const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                            return (
+                              <button
+                                key={lvl.level}
                               onClick={() => {
                                 if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
                                 else setPendingUnlockTrack(track);
-                            }}
-                            className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
-                              (userLevels || {})[track.id] === lvl.level
-                                ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                                : isLocked 
-                                ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
-                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                              }}
+                              className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
+                                (userLevels || {})[track.id] === lvl.level
+                                  ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
+                                  : isLocked 
+                                  ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
+                                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                             }`}
                           >
                             {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
@@ -855,48 +855,48 @@ export default function App() {
                               <span>{cue}</span>
                             </li>
                           ))}
-                        </ul>
-                      </div>
-
-                      <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                          <ShieldAlert className="w-4 h-4 text-amber-400" />
-                          Common Pitfalls to Avoid
-                        </div>
-                        <ul className="space-y-2 text-xs text-slate-300">
-                          {activeLevelData.pitfalls?.map((pit, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-amber-400 font-bold">•</span>
-                              <span>{pit}</span>
-                            </li>
-                          ))}
                       </ul>
                     </div>
+
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-400" />
+                        Common Pitfalls to Avoid
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {activeLevelData.pitfalls?.map((pit, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-amber-400 font-bold">•</span>
+                            <span>{pit}</span>
+                          </li>
+                        ))}
+                    </ul>
                   </div>
+                </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-800/80">
-                    <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                      {activeList?.map((lvl) => {
-                        const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                        const isCurrent = lvl.level === currentLevel;
-                        const isPassed = lvl.level < currentLevel;
+                <div className="mt-6 pt-6 border-t border-slate-800/80">
+                  <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {activeList?.map((lvl) => {
+                      const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                      const isCurrent = lvl.level === currentLevel;
+                      const isPassed = lvl.level < currentLevel;
 
-                        return (
-                          <div
-                            key={lvl.level}
-                            onClick={() => {
-                              if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                              else setPendingUnlockTrack(track);
-                            }}
-                            className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
-                              isLocked 
-                                ? 'opacity-50 bg-slate-950 border-slate-800'
-                                : isCurrent
-                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                : isPassed
-                                ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                                : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                      return (
+                        <div
+                          key={lvl.level}
+                          onClick={() => {
+                            if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                            else setPendingUnlockTrack(track);
+                          }}
+                          className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                            isLocked 
+                              ? 'opacity-50 bg-slate-950 border-slate-800'
+                              : isCurrent
+                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                              : isPassed
+                              ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -919,13 +919,13 @@ export default function App() {
                       </div>
                     );
                   })}
-              </div>
             </div>
-        </div>
-      )}
-    </div>
-  ))}
-</div>
+          </div>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
   )}
 
   {/* --- TAB: MOBILITY & RECOVERY --- */}
