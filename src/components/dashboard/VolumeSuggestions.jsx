@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { Lightbulb } from 'lucide-react';
 import { db, auth } from '../../services/firebase';
-import { VOLUME_CATEGORIES } from '../../constants'; // Adjust path as needed
+import { VOLUME_CATEGORIES } from '../../data/constants'; // Adjust path as needed
 
 export default function VolumeSuggestion() {
   const [suggestion, setSuggestion] = useState('');
