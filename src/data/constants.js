@@ -259,3 +259,17 @@ export const VOLUME_CATEGORIES = {
   Legs: ['dragon_squat', 'pistol_squat'],
   Balance: ['inversion-master']
 };
+
+export const TENDON_INTENSIVE_MOVEMENTS = [
+  'Wall-Supported Eccentric HSPU',
+  'Full Dragon Flag Negatives (Lowers)',
+  'One-Arm Push-Up Negatives',
+  'Full Freestanding One-Arm Push-Up',
+  'Eccentric Pull-Up Negatives',
+  'Pseudo Planche Push-Ups (PPPU)',
+  'Straight Bar Dips',
+  'Strict / Clean Bar Muscle-Up',
+  'Box / Bench Dragon Squat Negatives',
+  'Full Freestanding L-Sit Hold',
+  'V-Sit / High Compression L-Sit'
+];
