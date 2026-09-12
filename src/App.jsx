@@ -30,6 +30,7 @@ import LogSetModal from './components/workout/LogSetModal';
 import ExerciseFormVisualizer from './components/workout/ExerciseFormVisualizer';
 import RoutineBuilderModal from './components/workout/RoutineBuilderModal';
 import BalanceRadar from './components/dashboard/BalanceRadar';
+import VolumeSuggestion from './components/dashboard/VolumeSuggestion';
 import GlobalFeedback from './components/ui/GlobalFeedback';
 
 import { 
@@ -656,6 +657,7 @@ export default function App() {
         {activeTab === 'roadmap' && (
           <div className="space-y-6">
             <BalanceRadar userProgress={userLevels} />
+            <VolumeSuggestion userProgress={userLevels} />
             
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
