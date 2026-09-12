@@ -22,13 +22,14 @@ import {
   LADDER_RUNGS 
 } from './data/constants';
 
-// IMPORTING MODALS
+// IMPORTING MODALS & DASHBOARD COMPONENTS
 import AuthModal from './components/ui/AuthModal';
 import AccountSettingsModal from './components/ui/AccountSettingsModal';
 import UnlockConfirmModal from './components/workout/UnlockConfirmModal';
 import LogSetModal from './components/workout/LogSetModal';
 import ExerciseFormVisualizer from './components/workout/ExerciseFormVisualizer';
 import RoutineBuilderModal from './components/workout/RoutineBuilderModal';
+import BalanceRadar from './components/dashboard/BalanceRadar';
 
 import { 
   Dumbbell, Trophy, Timer as TimerIcon, CheckCircle, ChevronRight, 
@@ -653,6 +654,8 @@ export default function App() {
         {/* --- TAB 1: ROADMAP & SKILL PATHWAYS --- */}
         {activeTab === 'roadmap' && (
           <div className="space-y-6">
+            <BalanceRadar userProgress={userLevels} />
+            
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
