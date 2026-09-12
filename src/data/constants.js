@@ -251,3 +251,11 @@ export const PILLAR_MAPPINGS = {
   'Leg Power': ['dragon_squat', 'pistol_squat'],
   'Core': ['dragon-flag', 'lsit_core']
 };
+
+export const VOLUME_CATEGORIES = {
+  Push: ['pushing', 'one_arm_pushup'],
+  Pull: ['pulling', 'muscle_up'],
+  Core: ['dragon-flag', 'lsit_core'],
+  Legs: ['dragon_squat', 'pistol_squat'],
+  Balance: ['inversion-master']
+};
