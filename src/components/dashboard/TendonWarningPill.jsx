@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { AlertTriangle } from 'lucide-react';
 import { auth, db } from '../../services/firebase';
-import { TENDON_INTENSIVE_MOVEMENTS } from '../../constants';
+import { TENDON_INTENSIVE_MOVEMENTS } from '../../data/constants';
 
 export default function TendonWarningPill() {
   const [showWarning, setShowWarning] = useState(false);
