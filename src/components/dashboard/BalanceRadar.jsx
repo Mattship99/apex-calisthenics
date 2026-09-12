@@ -1,5 +1,5 @@
 import React from 'react';
-import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../constants'; // Adjust the import path as necessary
+import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants'; // Adjust the import path as necessary
 
 export default function BalanceRadar({ userProgress }) {
   // Utility function to calculate the 0-100 score for each pillar
