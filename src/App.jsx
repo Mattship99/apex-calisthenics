@@ -820,426 +820,427 @@ export default function App() {
                             <Target className="w-3.5 h-3.5" />
                             Mastery Standard: {activeLevelData.target}
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setSelectedExerciseDemo(activeLevelData)}
-                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
-                          >
-                            <Eye className="w-4 h-4 text-amber-400" />
-                            View Animated Demo
-                          </button>
-
-                          <button
-                            onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
-                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
-                          >
-                            <Plus className="w-4 h-4 stroke-[3]" />
-                            Log Set
-                          </button>
-                        </div>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4 mt-6">
-                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                          <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                            <CheckCircle className="w-4 h-4 text-emerald-400" />
-                            Non-Negotiable Form Cues
-                          </div>
-                          <ul className="space-y-2 text-xs text-slate-300">
-                            {activeLevelData.cues?.map((cue, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-emerald-400 font-bold">•</span>
-                                <span>{cue}</span>
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedExerciseDemo(activeLevelData)}
+                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                        >
+                          <Eye className="w-4 h-4 text-amber-400" />
+                          View Animated Demo
+                        </button>
 
+                        <button
+                          onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
+                          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+                        >
+                          <Plus className="w-4 h-4 stroke-[3]" />
+                          Log Set
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 mt-6">
                       <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                         <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                          <ShieldAlert className="w-4 h-4 text-amber-400" />
-                          Common Pitfalls to Avoid
+                          <CheckCircle className="w-4 h-4 text-emerald-400" />
+                          Non-Negotiable Form Cues
                         </div>
                         <ul className="space-y-2 text-xs text-slate-300">
-                          {activeLevelData.pitfalls?.map((pit, idx) => (
+                          {activeLevelData.cues?.map((cue, idx) => (
                             <li key={idx} className="flex items-start gap-2">
-                              <span className="text-amber-400 font-bold">•</span>
-                              <span>{pit}</span>
+                              <span className="text-emerald-400 font-bold">•</span>
+                              <span>{cue}</span>
                             </li>
                           ))}
                       </ul>
                     </div>
-                  </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-800/80">
-                    <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                      {activeList?.map((lvl) => {
-                        const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                        const isCurrent = lvl.level === currentLevel;
-                        const isPassed = lvl.level < currentLevel;
-
-                        return (
-                          <div
-                            key={lvl.level}
-                            onClick={() => {
-                              if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                              else setPendingUnlockTrack(track);
-                            }}
-                            className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
-                              isLocked 
-                                ? 'opacity-50 bg-slate-950 border-slate-800'
-                                : isCurrent
-                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                : isPassed
-                                ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                                : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                          }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                              {isLocked ? (
-                                <LockIcon className="w-3 h-3 text-amber-400" />
-                              ) : (
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedExerciseDemo(lvl);
-                                  }}
-                                  className="text-slate-400 hover:text-amber-300"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </button>
-                              )}
-                          </div>
-                          <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                        </div>
-                      );
-                    })}
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-400" />
+                        Common Pitfalls to Avoid
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {activeLevelData.pitfalls?.map((pit, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-amber-400 font-bold">•</span>
+                            <span>{pit}</span>
+                          </li>
+                        ))}
+                    </ul>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-            )
-          )
-        )}
 
-        {/* --- TAB: MOBILITY & RECOVERY --- */}
-        {activeTab === 'mobility' && (
-          <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <h2 className="text-xl font-bold flex items-center gap-2 text-slate-100"><HeartPulse className="w-6 h-6 text-emerald-400" /> Mobility & Recovery Protocols</h2>
-              <p className="text-sm text-slate-400 mt-2">Joint health and tissue resilience are the true limits of calisthenics progression. Incorporate these into your off-days or warm-ups.</p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {MOBILITY_RECOVERY_MODULE.map(mod => (
-                <div key={mod.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
-                  <h3 className="text-lg font-bold text-slate-100">{mod.title}</h3>
-                  <div className="space-y-2 pt-2 border-t border-slate-800">
-                    {mod.exercises.map((ex, i) => (
-                      <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-                        <div className="font-bold text-slate-200">{ex.name}</div>
-                        <div className="text-amber-400 font-medium">Target: {ex.target}</div>
-                        <div className="text-slate-500 mt-1">Focus: {ex.focus}</div>
+                <div className="mt-6 pt-6 border-t border-slate-800/80">
+                  <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {activeList?.map((lvl) => {
+                      const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                      const isCurrent = lvl.level === currentLevel;
+                      const isPassed = lvl.level < currentLevel;
+
+                      return (
+                        <div
+                          key={lvl.level}
+                          onClick={() => {
+                            if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                            else setPendingUnlockTrack(track);
+                          }}
+                          className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                            isLocked 
+                              ? 'opacity-50 bg-slate-950 border-slate-800'
+                              : isCurrent
+                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                              : isPassed
+                              ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
+                            {isLocked ? (
+                              <LockIcon className="w-3 h-3 text-amber-400" />
+                            ) : (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedExerciseDemo(lvl);
+                                }}
+                                className="text-slate-400 hover:text-amber-300"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                       </div>
-                    ))}
-                  </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+      })}
+    </div>
+  )}
+
+  {/* --- TAB: MOBILITY & RECOVERY --- */}
+  {activeTab === 'mobility' && (
+    <div className="space-y-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-100"><HeartPulse className="w-6 h-6 text-emerald-400" /> Mobility & Recovery Protocols</h2>
+        <p className="text-sm text-slate-400 mt-2">Joint health and tissue resilience are the true limits of calisthenics progression. Incorporate these into your off-days or warm-ups.</p>
+      </div>
+      <div className="grid md:grid-cols-3 gap-6">
+        {MOBILITY_RECOVERY_MODULE.map(mod => (
+          <div key={mod.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-100">{mod.title}</h3>
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              {mod.exercises.map((ex, i) => (
+                <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                  <div className="font-bold text-slate-200">{ex.name}</div>
+                  <div className="text-amber-400 font-medium">Target: {ex.target}</div>
+                  <div className="text-slate-500 mt-1">Focus: {ex.focus}</div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        ))}
+      </div>
+    </div>
+  )}
 
-        {/* --- TAB 2: ROUTINES --- */}
-        {activeTab === 'routines' && (
-          <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-emerald-400" />
-                  Custom Workout Routines
-                </h2>
-                <p className="text-sm text-slate-400 mt-1">Pre-build your training split days (Push, Pull, Core, etc.) and rest durations. Saved directly to cloud storage.</p>
-              </div>
-              <button
-                onClick={() => setIsBuildingRoutine(true)}
-                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+  {/* --- TAB 2: ROUTINES --- */}
+  {activeTab === 'routines' && (
+    <div className="space-y-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-emerald-400" />
+            Custom Workout Routines
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">Pre-build your training split days (Push, Pull, Core, etc.) and rest durations. Saved directly to cloud storage.</p>
+        </div>
+        <button
+          onClick={() => setIsBuildingRoutine(true)}
+          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+          Create New Routine
+        </button>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {routines.map((routine) => {
+          const isExpanded = expandedRoutine === routine.id;
+
+          return (
+            <div key={routine.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <div 
+                onClick={() => setExpandedRoutine(isExpanded ? null : routine.id)}
+                className="p-6 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                Create New Routine
-              </button>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {routines.map((routine) => {
-                const isExpanded = expandedRoutine === routine.id;
-
-                return (
-                  <div key={routine.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                    <div 
-                      onClick={() => setExpandedRoutine(isExpanded ? null : routine.id)}
-                      className="p-6 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
+                <div>
+                  <h3 className="font-bold text-lg text-slate-100">{routine.name}</h3>
+                  <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s | {(routine.type || 'open').toUpperCase()}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); startRoutineSession(routine); }}
+                    className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs font-bold transition"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    Start
+                  </button>
+                   
+                  {typeof routine.id === 'number' && routine.id > 1000000 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteRoutine(routine.id); }}
+                      className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
+                      title="Delete Routine"
                     >
-                      <div>
-                        <h3 className="font-bold text-lg text-slate-100">{routine.name}</h3>
-                        <span className="text-xs text-slate-400 font-medium">Rest interval: {routine.restDuration}s | {(routine.type || 'open').toUpperCase()}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); startRoutineSession(routine); }}
-                          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs font-bold transition"
-                        >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          Start
-                        </button>
-                        
-                        {typeof routine.id === 'number' && routine.id > 1000000 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); deleteRoutine(routine.id); }}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 transition rounded-lg hover:bg-slate-800"
-                            title="Delete Routine"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                      </div>
-                  </div>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
 
-                  {isExpanded && (
-                    <div className="px-6 pb-6 pt-2 border-t border-slate-800/50 bg-slate-900/40">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 mt-2">Planned Exercises:</span>
-                      <div className="space-y-1.5">
-                        {(routine.items || []).map((item, idx) => (
-                          <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-                            <span className="font-bold text-slate-200">{item.name}</span>
-                            <span className="text-amber-400 font-medium">{item.target}</span>
-                          </div>
-                        ))}
+              {isExpanded && (
+                <div className="px-6 pb-6 pt-2 border-t border-slate-800/50 bg-slate-900/40">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 mt-2">Planned Exercises:</span>
+                  <div className="space-y-1.5">
+                    {(routine.items || []).map((item, idx) => (
+                      <div key={idx} className="text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                        <span className="font-bold text-slate-200">{item.name}</span>
+                        <span className="text-amber-400 font-medium">{item.target}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+
+  {/* --- TAB 3: ACTIVE WORKOUT LOGGER --- */}
+  {activeTab === 'workout' && (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <div>
+          <h2 className="text-xl font-bold text-slate-100">{activeWorkout.title}</h2>
+          <p className="text-xs text-slate-400 mt-1">Logged sets auto-save instantly to your personal Firebase cloud account.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={finishWorkout}
+            disabled={(activeWorkout.sets || []).length === 0 && roundTally === 0}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+              (activeWorkout.sets || []).length > 0 || roundTally > 0
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            Save & Finish Session
+          </button>
+        </div>
+      </div>
+
+      {/* Rest Timer Panel */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+            <TimerIcon className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-slate-400">Inter-Set Rest Timer</div>
+            <div className="text-3xl font-mono font-bold text-slate-100">{formatTime(timerSeconds)}</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => startTimer(60)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 60 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
+          >
+            60s
+          </button>
+          <button
+            onClick={() => startTimer(90)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 90 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
+          >
+            90s
+          </button>
+          <button
+            onClick={() => startTimer(180)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 180 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
+          >
+            3 min
+          </button>
+
+          <div className="h-6 w-px bg-slate-800 mx-1" />
+
+          <button
+            onClick={toggleTimer}
+            className={`p-2.5 rounded-xl font-bold transition ${
+              timerActive ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'
+            }`}
+          >
+            {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={resetTimer}
+            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Active Circuit Tracker & Fractional Round Calculator */}
+      {activeCircuit && activeCircuit.items && (
+        <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
+              <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
+            </div>
+            <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
+              <span>Completed Rounds:</span>
+              <span className="text-base font-black text-emerald-300">
+                {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
+            <div className="text-center py-8">
+              <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+              <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
+              <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleCompleteRoundFastForward}
+                className="w-full py-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20"
+              >
+                Complete Full Round Fast-Forward
+              </button>
+               
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
+                {activeCircuit.items.map((item, idx) => {
+                  const isLadder = activeCircuit.type === 'ladder';
+                  const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
+                  const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => handleToggleCircuitItem(idx)}
+                      className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                        item.completed
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
+                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="text-xs font-bold">{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-amber-400">{displayTarget}</span>
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
+                          {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setActiveCircuit(null)}
+              className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
+            >
+              Close Circuit Without Saving
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Planned Routine Checklist (for standard workouts) */}
+      {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <CheckSquare className="w-4 h-4" />
+              Routine Checklist (Tap to Log Sets)
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-slate-400 hidden sm:inline">Use ▲/▼ to adjust difficulty</span>
+              <button
+                onClick={clearRoutineChecklist}
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
+                title="Clear remaining routine checklist without affecting logged sets"
+              >
+                Clear Checklist
+              </button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            {activeWorkout.plannedItems.map((item, idx) => {
+              const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
+              const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
+               
+              return (
+                <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={() => adjustPlannedItemLevel(idx, 1)}
+                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => adjustPlannedItemLevel(idx, -1)}
+                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
+                        <span className="text-xs font-bold text-slate-200">{item.name}</span>
+                      </div>
+                      <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
+                    </div>
+                  </div>
+
+                  {levelData && track && (
+                    <button
+                      onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
+                    >
+                      + Log Set
+                    </button>
                   )}
                 </div>
               );
             })}
-        </div>
-        </div>
-        )}
-
-        {/* --- TAB 3: ACTIVE WORKOUT LOGGER --- */}
-        {activeTab === 'workout' && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-              <div>
-                <h2 className="text-xl font-bold text-slate-100">{activeWorkout.title}</h2>
-                <p className="text-xs text-slate-400 mt-1">Logged sets auto-save instantly to your personal Firebase cloud account.</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={finishWorkout}
-                  disabled={(activeWorkout.sets || []).length === 0 && roundTally === 0}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-                    (activeWorkout.sets || []).length > 0 || roundTally > 0
-                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  <Award className="w-4 h-4" />
-                  Save & Finish Session
-                </button>
-              </div>
-            </div>
-
-            {/* Rest Timer Panel */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
-                  <TimerIcon className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-400">Inter-Set Rest Timer</div>
-                  <div className="text-3xl font-mono font-bold text-slate-100">{formatTime(timerSeconds)}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => startTimer(60)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 60 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
-                >
-                  60s
-                </button>
-                <button
-                  onClick={() => startTimer(90)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 90 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
-                >
-                  90s
-                </button>
-                <button
-                  onClick={() => startTimer(180)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout.restDuration === 180 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
-                >
-                  3 min
-                </button>
-
-                <div className="h-6 w-px bg-slate-800 mx-1" />
-
-                <button
-                  onClick={toggleTimer}
-                  className={`p-2.5 rounded-xl font-bold transition ${
-                    timerActive ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'
-                  }`}
-                >
-                  {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={resetTimer}
-                  className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-            </div>
           </div>
-
-          {/* Active Circuit Tracker & Fractional Round Calculator */}
-          {activeCircuit && activeCircuit.items && (
-            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
-                  <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
-                </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
-                  <span>Completed Rounds:</span>
-                  <span className="text-base font-black text-emerald-300">
-                    {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                  <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
-                  <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={handleCompleteRoundFastForward}
-                    className="w-full py-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20"
-                  >
-                    Complete Full Round Fast-Forward
-                  </button>
-                  
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
-                    {activeCircuit.items.map((item, idx) => {
-                      const isLadder = activeCircuit.type === 'ladder';
-                      const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
-                      const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
-
-                      return (
-                        <div
-                          key={idx}
-                          onClick={() => handleToggleCircuitItem(idx)}
-                          className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                            item.completed
-                              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
-                              : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
-                          }`}
-                        >
-                          <span className="text-xs font-bold">{item.name}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-amber-400">{displayTarget}</span>
-                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
-                              {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                            </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                </>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setActiveCircuit(null)}
-                  className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
-                >
-                  Close Circuit Without Saving
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Planned Routine Checklist (for standard workouts) */}
-          {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  <CheckSquare className="w-4 h-4" />
-                  Routine Checklist (Tap to Log Sets)
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-slate-400 hidden sm:inline">Use ▲/▼ to adjust difficulty</span>
-                  <button
-                    onClick={clearRoutineChecklist}
-                    className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
-                    title="Clear remaining routine checklist without affecting logged sets"
-                  >
-                    Clear Checklist
-                  </button>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              {activeWorkout.plannedItems.map((item, idx) => {
-                const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
-                const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
-                
-                return (
-                  <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col gap-0.5">
-                        <button
-                          onClick={() => adjustPlannedItemLevel(idx, 1)}
-                          className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
-                        >
-                          <ChevronUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => adjustPlannedItemLevel(idx, -1)}
-                          className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
-                        >
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
-                          <span className="text-xs font-bold text-slate-200">{item.name}</span>
-                        </div>
-                        <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
-                      </div>
-                    </div>
-
-                    {levelData && track && (
-                        <button
-                          onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
-                        >
-                          + Log Set
-                        </button>
-                      )}
-                </div>
-              );
-            })}
-        </div>
         </div>
       )}
 
