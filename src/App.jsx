@@ -949,7 +949,6 @@ export default function App() {
               ))}
             </div>
           </div>
-        )}
 
         {/* --- TAB 2: ROUTINES --- */}
         {activeTab === 'routines' && (
