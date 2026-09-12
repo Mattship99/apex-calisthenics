@@ -920,26 +920,6 @@ export default function App() {
                 );
               })
             )}
-
-            {/* Suggestion Box */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mt-12 space-y-4">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-slate-100">Send App Feedback or Suggestions</h3>
-              </div>
-              {suggestionSubmitted ? (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-medium">Thank you! Your feedback has been sent directly to our Firebase backend.</div>
-              ) : (
-                <form onSubmit={handleSendSuggestion} className="space-y-3">
-                  <textarea rows={3} placeholder="Type your feature request, bug report, or new exercise pathway idea here..." value={suggestionText} onChange={e => setSuggestionText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" required />
-                  <div className="flex justify-end">
-                    <button type="submit" className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/20">
-                      <Send className="w-3.5 h-3.5" /> Submit Feedback
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
           </div>
         )}
 
