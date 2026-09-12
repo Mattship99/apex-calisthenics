@@ -30,7 +30,7 @@ import LogSetModal from './components/workout/LogSetModal';
 import ExerciseFormVisualizer from './components/workout/ExerciseFormVisualizer';
 import RoutineBuilderModal from './components/workout/RoutineBuilderModal';
 import BalanceRadar from './components/dashboard/BalanceRadar';
-import VolumeSuggestion from './components/dashboard/VolumeSuggestion';
+import VolumeSuggestion from './components/dashboard/VolumeSuggestions.jsx';
 import GlobalFeedback from './components/ui/GlobalFeedback';
 
 import { 
