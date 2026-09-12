@@ -30,6 +30,7 @@ import LogSetModal from './components/workout/LogSetModal';
 import ExerciseFormVisualizer from './components/workout/ExerciseFormVisualizer';
 import RoutineBuilderModal from './components/workout/RoutineBuilderModal';
 import BalanceRadar from './components/dashboard/BalanceRadar';
+import GlobalFeedback from './components/ui/GlobalFeedback';
 
 import { 
   Dumbbell, Trophy, Timer as TimerIcon, CheckCircle, ChevronRight, 
@@ -1556,7 +1557,8 @@ export default function App() {
           onStartTimer={startTimer}
         />
       )}
-
+      
+      <GlobalFeedback />
     </div>
   );
 }
