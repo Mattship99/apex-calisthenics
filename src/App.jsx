@@ -1375,7 +1375,7 @@ export default function App() {
           )}
         </div>
         </div>
-      )}
+    )}
 
       {/* --- TAB 4: LOG HISTORY --- */}
       {activeTab === 'history' && (
@@ -1386,6 +1386,7 @@ export default function App() {
           onNavigateWorkout={() => setActiveTab('workout')}
         />
       )}
+    </div>
 
       </main>
 
