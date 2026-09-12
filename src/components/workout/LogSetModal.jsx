@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 
 export default function LogSetModal({ levelData, trackId, restDuration, initialSetData, onClose, onSave, onStartTimer }) {
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [reps, setReps] = useState(initialSetData ? initialSetData.repsOrHold : (levelData?.type === 'hold' ? '30s' : '8'));
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
   const [setNote, setSetNote] = useState(initialSetData ? (initialSetData.notes || '') : '');
+  const [workoutDate, setWorkoutDate] = useState(
+    initialSetData?.date || initialSetData?.timestamp?.split('T')[0] || getTodayDateString()
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,7 +28,8 @@ export default function LogSetModal({ levelData, trackId, restDuration, initialS
       rpe,
       formRating: formQuality,
       notes: setNote,
-      timestamp: initialSetData ? initialSetData.timestamp : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      date: workoutDate,
+      timestamp: initialSetData ? initialSetData.timestamp : new Date().toISOString()
     });
     if (!initialSetData && onStartTimer) {
       onStartTimer(restDuration);
@@ -39,6 +51,20 @@ export default function LogSetModal({ levelData, trackId, restDuration, initialS
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1">Workout Date:</label>
+            <div className="relative">
+              <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+              <input
+                type="date"
+                value={workoutDate}
+                onChange={(e) => setWorkoutDate(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                required
+              />
+            </div>
+          </div>
+
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1">Actual Reps / Hold:</label>
             <input
