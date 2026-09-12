@@ -38,7 +38,7 @@ import {
   Play, Pause, RotateCcw, Plus, Trash2, Target, Award, 
   Zap, BarChart3, Activity, Check, Cloud, Eye, X, MessageSquare, 
   Layers, CheckSquare, ChevronUp, ChevronDown, Edit3, LogIn, LogOut, 
-  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon
+  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert
 } from 'lucide-react';
 
 export default function App() {
