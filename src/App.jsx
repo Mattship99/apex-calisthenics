@@ -31,6 +31,7 @@ import ExerciseFormVisualizer from './components/workout/ExerciseFormVisualizer'
 import RoutineBuilderModal from './components/workout/RoutineBuilderModal';
 import BalanceRadar from './components/dashboard/BalanceRadar';
 import VolumeSuggestion from './components/dashboard/VolumeSuggestions.jsx';
+import TendonWarningPill from './components/dashboard/TendonWarningPill.jsx';
 import GlobalFeedback from './components/ui/GlobalFeedback';
 
 import { 
@@ -656,6 +657,7 @@ export default function App() {
         {/* --- TAB 1: ROADMAP & SKILL PATHWAYS --- */}
         {activeTab === 'roadmap' && (
           <div className="space-y-6">
+            <TendonWarningPill workoutHistory={workoutHistory} />
             <BalanceRadar userProgress={userLevels} />
             <VolumeSuggestion userProgress={userLevels} />
             
