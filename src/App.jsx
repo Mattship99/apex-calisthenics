@@ -847,7 +847,7 @@ export default function App() {
                         <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
                           <CheckCircle className="w-4 h-4 text-emerald-400" />
                           Non-Negotiable Form Cues
-                      </div>
+                        </div>
                         <ul className="space-y-2 text-xs text-slate-300">
                           {activeLevelData.cues?.map((cue, idx) => (
                             <li key={idx} className="flex items-start gap-2">
@@ -897,7 +897,7 @@ export default function App() {
                                 : isPassed
                                 ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
                                 : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                            }`}
+                          }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
@@ -916,13 +916,15 @@ export default function App() {
                               )}
                           </div>
                           <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
+          </div>
+        ))}
 
         {/* --- TAB: MOBILITY & RECOVERY --- */}
         {activeTab === 'mobility' && (
@@ -1099,56 +1101,56 @@ export default function App() {
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
-              </div>
             </div>
+          </div>
 
-            {/* Active Circuit Tracker & Fractional Round Calculator */}
-            {activeCircuit && activeCircuit.items && (
-              <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
-                    <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
-                  </div>
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
-                    <span>Completed Rounds:</span>
-                    <span className="text-base font-black text-emerald-300">
-                      {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
-                    </span>
-                  </div>
+          {/* Active Circuit Tracker & Fractional Round Calculator */}
+          {activeCircuit && activeCircuit.items && (
+            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
+                  <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
                 </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
+                  <span>Completed Rounds:</span>
+                  <span className="text-base font-black text-emerald-300">
+                    {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
+                  </span>
+                </div>
+              </div>
 
-                {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
-                  <div className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                    <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
-                    <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleCompleteRoundFastForward}
-                      className="w-full py-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20"
-                    >
-                      Complete Full Round Fast-Forward
-                    </button>
-                    
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
-                      {activeCircuit.items.map((item, idx) => {
-                        const isLadder = activeCircuit.type === 'ladder';
-                        const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
-                        const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
+              {activeCircuit.type === 'ladder' && roundTally >= LADDER_RUNGS.length ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                  <h3 className="text-xl font-bold text-slate-100">Ladder Complete!</h3>
+                  <p className="text-sm text-slate-400">You survived the Spider-Man Ladder.</p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleCompleteRoundFastForward}
+                    className="w-full py-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20"
+                  >
+                    Complete Full Round Fast-Forward
+                  </button>
+                  
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
+                    {activeCircuit.items.map((item, idx) => {
+                      const isLadder = activeCircuit.type === 'ladder';
+                      const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
+                      const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
 
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => handleToggleCircuitItem(idx)}
-                            className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                              item.completed
-                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
-                                : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
-                          }`}
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => handleToggleCircuitItem(idx)}
+                          className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
+                            item.completed
+                              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200'
+                              : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                        }`}
                         >
                           <span className="text-xs font-bold">{item.name}</span>
                           <div className="flex items-center gap-3">
@@ -1156,10 +1158,10 @@ export default function App() {
                             <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
                               {item.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                             </div>
-                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
                 </div>
                 </>
               )}
@@ -1191,7 +1193,7 @@ export default function App() {
                     title="Clear remaining routine checklist without affecting logged sets"
                   >
                     Clear Checklist
-                </button>
+                  </button>
               </div>
             </div>
             <div className="grid gap-2">
@@ -1233,7 +1235,7 @@ export default function App() {
                           + Log Set
                         </button>
                       )}
-                  </div>
+                </div>
                 );
               })}
             </div>
@@ -1316,9 +1318,9 @@ export default function App() {
                                     </p>
                                   )}
                                 </div>
-                              </div>
+                            </div>
 
-                              <div className="flex items-center gap-5">
+                            <div className="flex items-center gap-5">
                                 <div className="text-center">
                                   <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
                                   <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
@@ -1352,15 +1354,15 @@ export default function App() {
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
-                              </div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                );
-        })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
                 <div className="p-4 bg-slate-950/40">
                   <input
@@ -1374,8 +1376,7 @@ export default function App() {
               </div>
           )}
         </div>
-        </div>
-    )}
+        )}
 
       {/* --- TAB 4: LOG HISTORY --- */}
       {activeTab === 'history' && (
@@ -1386,8 +1387,7 @@ export default function App() {
           onNavigateWorkout={() => setActiveTab('workout')}
         />
       )}
-    </div>
-
+      
       </main>
 
       {/* MODALS */}
