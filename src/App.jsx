@@ -921,12 +921,12 @@ export default function App() {
                   })}
             </div>
           </div>
-          </div>
         )}
       </div>
     ))}
   </div>
-  
+  )}
+                                   
   {/* --- TAB: MOBILITY & RECOVERY --- */}
   {activeTab === 'mobility' && (
     <div className="space-y-6">
