@@ -760,21 +760,26 @@ export default function App() {
                           <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
                           {activeList?.map((lvl) => {
                             const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                            const isCurrent = lvl.level === currentLevel;
+                            const isPassed = lvl.level < currentLevel;
+
                             return (
-                              <button
+                              <div
                                 key={lvl.level}
-                              onClick={() => {
-                                if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                                else setPendingUnlockTrack(track);
-                              }}
-                              className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
-                                (userLevels || {})[track.id] === lvl.level
-                                  ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                                  : isLocked 
-                                  ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
-                                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                            }`}
-                          >
+                                onClick={() => {
+                                  if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                                  else setPendingUnlockTrack(track);
+                                }}
+                                className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                                  isLocked 
+                                    ? 'opacity-50 bg-slate-950 border-slate-800'
+                                    : isCurrent
+                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                    : isPassed
+                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                                }`}
+                              >
                             {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
                           </button>
                         );
