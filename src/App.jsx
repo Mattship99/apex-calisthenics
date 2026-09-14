@@ -920,17 +920,15 @@ export default function App() {
                             )}
                 </div>
               <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-            </div>
-          );
-        })}
+        </div>
+      );
+    })}
       </div>
     </div>
   </div>
-);
-  </div>
 </div>
-                                   
-  {/* --- TAB: MOBILITY & RECOVERY --- */}
+           
+{/* --- TAB: MOBILITY & RECOVERY --- */}
   {activeTab === 'mobility' && (
     <div className="space-y-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
