@@ -918,17 +918,15 @@ export default function App() {
                                 <Eye className="w-3 h-3" />
                               </button>
                             )}
-                          </div>
-                        <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                      </div>
-                    );
-                  })}
+                </div>
+              <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
-    ))}
-  </div>
+    </div>
+  ))}
+</div>
                                    
   {/* --- TAB: MOBILITY & RECOVERY --- */}
   {activeTab === 'mobility' && (
