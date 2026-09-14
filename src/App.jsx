@@ -929,7 +929,6 @@ export default function App() {
       </div>
     ))}
   </div>
-  )}
                                    
   {/* --- TAB: MOBILITY & RECOVERY --- */}
   {activeTab === 'mobility' && (
