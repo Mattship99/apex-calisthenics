@@ -764,13 +764,13 @@ export default function App() {
                             const isPassed = lvl.level < currentLevel;
 
                             return (
-                              <div
+                              <button
                                 key={lvl.level}
                                 onClick={() => {
                                   if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
                                   else setPendingUnlockTrack(track);
                                 }}
-                                className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                                className={`p-2.5 rounded-xl border cursor-pointer transition relative text-left w-full ${
                                   isLocked 
                                     ? 'opacity-50 bg-slate-950 border-slate-800'
                                     : isCurrent
@@ -780,11 +780,10 @@ export default function App() {
                                     : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
                                 }`}
                               >
-                            {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
-                          </button>
-                        );
-                      })}
-                    </div>
+                                {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
+                              </button>
+                            );
+                          })}                    </div>
                     <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
