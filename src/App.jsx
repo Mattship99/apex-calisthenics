@@ -920,13 +920,13 @@ export default function App() {
                             )}
                 </div>
               <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+            </div>
+          );
+        })}
       </div>
-    ))}
+    </div>
+  </div>
+);
   </div>
 </div>
                                    
