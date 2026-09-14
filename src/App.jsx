@@ -33,6 +33,7 @@ import BalanceRadar from './components/dashboard/BalanceRadar';
 import VolumeSuggestion from './components/dashboard/VolumeSuggestions.jsx';
 import TendonWarningPill from './components/dashboard/TendonWarningPill.jsx';
 import GlobalFeedback from './components/ui/GlobalFeedback';
+import ActiveWorkoutView from './components/views/ActiveWorkoutView';
 
 import { 
   Dumbbell, Trophy, Timer as TimerIcon, CheckCircle, ChevronRight, 
