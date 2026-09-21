@@ -1,12 +1,35 @@
-import React from 'react';
-import { BarChart3, Cloud, Trash2, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart3, Cloud, Trash2, ChevronDown, Calendar, Check, X } from 'lucide-react';
 
 export default function HistoryView({
   workoutHistory,
   expandedHistoryLogs,
   toggleHistorySessionDetails,
-  deleteHistorySession
+  deleteHistorySession,
+  handleUpdateSessionDate
 }) {
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [newDate, setNewDate] = useState('');
+
+  const startEditing = (session) => {
+    setEditingSessionId(session.id);
+    // Assuming session.date is stored as a standard string or YYYY-MM-DD
+    setNewDate(session.date || new Date().toISOString().split('T')[0]);
+  };
+
+  const cancelEditing = () => {
+    setEditingSessionId(null);
+    setNewDate('');
+  };
+
+  const saveEditing = async (sessionId) => {
+    if (!newDate) return;
+    if (handleUpdateSessionDate) {
+      await handleUpdateSessionDate(sessionId, newDate);
+    }
+    setEditingSessionId(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between">
@@ -34,6 +57,7 @@ export default function HistoryView({
         <div className="space-y-4">
           {workoutHistory.map((session) => {
             const isExpanded = expandedHistoryLogs[session.id];
+            const isEditing = editingSessionId === session.id;
             
             const sessionSummary = (session.sets || []).reduce((acc, s) => {
               if (s && s.exerciseName) {
@@ -48,7 +72,42 @@ export default function HistoryView({
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-bold text-slate-100">{session.title}</h3>
-                      <span className="text-xs text-slate-400">{session.date}</span>
+                      
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <input
+                            type="date"
+                            value={newDate}
+                            onChange={(e) => setNewDate(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-medium"
+                          />
+                          <button
+                            onClick={() => saveEditing(session.id)}
+                            className="p-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition"
+                            title="Save Date"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="p-1 bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-slate-400">{session.date}</span>
+                          <button
+                            onClick={() => startEditing(session)}
+                            className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 transition"
+                          >
+                            <Calendar className="w-3 h-3" />
+                            Edit Date
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
