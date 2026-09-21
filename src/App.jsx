@@ -56,7 +56,7 @@ export default function App() {
   // Accordion UI States for Menus
   const [expandedPathway, setExpandedPathway] = useState(null);
   const [expandedRoutine, setExpandedRoutine] = useState(null);
-  
+   
   // Accordion UI States for Logs (De-Clutter Feature)
   const [expandedActiveLogs, setExpandedActiveLogs] = useState({});
   const [expandedHistoryLogs, setExpandedHistoryLogs] = useState({});
@@ -110,10 +110,20 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
-    // Load History safely
+    // Load History safely with robust timestamp and backdated date handling
     const sessionsRef = collection(db, 'users', user.uid, 'sessions');
     const unsubscribeSessions = onSnapshot(sessionsRef, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const docs = snapshot.docs.map(d => {
+        const data = d.data();
+        const workoutDate = data.date || new Date().toISOString().split('T')[0];
+        const createdAt = data.createdAt || `${workoutDate}T00:00:00.000Z`;
+        return {
+          id: d.id,
+          ...data,
+          date: workoutDate,
+          createdAt: createdAt
+        };
+      });
       docs.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
       setWorkoutHistory(docs || []);
     });
@@ -139,7 +149,6 @@ export default function App() {
     const unsubscribeRoutines = onSnapshot(routinesDocRef, async (docSnap) => {
       if (docSnap.exists() && docSnap.data().routines) {
         const cloudRoutines = docSnap.data().routines;
-        // Bulletproof check: Ensure cloudRoutines is an array before filtering
         const validRoutines = Array.isArray(cloudRoutines) ? cloudRoutines : [];
         const customOnly = validRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         setRoutines([...DEFAULT_CIRCUITS, ...customOnly]);
@@ -187,7 +196,6 @@ export default function App() {
     if (user) {
       try {
         const routinesDocRef = doc(db, 'users', user.uid, 'settings', 'customRoutines');
-        // Only save custom user routines to the cloud
         const customOnly = newRoutines.filter(r => typeof r.id === 'number' && r.id > 1000000);
         await setDoc(routinesDocRef, { routines: customOnly }, { merge: true });
       } catch (err) {
@@ -302,7 +310,7 @@ export default function App() {
 
     let maxLevel = track.levels6to10 ? 10 : 5;
     const newLevelNum = Math.max(1, Math.min(maxLevel, currentItem.level + direction));
-    
+     
     const newLevelData = track.levels1to5?.find(l => l.level === newLevelNum) || 
                          track.levels6to10?.find(l => l.level === newLevelNum);
                          
@@ -348,8 +356,7 @@ export default function App() {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
         setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
-      
-      // Auto-expand the log group for this new set so they can see it instantly
+       
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
       return nextState;
@@ -479,7 +486,7 @@ export default function App() {
       roundsCompleted: roundTally,
       sets: currentSets,
       notes: sessionNotes || '',
-      createdAt: new Date().toISOString()
+      createdAt: `${activeWorkout.date}T${new Date().toTimeString().split(' ')[0]}.000Z`
     };
 
     if (user) {
@@ -498,7 +505,7 @@ export default function App() {
       restDuration: 90,
       plannedItems: null
     });
-    
+     
     setActiveCircuit(null);
     setRoundTally(0);
     setSessionNotes('');
@@ -532,13 +539,13 @@ export default function App() {
   const filteredPathways = MASTER_PATHWAYS.filter(t => {
     const matchesCat = selectedCategory === 'All' || t.category === selectedCategory;
     const searchLower = pathwaySearch.trim().toLowerCase();
-    
+     
     const matchesSearch = !searchLower || 
       t.title?.toLowerCase().includes(searchLower) ||
       t.description?.toLowerCase().includes(searchLower) ||
       t.levels1to5?.some(l => l.name?.toLowerCase().includes(searchLower)) ||
       t.levels6to10?.some(l => l.name?.toLowerCase().includes(searchLower));
-      
+       
     return matchesCat && matchesSearch;
   });
 
@@ -660,87 +667,89 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-4 py-6">
 
         {/* --- TAB 1: ROADMAP & SKILL PATHWAYS --- */}
-{activeTab === 'roadmap' && (
-  <SkillPathwaysView
-    workoutHistory={workoutHistory}
-    userLevels={userLevels}
-    pathwaySearch={pathwaySearch}
-    setPathwaySearch={setPathwaySearch}
-    selectedCategory={selectedCategory}
-    setSelectedCategory={setSelectedCategory}
-    filteredPathways={filteredPathways}
-    expandedPathway={expandedPathway}
-    setExpandedPathway={setExpandedPathway}
-    unlockedPhases={unlockedPhases}
-    activePhaseTab={activePhaseTab}
-    setActivePhaseTab={setActivePhaseTab}
-    setPendingUnlockTrack={setPendingUnlockTrack}
-    updateLevel={updateLevel}
-    setSelectedExerciseDemo={setSelectedExerciseDemo}
-    setLoggingExercise={setLoggingExercise}
-  />
-)}
+        {activeTab === 'roadmap' && (
+          <SkillPathwaysView
+            workoutHistory={workoutHistory}
+            userLevels={userLevels}
+            pathwaySearch={pathwaySearch}
+            setPathwaySearch={setPathwaySearch}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            filteredPathways={filteredPathways}
+            expandedPathway={expandedPathway}
+            setExpandedPathway={setExpandedPathway}
+            unlockedPhases={unlockedPhases}
+            activePhaseTab={activePhaseTab}
+            setActivePhaseTab={setActivePhaseTab}
+            setPendingUnlockTrack={setPendingUnlockTrack}
+            updateLevel={updateLevel}
+            setSelectedExerciseDemo={setSelectedExerciseDemo}
+            setLoggingExercise={setLoggingExercise}
+          />
+        )}
+        
         {/* --- TAB: MOBILITY & RECOVERY --- */}
-{activeTab === 'mobility' && (
-  <MobilityView />
-)}
+        {activeTab === 'mobility' && (
+          <MobilityView />
+        )}
 
         {/* --- TAB 2: ROUTINES --- */}
-{activeTab === 'routines' && (
-  <RoutinesView
-    routines={routines}
-    expandedRoutine={expandedRoutine}
-    setExpandedRoutine={setExpandedRoutine}
-    startRoutineSession={startRoutineSession}
-    deleteRoutine={deleteRoutine}
-    setIsBuildingRoutine={setIsBuildingRoutine}
-  />
-)}
+        {activeTab === 'routines' && (
+          <RoutinesView
+            routines={routines}
+            expandedRoutine={expandedRoutine}
+            setExpandedRoutine={setExpandedRoutine}
+            startRoutineSession={startRoutineSession}
+            deleteRoutine={deleteRoutine}
+            setIsBuildingRoutine={setIsBuildingRoutine}
+          />
+        )}
 
         {/* --- TAB 3: ACTIVE WORKOUT LOGGER --- */}
-{activeTab === 'workout' && (
-  <ActiveWorkoutView
-    activeWorkout={activeWorkout}
-    finishWorkout={finishWorkout}
-    timerSeconds={timerSeconds}
-    formatTime={formatTime}
-    startTimer={startTimer}
-    toggleTimer={toggleTimer}
-    resetTimer={resetTimer}
-    timerActive={timerActive}
-    activeCircuit={activeCircuit}
-    roundTally={roundTally}
-    handleCompleteRoundFastForward={handleCompleteRoundFastForward}
-    handleToggleCircuitItem={handleToggleCircuitItem}
-    setActiveCircuit={setActiveCircuit}
-    clearRoutineChecklist={clearRoutineChecklist}
-    adjustPlannedItemLevel={adjustPlannedItemLevel}
-    setLoggingExercise={setLoggingExercise}
-    groupedSets={groupedSets}
-    expandedActiveLogs={expandedActiveLogs}
-    toggleActiveLogGroup={toggleActiveLogGroup}
-    sessionNotes={sessionNotes}
-    setSessionNotes={setSessionNotes}
-    setEditingSet={setEditingSet}
-    removeSet={removeSet}
-    setActiveTab={setActiveTab}
-  />
-)}
+        {activeTab === 'workout' && (
+          <ActiveWorkoutView
+            activeWorkout={activeWorkout}
+            finishWorkout={finishWorkout}
+            timerSeconds={timerSeconds}
+            formatTime={formatTime}
+            startTimer={startTimer}
+            toggleTimer={toggleTimer}
+            resetTimer={resetTimer}
+            timerActive={timerActive}
+            activeCircuit={activeCircuit}
+            roundTally={roundTally}
+            handleCompleteRoundFastForward={handleCompleteRoundFastForward}
+            handleToggleCircuitItem={handleToggleCircuitItem}
+            setActiveCircuit={setActiveCircuit}
+            clearRoutineChecklist={clearRoutineChecklist}
+            adjustPlannedItemLevel={adjustPlannedItemLevel}
+            setLoggingExercise={setLoggingExercise}
+            groupedSets={groupedSets}
+            expandedActiveLogs={expandedActiveLogs}
+            toggleActiveLogGroup={toggleActiveLogGroup}
+            sessionNotes={sessionNotes}
+            setSessionNotes={setSessionNotes}
+            setEditingSet={setEditingSet}
+            removeSet={removeSet}
+            setActiveTab={setActiveTab}
+          />
+        )}
+
         {/* --- TAB 4: LOG HISTORY --- */}
-{activeTab === 'history' && (
-  <HistoryView
-    workoutHistory={workoutHistory}
-    expandedHistoryLogs={expandedHistoryLogs}
-    toggleHistorySessionDetails={toggleHistorySessionDetails}
-    deleteHistorySession={deleteHistorySession}
-  />
-)}
+        {activeTab === 'history' && (
+          <HistoryView
+            workoutHistory={workoutHistory}
+            expandedHistoryLogs={expandedHistoryLogs}
+            toggleHistorySessionDetails={toggleHistorySessionDetails}
+            deleteHistorySession={deleteHistorySession}
+          />
+        )}
 
       </main>
 
       {/* MODALS */}
       {pendingUnlockTrack && <UnlockConfirmModal trackTitle={pendingUnlockTrack.title} onConfirm={handleConfirmUnlock} onClose={() => setPendingUnlockTrack(null)} />}
-      
+       
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
@@ -748,7 +757,7 @@ export default function App() {
       {showAccountModal && user && (
         <AccountSettingsModal user={user} onClose={() => setShowAccountModal(false)} />
       )}
-  
+   
       {selectedExerciseDemo && (
         <ExerciseFormVisualizer 
           exercise={selectedExerciseDemo} 
@@ -784,7 +793,7 @@ export default function App() {
           onStartTimer={startTimer}
         />
       )}
-      
+       
       <GlobalFeedback />
     </div>
   );
