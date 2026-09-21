@@ -47,8 +47,20 @@ export default function ActiveWorkoutView({
 
   const [workoutTimestamp, setWorkoutTimestamp] = useState(getCurrentLocalDateTime());
 
+  // Helper to format date into friendly "mmm dd, yyyy" string
+  const formatFriendlyDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    const dateFormatted = date.toLocaleDateString('en-US', options);
+    const timeFormatted = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${dateFormatted} at ${timeFormatted}`;
+  };
+
   const handleFinish = () => {
-    // Pass the selected timestamp value to your parent finishWorkout handler
+    // Pass the selected timestamp value as a true Date object to your parent finishWorkout handler for Firebase
     finishWorkout(workoutTimestamp ? new Date(workoutTimestamp) : new Date());
   };
 
@@ -61,15 +73,20 @@ export default function ActiveWorkoutView({
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Date & Time Picker */}
-          <div className="relative">
-            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition">
-              <Calendar className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+          {/* Friendly Date & Time Picker */}
+          <div className="relative group">
+            <div className="flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition shadow-inner">
+              <Calendar className="w-4 h-4 text-emerald-400 mr-2.5 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Session Timestamp</span>
+                <span className="font-semibold text-slate-100">{formatFriendlyDate(workoutTimestamp)}</span>
+              </div>
               <input
                 type="datetime-local"
                 value={workoutTimestamp}
                 onChange={(e) => setWorkoutTimestamp(e.target.value)}
-                className="bg-transparent text-slate-200 focus:outline-none text-xs font-medium w-full"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                title="Change workout date and time"
               />
             </div>
           </div>
