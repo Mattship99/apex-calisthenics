@@ -11,10 +11,49 @@ export default function HistoryView({
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [newDate, setNewDate] = useState('');
 
+  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026)
+  const formatDate = (dateInput) => {
+    if (!dateInput) return '';
+    let dateObj;
+    if (typeof dateInput.toDate === 'function') {
+      dateObj = dateInput.toDate();
+    } else if (dateInput instanceof Date) {
+      dateObj = dateInput;
+    } else {
+      const parts = dateInput.split('-');
+      if (parts.length === 3) {
+        dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        dateObj = new Date(dateInput);
+      }
+    }
+    if (isNaN(dateObj.getTime())) return dateInput;
+    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Helper to ensure input value is strictly YYYY-MM-DD for the date picker
+  const getInputValue = (dateInput) => {
+    if (!dateInput) return new Date().toISOString().split('T')[0];
+    let dateObj;
+    if (typeof dateInput.toDate === 'function') {
+      dateObj = dateInput.toDate();
+    } else if (dateInput instanceof Date) {
+      dateObj = dateInput;
+    } else {
+      const parts = dateInput.split('-');
+      if (parts.length === 3) return dateInput; // already YYYY-MM-DD
+      dateObj = new Date(dateInput);
+    }
+    if (isNaN(dateObj.getTime())) return new Date().toISOString().split('T')[0];
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   const startEditing = (session) => {
     setEditingSessionId(session.id);
-    // Assuming session.date is stored as a standard string or YYYY-MM-DD
-    setNewDate(session.date || new Date().toISOString().split('T')[0]);
+    setNewDate(getInputValue(session.date));
   };
 
   const cancelEditing = () => {
@@ -98,7 +137,7 @@ export default function HistoryView({
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-slate-400">{session.date}</span>
+                          <span className="text-xs text-slate-400 font-medium">{formatDate(session.date)}</span>
                           <button
                             onClick={() => startEditing(session)}
                             className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 transition"
