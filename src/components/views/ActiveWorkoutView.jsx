@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Dumbbell, Trophy, Timer as TimerIcon, CheckCircle, ChevronRight, 
   Play, Pause, RotateCcw, Plus, Trash2, Target, Award, 
   Zap, BarChart3, Activity, Check, Cloud, Eye, X, MessageSquare, 
   Layers, CheckSquare, ChevronUp, ChevronDown, Edit3, LogIn, LogOut, 
-  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert
+  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar
 } from 'lucide-react';
 import { LADDER_RUNGS, MASTER_PATHWAYS } from '../../data/constants';
 
@@ -34,6 +34,24 @@ export default function ActiveWorkoutView({
   removeSet,
   setActiveTab
 }) {
+  // Helper to format current date/time for datetime-local input (YYYY-MM-DDTHH:mm)
+  const getCurrentLocalDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [workoutTimestamp, setWorkoutTimestamp] = useState(getCurrentLocalDateTime());
+
+  const handleFinish = () => {
+    // Pass the selected timestamp value to your parent finishWorkout handler
+    finishWorkout(workoutTimestamp ? new Date(workoutTimestamp) : new Date());
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
@@ -42,11 +60,24 @@ export default function ActiveWorkoutView({
           <p className="text-xs text-slate-400 mt-1">Logged sets auto-save instantly to your personal Firebase cloud account.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Date & Time Picker */}
+          <div className="relative">
+            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition">
+              <Calendar className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+              <input
+                type="datetime-local"
+                value={workoutTimestamp}
+                onChange={(e) => setWorkoutTimestamp(e.target.value)}
+                className="bg-transparent text-slate-200 focus:outline-none text-xs font-medium w-full"
+              />
+            </div>
+          </div>
+
           <button
-            onClick={finishWorkout}
+            onClick={handleFinish}
             disabled={(activeWorkout.sets || []).length === 0 && roundTally === 0}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
               (activeWorkout.sets || []).length > 0 || roundTally > 0
                 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
