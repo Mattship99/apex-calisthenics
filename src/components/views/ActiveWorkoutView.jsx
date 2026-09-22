@@ -34,34 +34,49 @@ export default function ActiveWorkoutView({
   removeSet,
   setActiveTab
 }) {
-  // Helper to format current date/time for datetime-local input (YYYY-MM-DDTHH:mm)
-  const getCurrentLocalDateTime = () => {
+  // Helper to format current date for date input (YYYY-MM-DD)
+  const getCurrentLocalDate = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}`;
   };
 
-  const [workoutTimestamp, setWorkoutTimestamp] = useState(getCurrentLocalDateTime());
+  const [workoutDate, setWorkoutDate] = useState(getCurrentLocalDate());
 
-  // Helper to format date into friendly "mmm dd, yyyy" string
+  // Helper to format date into friendly "mmm dd, yyyy" string without timezone shifts
   const formatFriendlyDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return dateString;
+    
+    const date = new Date(year, month - 1, day);
     if (isNaN(date.getTime())) return dateString;
     
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
-    const dateFormatted = date.toLocaleDateString('en-US', options);
-    const timeFormatted = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return `${dateFormatted} at ${timeFormatted}`;
+    return date.toLocaleDateString('en-US', options);
   };
 
   const handleFinish = () => {
-    // Pass the selected timestamp value as a true Date object to your parent finishWorkout handler for Firebase
-    finishWorkout(workoutTimestamp ? new Date(workoutTimestamp) : new Date());
+    // Parse the YYYY-MM-DD string into local date components to prevent UTC shift
+    if (workoutDate) {
+      const [year, month, day] = workoutDate.split('-').map(Number);
+      // Construct date at current local time or start of day depending on preference, 
+      // here preserving current time hours/minutes while setting the correct calendar day:
+      const localNow = new Date();
+      const targetDate = new Date(
+        year, 
+        month - 1, 
+        day, 
+        localNow.getHours(), 
+        localNow.getMinutes(), 
+        localNow.getSeconds()
+      );
+      finishWorkout(targetDate);
+    } else {
+      finishWorkout(new Date());
+    }
   };
 
   return (
@@ -73,20 +88,20 @@ export default function ActiveWorkoutView({
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Friendly Date & Time Picker */}
+          {/* Friendly Date Picker */}
           <div className="relative group">
             <div className="flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition shadow-inner">
               <Calendar className="w-4 h-4 text-emerald-400 mr-2.5 shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Session Timestamp</span>
-                <span className="font-semibold text-slate-100">{formatFriendlyDate(workoutTimestamp)}</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Session Date</span>
+                <span className="font-semibold text-slate-100">{formatFriendlyDate(workoutDate)}</span>
               </div>
               <input
-                type="datetime-local"
-                value={workoutTimestamp}
-                onChange={(e) => setWorkoutTimestamp(e.target.value)}
+                type="date"
+                value={workoutDate}
+                onChange={(e) => setWorkoutDate(e.target.value)}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                title="Change workout date and time"
+                title="Change workout date"
               />
             </div>
           </div>
