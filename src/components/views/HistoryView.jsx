@@ -11,7 +11,7 @@ export default function HistoryView({
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [newDate, setNewDate] = useState('');
 
-  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026) without timezone shifts
+  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026) using local time components
   const formatDate = (dateInput) => {
     if (!dateInput) return '';
     let dateObj;
@@ -19,13 +19,15 @@ export default function HistoryView({
       dateObj = dateInput.toDate();
     } else if (dateInput instanceof Date) {
       dateObj = dateInput;
-    } else {
+    } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
       const parts = dateInput.split('-');
       if (parts.length === 3) {
         dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       } else {
         dateObj = new Date(dateInput);
       }
+    } else {
+      dateObj = new Date(dateInput);
     }
     if (isNaN(dateObj.getTime())) return dateInput;
     return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -45,9 +47,11 @@ export default function HistoryView({
       dateObj = dateInput.toDate();
     } else if (dateInput instanceof Date) {
       dateObj = dateInput;
-    } else {
+    } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
       const parts = dateInput.split('-');
       if (parts.length === 3) return dateInput; // already YYYY-MM-DD
+      dateObj = new Date(dateInput);
+    } else {
       dateObj = new Date(dateInput);
     }
     if (isNaN(dateObj.getTime())) {
@@ -129,6 +133,7 @@ export default function HistoryView({
                               type="date"
                               value={newDate}
                               onChange={(e) => setNewDate(e.target.value)}
+                              onClick={(e) => e.target.showPicker?.()}
                               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
                             />
                           </div>
