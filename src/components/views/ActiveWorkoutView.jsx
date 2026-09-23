@@ -34,7 +34,7 @@ export default function ActiveWorkoutView({
   removeSet,
   setActiveTab
 }) {
-  // Helper to format current date for date input (YYYY-MM-DD)
+  // Helper to format current date for date input (YYYY-MM-DD) in local time
   const getCurrentLocalDate = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -62,8 +62,6 @@ export default function ActiveWorkoutView({
     // Parse the YYYY-MM-DD string into local date components to prevent UTC shift
     if (workoutDate) {
       const [year, month, day] = workoutDate.split('-').map(Number);
-      // Construct date at current local time or start of day depending on preference, 
-      // here preserving current time hours/minutes while setting the correct calendar day:
       const localNow = new Date();
       const targetDate = new Date(
         year, 
@@ -100,6 +98,7 @@ export default function ActiveWorkoutView({
                 type="date"
                 value={workoutDate}
                 onChange={(e) => setWorkoutDate(e.target.value)}
+                onClick={(e) => e.target.showPicker?.()}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 title="Change workout date"
               />
