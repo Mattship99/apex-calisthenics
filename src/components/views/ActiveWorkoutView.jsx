@@ -4,7 +4,7 @@ import {
   Play, Pause, RotateCcw, Plus, Trash2, Target, Award, 
   Zap, BarChart3, Activity, Check, Cloud, Eye, X, MessageSquare, 
   Layers, CheckSquare, ChevronUp, ChevronDown, Edit3, LogIn, LogOut, 
-  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar
+  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar, Clock
 } from 'lucide-react';
 import { LADDER_RUNGS, MASTER_PATHWAYS } from '../../data/constants';
 
@@ -43,33 +43,56 @@ export default function ActiveWorkoutView({
     return `${year}-${month}-${day}`;
   };
 
+  // Helper to format current time for time input (HH:MM) in local time
+  const getCurrentLocalTime = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [workoutDate, setWorkoutDate] = useState(getCurrentLocalDate());
+  const [workoutTime, setWorkoutTime] = useState(getCurrentLocalTime());
 
   // Helper to format date into friendly "mmm dd, yyyy" string without timezone shifts
   const formatFriendlyDate = (dateString) => {
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-').map(Number);
     if (!year || !month || !day) return dateString;
-    
+     
     const date = new Date(year, month - 1, day);
     if (isNaN(date.getTime())) return dateString;
-    
+     
     const options = { month: 'short', day: 'numeric', year: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   };
 
   const handleFinish = () => {
-    // Parse the YYYY-MM-DD string into local date components to prevent UTC shift
+    // Parse the YYYY-MM-DD and HH:MM strings into local date components to prevent UTC shift
     if (workoutDate) {
       const [year, month, day] = workoutDate.split('-').map(Number);
-      const localNow = new Date();
+      let hours = 0;
+      let minutes = 0;
+      let seconds = 0;
+
+      if (workoutTime) {
+        const [parsedHours, parsedMinutes] = workoutTime.split(':').map(Number);
+        if (!isNaN(parsedHours)) hours = parsedHours;
+        if (!isNaN(parsedMinutes)) minutes = parsedMinutes;
+      } else {
+        const localNow = new Date();
+        hours = localNow.getHours();
+        minutes = localNow.getMinutes();
+        seconds = localNow.getSeconds();
+      }
+
       const targetDate = new Date(
         year, 
         month - 1, 
         day, 
-        localNow.getHours(), 
-        localNow.getMinutes(), 
-        localNow.getSeconds()
+        hours, 
+        minutes, 
+        seconds
       );
       finishWorkout(targetDate);
     } else {
@@ -101,6 +124,25 @@ export default function ActiveWorkoutView({
                 onClick={(e) => e.target.showPicker?.()}
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 title="Change workout date"
+              />
+            </div>
+          </div>
+
+          {/* Time-of-Day Picker for Two-a-Days */}
+          <div className="relative group">
+            <div className="flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition shadow-inner">
+              <Clock className="w-4 h-4 text-amber-400 mr-2.5 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Time of Day</span>
+                <span className="font-semibold text-slate-100">{workoutTime || 'Select Time'}</span>
+              </div>
+              <input
+                type="time"
+                value={workoutTime}
+                onChange={(e) => setWorkoutTime(e.target.value)}
+                onClick={(e) => e.target.showPicker?.()}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                title="Change workout time"
               />
             </div>
           </div>
@@ -201,7 +243,7 @@ export default function ActiveWorkoutView({
               >
                 Complete Full Round Fast-Forward
               </button>
-              
+               
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
                 {activeCircuit.items.map((item, idx) => {
@@ -267,7 +309,7 @@ export default function ActiveWorkoutView({
             {activeWorkout.plannedItems.map((item, idx) => {
               const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
               const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
-              
+               
               return (
                 <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -368,7 +410,7 @@ export default function ActiveWorkoutView({
                           </button>
                         </div>
                       )}
-                      
+                       
                       <div className="space-y-2">
                         {group.sets.map((set, sIdx) => (
                           <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
