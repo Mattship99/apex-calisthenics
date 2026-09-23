@@ -523,6 +523,28 @@ export default function App() {
     }
   };
 
+  const handleUpdateSessionDate = async (sessionId, newLocalDate) => {
+    if (user) {
+      try {
+        const sessionDocRef = doc(db, 'users', user.uid, 'sessions', sessionId);
+        const y = newLocalDate.getFullYear();
+        const m = String(newLocalDate.getMonth() + 1).padStart(2, '0');
+        const d = String(newLocalDate.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${d}`;
+        const hours = String(newLocalDate.getHours()).padStart(2, '0');
+        const mins = String(newLocalDate.getMinutes()).padStart(2, '0');
+        const secs = String(newLocalDate.getSeconds()).padStart(2, '0');
+        
+        await setDoc(sessionDocRef, { 
+          date: dateStr,
+          createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`
+        }, { merge: true });
+      } catch (err) {
+        console.error("Update date error:", err);
+      }
+    }
+  };
+
   const handleSendSuggestion = async (e) => {
     e.preventDefault();
     if (!suggestionText.trim()) return;
@@ -687,7 +709,7 @@ export default function App() {
             setLoggingExercise={setLoggingExercise}
           />
         )}
-        
+         
         {/* --- TAB: MOBILITY & RECOVERY --- */}
         {activeTab === 'mobility' && (
           <MobilityView />
@@ -742,6 +764,7 @@ export default function App() {
             expandedHistoryLogs={expandedHistoryLogs}
             toggleHistorySessionDetails={toggleHistorySessionDetails}
             deleteHistorySession={deleteHistorySession}
+            handleUpdateSessionDate={handleUpdateSessionDate}
           />
         )}
 
