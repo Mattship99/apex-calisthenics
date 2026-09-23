@@ -66,7 +66,7 @@ export default function HistoryView({
     return `${y}-${m}-${d}`;
   };
 
-  // Helper to extract time in HH:mm format for the time picker
+  // Helper to extract time in HH:mm format for the time picker using local time components
   const getTimeInputValue = (dateInput) => {
     if (!dateInput) {
       const now = new Date();
