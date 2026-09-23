@@ -12,19 +12,37 @@ export default function HistoryView({
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
 
-  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026, 3:30 PM) using local time components
+  // Helper to safely convert various stored date formats into a local Date object
+  const parseLocalDate = (dateInput) => {
+    if (!dateInput) return new Date();
+    if (typeof dateInput.toDate === 'function') {
+      return dateInput.toDate();
+    }
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+    if (typeof dateInput === 'string') {
+      // If it's a standard YYYY-MM-DD or ISO string without explicit time offset parsing issues,
+      // creating a Date directly or splitting components ensures local interpretation.
+      if (dateInput.includes('T')) {
+        return new Date(dateInput);
+      }
+      if (dateInput.includes('-')) {
+        const parts = dateInput.split('-').map(Number);
+        if (parts.length === 3) {
+          // Check if format is YYYY-MM-DD vs MM-DD-YYYY
+          const [y, m, d] = parts[0].length === 4 ? parts : [parts[2], parts[0], parts[1]];
+          return new Date(y, m - 1, d);
+        }
+      }
+    }
+    return new Date(dateInput);
+  };
+
+  // Helper to format stored dates into friendly text using local time components
   const formatDate = (dateInput) => {
     if (!dateInput) return '';
-    let dateObj;
-    if (typeof dateInput.toDate === 'function') {
-      dateObj = dateInput.toDate();
-    } else if (dateInput instanceof Date) {
-      dateObj = dateInput;
-    } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
-      dateObj = new Date(dateInput);
-    } else {
-      dateObj = new Date(dateInput);
-    }
+    const dateObj = parseLocalDate(dateInput);
     if (isNaN(dateObj.getTime())) return dateInput;
     return dateObj.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -37,28 +55,13 @@ export default function HistoryView({
 
   // Helper to ensure input value is strictly YYYY-MM-DD for the date picker using local time components
   const getInputValue = (dateInput) => {
-    if (!dateInput) {
+    const dateObj = parseLocalDate(dateInput);
+    if (isNaN(dateObj.getTime())) {
       const today = new Date();
       const y = today.getFullYear();
       const m = String(today.getMonth() + 1).padStart(2, '0');
       const d = String(today.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
-    }
-    let dateObj;
-    if (typeof dateInput.toDate === 'function') {
-      dateObj = dateInput.toDate();
-    } else if (dateInput instanceof Date) {
-      dateObj = dateInput;
-    } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
-      const parts = dateInput.split('-');
-      if (parts.length === 3) return parts[0].length === 4 ? dateInput : `${parts[2]}-${parts[0]}-${parts[1]}`;
-      dateObj = new Date(dateInput);
-    } else {
-      dateObj = new Date(dateInput);
-    }
-    if (isNaN(dateObj.getTime())) {
-      const today = new Date();
-      return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     }
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -66,20 +69,9 @@ export default function HistoryView({
     return `${y}-${m}-${d}`;
   };
 
-  // Helper to extract time in HH:mm format for the time picker using local time components
+  // Helper to extract time in consistent 24-hour HH:mm format for the time picker using local time components
   const getTimeInputValue = (dateInput) => {
-    if (!dateInput) {
-      const now = new Date();
-      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-    let dateObj;
-    if (typeof dateInput.toDate === 'function') {
-      dateObj = dateInput.toDate();
-    } else if (dateInput instanceof Date) {
-      dateObj = dateInput;
-    } else {
-      dateObj = new Date(dateInput);
-    }
+    const dateObj = parseLocalDate(dateInput);
     if (isNaN(dateObj.getTime())) return '12:00';
     const hours = String(dateObj.getHours()).padStart(2, '0');
     const minutes = String(dateObj.getMinutes()).padStart(2, '0');
