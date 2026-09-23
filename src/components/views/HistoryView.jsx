@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, Cloud, Trash2, ChevronDown, Calendar, Check, X } from 'lucide-react';
+import { BarChart3, Cloud, Trash2, ChevronDown, Calendar, Clock, Check, X } from 'lucide-react';
 
 export default function HistoryView({
   workoutHistory,
@@ -10,8 +10,9 @@ export default function HistoryView({
 }) {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
 
-  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026) using local time components
+  // Helper to format stored dates into friendly text (e.g., Sep 21, 2026, 3:30 PM) using local time components
   const formatDate = (dateInput) => {
     if (!dateInput) return '';
     let dateObj;
@@ -20,17 +21,18 @@ export default function HistoryView({
     } else if (dateInput instanceof Date) {
       dateObj = dateInput;
     } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
-      const parts = dateInput.split('-');
-      if (parts.length === 3) {
-        dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      } else {
-        dateObj = new Date(dateInput);
-      }
+      dateObj = new Date(dateInput);
     } else {
       dateObj = new Date(dateInput);
     }
     if (isNaN(dateObj.getTime())) return dateInput;
-    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return dateObj.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
   };
 
   // Helper to ensure input value is strictly YYYY-MM-DD for the date picker using local time components
@@ -49,7 +51,7 @@ export default function HistoryView({
       dateObj = dateInput;
     } else if (typeof dateInput === 'string' && dateInput.includes('-')) {
       const parts = dateInput.split('-');
-      if (parts.length === 3) return dateInput; // already YYYY-MM-DD
+      if (parts.length === 3) return parts[0].length === 4 ? dateInput : `${parts[2]}-${parts[0]}-${parts[1]}`;
       dateObj = new Date(dateInput);
     } else {
       dateObj = new Date(dateInput);
@@ -64,23 +66,52 @@ export default function HistoryView({
     return `${y}-${m}-${d}`;
   };
 
+  // Helper to extract time in HH:mm format for the time picker
+  const getTimeInputValue = (dateInput) => {
+    if (!dateInput) {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+    let dateObj;
+    if (typeof dateInput.toDate === 'function') {
+      dateObj = dateInput.toDate();
+    } else if (dateInput instanceof Date) {
+      dateObj = dateInput;
+    } else {
+      dateObj = new Date(dateInput);
+    }
+    if (isNaN(dateObj.getTime())) return '12:00';
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const startEditing = (session) => {
     setEditingSessionId(session.id);
     setNewDate(getInputValue(session.date));
+    setNewTime(getTimeInputValue(session.date));
   };
 
   const cancelEditing = () => {
     setEditingSessionId(null);
     setNewDate('');
+    setNewTime('');
   };
 
   const saveEditing = async (sessionId) => {
     if (!newDate) return;
+    
+    // Combine date (YYYY-MM-DD) and time (HH:mm) into a single local Date object
+    const [year, month, day] = newDate.split('-').map(Number);
+    const [hours, minutes] = (newTime || '00:00').split(':').map(Number);
+    const combinedLocalDate = new Date(year, month - 1, day, hours, minutes, 0);
+
     if (handleUpdateSessionDate) {
-      await handleUpdateSessionDate(sessionId, newDate);
+      await handleUpdateSessionDate(sessionId, combinedLocalDate);
     }
     setEditingSessionId(null);
     setNewDate('');
+    setNewTime('');
   };
 
   return (
@@ -127,7 +158,7 @@ export default function HistoryView({
                       <h3 className="font-bold text-slate-100">{session.title}</h3>
                       
                       {isEditing ? (
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <div className="relative">
                             <input
                               type="date"
@@ -137,10 +168,19 @@ export default function HistoryView({
                               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
                             />
                           </div>
+                          <div className="relative">
+                            <input
+                              type="time"
+                              value={newTime}
+                              onChange={(e) => setNewTime(e.target.value)}
+                              onClick={(e) => e.target.showPicker?.()}
+                              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
+                            />
+                          </div>
                           <button
                             onClick={() => saveEditing(session.id)}
                             className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-xl transition shadow-sm"
-                            title="Save Date"
+                            title="Save Date & Time"
                           >
                             <Check className="w-4 h-4" />
                           </button>
