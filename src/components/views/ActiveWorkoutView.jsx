@@ -326,25 +326,25 @@ export default function ActiveWorkoutView({
                       >
                         <ChevronDown className="w-3 h-3" />
                       </button>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
-                        <span className="text-xs font-bold text-slate-200">{item.name}</span>
-                      </div>
-                      <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
-                    </div>
                   </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
+                      <span className="text-xs font-bold text-slate-200">{item.name}</span>
+                    </div>
+                    <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
+                  </div>
+              </div>
 
-                  {levelData && track && (
-                    <button
-                      onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
-                    >
-                      + Log Set
-                    </button>
-                  )}
-                </div>
+              {levelData && track && (
+                <button
+                  onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
+                >
+                  + Log Set
+                </button>
+              )}
+            </div>
               );
             })}
           </div>
@@ -464,27 +464,26 @@ export default function ActiveWorkoutView({
                                 </button>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-            <div className="p-4 bg-slate-950/40">
-              <input
-                type="text"
-                placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+          <div className="p-4 bg-slate-950/40">
+            <input
+              type="text"
+              placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+            />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
