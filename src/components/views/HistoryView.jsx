@@ -12,7 +12,7 @@ export default function HistoryView({
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
 
-  // Helper to safely convert various stored date formats into a local Date object
+  // Helper to safely convert stored dates (Firestore Timestamps, ISO strings, or YYYY-MM-DD) into a local Date object
   const parseLocalDate = (dateInput) => {
     if (!dateInput) return new Date();
     if (typeof dateInput.toDate === 'function') {
@@ -22,21 +22,20 @@ export default function HistoryView({
       return dateInput;
     }
     if (typeof dateInput === 'string') {
-      // If it's a standard YYYY-MM-DD or ISO string without explicit time offset parsing issues,
-      // creating a Date directly or splitting components ensures local interpretation.
+      // Handle YYYY-MM-DD or YYYY-MM-DDTHH:mm strings strictly without UTC fallback shifts
       if (dateInput.includes('T')) {
         return new Date(dateInput);
       }
       if (dateInput.includes('-')) {
-        const parts = dateInput.split('-').map(Number);
+        const parts = dateInput.split('T')[0].split('-').map(Number);
         if (parts.length === 3) {
-          // Check if format is YYYY-MM-DD vs MM-DD-YYYY
-          const [y, m, d] = parts[0].length === 4 ? parts : [parts[2], parts[0], parts[1]];
-          return new Date(y, m - 1, d);
+          const [y, m, d] = parts;
+          return new Date(y, m - 1, d, 0, 0, 0);
         }
       }
     }
-    return new Date(dateInput);
+    const parsed = new Date(dateInput);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
   };
 
   // Helper to format stored dates into friendly text using local time components
@@ -49,11 +48,12 @@ export default function HistoryView({
       day: 'numeric', 
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: true
     });
   };
 
-  // Helper to ensure input value is strictly YYYY-MM-DD for the date picker using local time components
+  // Helper to ensure input value is strictly YYYY-MM-DD using local time components
   const getInputValue = (dateInput) => {
     const dateObj = parseLocalDate(dateInput);
     if (isNaN(dateObj.getTime())) {
@@ -69,7 +69,7 @@ export default function HistoryView({
     return `${y}-${m}-${d}`;
   };
 
-  // Helper to extract time in consistent 24-hour HH:mm format for the time picker using local time components
+  // Helper to extract time in consistent 24-hour HH:mm format for the time input
   const getTimeInputValue = (dateInput) => {
     const dateObj = parseLocalDate(dateInput);
     if (isNaN(dateObj.getTime())) return '12:00';
@@ -93,7 +93,7 @@ export default function HistoryView({
   const saveEditing = async (sessionId) => {
     if (!newDate) return;
     
-    // Combine date (YYYY-MM-DD) and time (HH:mm) into a single local Date object
+    // Explicitly parse local year, month, day, hours, and minutes to avoid timezone offset shifts
     const [year, month, day] = newDate.split('-').map(Number);
     const [hours, minutes] = (newTime || '00:00').split(':').map(Number);
     const combinedLocalDate = new Date(year, month - 1, day, hours, minutes, 0);
