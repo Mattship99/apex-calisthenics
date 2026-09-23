@@ -284,48 +284,48 @@ export default function ActiveWorkoutView({
             </button>
           </div>
         </div>
-      )}
+    )}
 
-      {/* Planned Routine Checklist (for standard workouts) */}
-      {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              <CheckSquare className="w-4 h-4" />
-              Routine Checklist (Tap to Log Sets)
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] text-slate-400 hidden sm:inline">Use ▲/▼ to adjust difficulty</span>
-              <button
-                onClick={clearRoutineChecklist}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
-                title="Clear remaining routine checklist without affecting logged sets"
-              >
-                Clear Checklist
-              </button>
-            </div>
+    {/* Planned Routine Checklist (for standard workouts) */}
+    {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+            <CheckSquare className="w-4 h-4" />
+            Routine Checklist (Tap to Log Sets)
           </div>
-          <div className="grid gap-2">
-            {activeWorkout.plannedItems.map((item, idx) => {
-              const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
-              const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
-               
-              return (
-                <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <button
-                        onClick={() => adjustPlannedItemLevel(idx, 1)}
-                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
-                      >
-                        <ChevronUp className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => adjustPlannedItemLevel(idx, -1)}
-                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
-                      >
-                        <ChevronDown className="w-3 h-3" />
-                      </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-slate-400 hidden sm:inline">Use ▲/▼ to adjust difficulty</span>
+            <button
+              onClick={clearRoutineChecklist}
+              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
+              title="Clear remaining routine checklist without affecting logged sets"
+            >
+              Clear Checklist
+            </button>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          {activeWorkout.plannedItems.map((item, idx) => {
+            const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
+            const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
+             
+            return (
+              <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => adjustPlannedItemLevel(idx, 1)}
+                      className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => adjustPlannedItemLevel(idx, -1)}
+                      className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
+                    >
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -334,136 +334,136 @@ export default function ActiveWorkoutView({
                     </div>
                     <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
                   </div>
-              </div>
+                </div>
 
-              {levelData && track && (
-                <button
-                  onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
-                >
-                  + Log Set
-                </button>
-              )}
-            </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Grouped Exercise Set Log (Accordion UI) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="font-bold text-slate-200 text-sm">Session Set Log</h3>
-          <span className="text-xs text-slate-400 font-medium">{(activeWorkout.sets || []).length} total sets recorded</span>
-        </div>
-
-        {(activeWorkout.sets || []).length === 0 ? (
-          <div className="p-12 text-center">
-            <Dumbbell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400 font-medium text-sm">No sets logged yet today.</p>
-            <p className="text-xs text-slate-500 mt-1">Head to Skill Pathways or Routines to start logging!</p>
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              className="mt-4 inline-flex items-center gap-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-xl border border-slate-700 transition"
-            >
-              View Skill Pathways
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-800">
-            {Object.values(groupedSets).map((group, groupIdx) => {
-              const track = MASTER_PATHWAYS.find(t => t.id === group.trackId);
-              const trackTitle = track ? track.title : 'Circuit Station';
-              const levelData = track ? (track.levels1to5?.find(l => l.name === group.exerciseName) || track.levels6to10?.find(l => l.name === group.exerciseName)) : null;
-              const isExpanded = expandedActiveLogs[group.exerciseName];
-
-              return (
-                <div key={groupIdx} className="bg-slate-900/40 transition">
-                  <div 
-                    onClick={() => toggleActiveLogGroup(group.exerciseName)}
-                    className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
+                {levelData && track && (
+                  <button
+                    onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
                   >
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{trackTitle}</span>
-                      <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
-                    </div>
+                    + Log Set
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
 
-                    <div className="flex items-center gap-4">
-                      <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
-                        {group.sets.length} Sets Logged
-                      </span>
-                      <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                    </div>
+    {/* Grouped Exercise Set Log (Accordion UI) */}
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 className="font-bold text-slate-200 text-sm">Session Set Log</h3>
+        <span className="text-xs text-slate-400 font-medium">{(activeWorkout.sets || []).length} total sets recorded</span>
+      </div>
+
+      {(activeWorkout.sets || []).length === 0 ? (
+        <div className="p-12 text-center">
+          <Dumbbell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-400 font-medium text-sm">No sets logged yet today.</p>
+          <p className="text-xs text-slate-500 mt-1">Head to Skill Pathways or Routines to start logging!</p>
+          <button
+            onClick={() => setActiveTab('roadmap')}
+            className="mt-4 inline-flex items-center gap-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-xl border border-slate-700 transition"
+          >
+            View Skill Pathways
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-800">
+          {Object.values(groupedSets).map((group, groupIdx) => {
+            const track = MASTER_PATHWAYS.find(t => t.id === group.trackId);
+            const trackTitle = track ? track.title : 'Circuit Station';
+            const levelData = track ? (track.levels1to5?.find(l => l.name === group.exerciseName) || track.levels6to10?.find(l => l.name === group.exerciseName)) : null;
+            const isExpanded = expandedActiveLogs[group.exerciseName];
+
+            return (
+              <div key={groupIdx} className="bg-slate-900/40 transition">
+                <div 
+                  onClick={() => toggleActiveLogGroup(group.exerciseName)}
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition"
+                >
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{trackTitle}</span>
+                    <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
                   </div>
 
-                  {isExpanded && (
-                    <div className="px-5 pb-5 space-y-3 pt-2 border-t border-slate-800/50">
-                      {levelData && track && (
-                        <div className="flex justify-end mb-2">
-                          <button
-                            onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                            className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
-                          >
-                            <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Manual Set
-                          </button>
-                        </div>
-                      )}
-                       
-                      <div className="space-y-2">
-                        {group.sets.map((set, sIdx) => (
-                          <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
-                                #{sIdx + 1}
+                  <div className="flex items-center gap-4">
+                    <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
+                      {group.sets.length} Sets Logged
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="px-5 pb-5 space-y-3 pt-2 border-t border-slate-800/50">
+                    {levelData && track && (
+                      <div className="flex justify-end mb-2">
+                        <button
+                          onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                          className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Manual Set
+                        </button>
+                      </div>
+                    )}
+                     
+                    <div className="space-y-2">
+                      {group.sets.map((set, sIdx) => (
+                        <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
+                              #{sIdx + 1}
+                            </span>
+                            <div>
+                              <span className="text-xs text-slate-400">Logged at {set.timestamp}</span>
+                              {set.notes && (
+                                <p className="text-xs text-amber-300/90 mt-0.5 flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3" />
+                                  {set.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-5">
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
+                              <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
+                            </div>
+
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
+                              <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
+                            </div>
+
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
+                              <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
+                                {set.formRating}
                               </span>
-                              <div>
-                                <span className="text-xs text-slate-400">Logged at {set.timestamp}</span>
-                                {set.notes && (
-                                  <p className="text-xs text-amber-300/90 mt-0.5 flex items-center gap-1">
-                                    <MessageSquare className="w-3 h-3" />
-                                    {set.notes}
-                                  </p>
-                                )}
-                              </div>
                             </div>
 
-                            <div className="flex items-center gap-5">
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
-                                <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
-                              </div>
-
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
-                                <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
-                              </div>
-
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
-                                <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
-                                  {set.formRating}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => setEditingSet(set)}
-                                  className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
-                                  title="Edit Set"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => removeSet(set.id)}
-                                  className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                                  title="Delete Set"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setEditingSet(set)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
+                                title="Edit Set"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => removeSet(set.id)}
+                                className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                                title="Delete Set"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -485,5 +485,6 @@ export default function ActiveWorkoutView({
         </div>
       )}
     </div>
+  </div>
   );
 }
