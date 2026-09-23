@@ -34,7 +34,7 @@ export default function ActiveWorkoutView({
   removeSet,
   setActiveTab
 }) {
-  // Helper to format current date for date input (YYYY-MM-DD) in local time
+  // Helper to format current date for date input (YYYY-MM-DD) in local time without UTC offset drift
   const getCurrentLocalDate = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -43,7 +43,7 @@ export default function ActiveWorkoutView({
     return `${year}-${month}-${day}`;
   };
 
-  // Helper to format current time for time input (HH:MM) in local time
+  // Helper to format current time for time input (HH:MM) in 24-hour local format
   const getCurrentLocalTime = () => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
