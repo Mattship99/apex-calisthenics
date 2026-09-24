@@ -22,7 +22,6 @@ export default function HistoryView({
       return dateInput;
     }
     if (typeof dateInput === 'string') {
-      // Handle YYYY-MM-DD or YYYY-MM-DDTHH:mm strings strictly without UTC fallback shifts
       if (dateInput.includes('T')) {
         return new Date(dateInput);
       }
@@ -38,10 +37,25 @@ export default function HistoryView({
     return isNaN(parsed.getTime()) ? new Date() : parsed;
   };
 
-  // Helper to format stored dates into friendly text using local time components
-  const formatDate = (dateInput) => {
+  // Helper to format stored dates into friendly text with 12-hour AM/PM time
+  const formatDate = (session) => {
+    const dateInput = session.date;
+    const createdAt = session.createdAt;
+    
     if (!dateInput) return '';
-    const dateObj = parseLocalDate(dateInput);
+    
+    // Try to extract hours and minutes from createdAt if available, otherwise parse from dateInput
+    let dateObj = parseLocalDate(dateInput);
+    if (createdAt && createdAt.includes('T')) {
+      const timePart = createdAt.split('T')[1];
+      if (timePart) {
+        const [h, m] = timePart.split(':').map(Number);
+        if (!isNaN(h) && !isNaN(m)) {
+          dateObj.setHours(h, m);
+        }
+      }
+    }
+
     if (isNaN(dateObj.getTime())) return dateInput;
     return dateObj.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -69,9 +83,18 @@ export default function HistoryView({
     return `${y}-${m}-${d}`;
   };
 
-  // Helper to extract time in consistent 24-hour HH:mm format for the time input
-  const getTimeInputValue = (dateInput) => {
-    const dateObj = parseLocalDate(dateInput);
+  // Helper to extract time in consistent 24-hour HH:mm format for the time input from createdAt or session date
+  const getTimeInputValue = (session) => {
+    if (session.createdAt && session.createdAt.includes('T')) {
+      const timePart = session.createdAt.split('T')[1];
+      if (timePart) {
+        const [h, m] = timePart.split(':');
+        if (h && m) {
+          return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+        }
+      }
+    }
+    const dateObj = parseLocalDate(session.date);
     if (isNaN(dateObj.getTime())) return '12:00';
     const hours = String(dateObj.getHours()).padStart(2, '0');
     const minutes = String(dateObj.getMinutes()).padStart(2, '0');
@@ -81,7 +104,7 @@ export default function HistoryView({
   const startEditing = (session) => {
     setEditingSessionId(session.id);
     setNewDate(getInputValue(session.date));
-    setNewTime(getTimeInputValue(session.date));
+    setNewTime(getTimeInputValue(session));
   };
 
   const cancelEditing = () => {
@@ -93,9 +116,16 @@ export default function HistoryView({
   const saveEditing = async (sessionId) => {
     if (!newDate) return;
     
-    // Explicitly parse local year, month, day, hours, and minutes to avoid timezone offset shifts
     const [year, month, day] = newDate.split('-').map(Number);
-    const [hours, minutes] = (newTime || '00:00').split(':').map(Number);
+    let hours = 0;
+    let minutes = 0;
+    
+    if (newTime && newTime.includes(':')) {
+      const [parsedH, parsedM] = newTime.split(':').map(Number);
+      if (!isNaN(parsedH)) hours = parsedH;
+      if (!isNaN(parsedM)) minutes = parsedM;
+    }
+
     const combinedLocalDate = new Date(year, month - 1, day, hours, minutes, 0);
 
     if (handleUpdateSessionDate) {
@@ -186,7 +216,7 @@ export default function HistoryView({
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-slate-400 font-medium">{formatDate(session.date)}</span>
+                          <span className="text-xs text-slate-400 font-medium">{formatDate(session)}</span>
                           <button
                             onClick={() => startEditing(session)}
                             className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 transition"
