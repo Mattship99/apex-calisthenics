@@ -48,7 +48,9 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('roadmap');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('apex_active_tab') || 'roadmap';
+  });
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -96,6 +98,11 @@ export default function App() {
   // Circuit Tracking State
   const [activeCircuit, setActiveCircuit] = useState(null);
   const [roundTally, setRoundTally] = useState(0);
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('apex_active_tab', activeTab);
+  }, [activeTab]);
 
   // Auth observer
   useEffect(() => {
@@ -543,7 +550,7 @@ export default function App() {
         const hours = String(newLocalDate.getHours()).padStart(2, '0');
         const mins = String(newLocalDate.getMinutes()).padStart(2, '0');
         const secs = String(newLocalDate.getSeconds()).padStart(2, '0');
-        
+         
         await setDoc(sessionDocRef, { 
           date: dateStr,
           createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`
@@ -603,96 +610,99 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24">
-      {/* HEADER */}
-      <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2 rounded-xl text-slate-950 shadow-lg shadow-emerald-500/20">
-              <Zap className="w-6 h-6 stroke-[2.5]" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                Apex Calisthenics
-              </h1>
-              <p className="text-xs text-slate-400 font-medium">Interactive Progression Framework</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('workout')}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition"
-            >
-              <Dumbbell className="w-4 h-4 text-emerald-400" />
-              <span>Session: <strong className="text-emerald-400">{(activeWorkout.sets || []).length}</strong></span>
-            </button>
-
-            {user ? (
-              <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-                <button
-                  onClick={() => setShowAccountModal(true)}
-                  className="flex items-center gap-1.5 hover:text-emerald-400 transition"
-                  title="Open Account Settings"
-                >
-                  <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-slate-300 font-bold max-w-[140px] truncate">
-                    {user.displayName || user.email?.split('@')[0] || 'Athlete'}
-                  </span>
-                </button>
-
-                <button
-                  onClick={async () => {
-                    await signOut(auth);
-                    window.location.reload(); 
-                  }}
-                  className="p-1 hover:text-rose-400 text-slate-400 ml-1 transition border-l border-slate-700 pl-2"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
+      {/* STICKY HEADER & NAVIGATION WRAPPER */}
+      <div className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-lg">
+        {/* HEADER */}
+        <header className="px-4 py-3 border-b border-slate-800/60">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2 rounded-xl text-slate-950 shadow-lg shadow-emerald-500/20">
+                <Zap className="w-6 h-6 stroke-[2.5]" />
               </div>
-            ) : (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-2 rounded-xl transition shadow-md shadow-emerald-500/10"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                  Apex Calisthenics
+                </h1>
+                <p className="text-xs text-slate-400 font-medium">Interactive Progression Framework</p>
+              </div>
+            </div>
 
-      {/* NAVIGATION TABS */}
-      <nav className="bg-slate-900 border-b border-slate-800 px-4">
-        <div className="max-w-5xl mx-auto flex overflow-x-auto space-x-1 scrollbar-none py-2">
-          {[
-            { id: 'roadmap', label: 'Skill Pathways', icon: Target },
-            { id: 'mobility', label: 'Mobility & Recovery', icon: HeartPulse },
-            { id: 'routines', label: 'Routines', icon: Layers },
-            { id: 'workout', label: 'Active Workout', icon: Activity },
-            { id: 'history', label: 'Log History', icon: BarChart3 }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
+            <div className="flex items-center gap-2">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                  isActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                }`}
+                onClick={() => setActiveTab('workout')}
+                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition"
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
+                <Dumbbell className="w-4 h-4 text-emerald-400" />
+                <span>Session: <strong className="text-emerald-400">{(activeWorkout.sets || []).length}</strong></span>
               </button>
-            );
-          })}
-        </div>
-      </nav>
+
+              {user ? (
+                <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                  <button
+                    onClick={() => setShowAccountModal(true)}
+                    className="flex items-center gap-1.5 hover:text-emerald-400 transition"
+                    title="Open Account Settings"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-slate-300 font-bold max-w-[140px] truncate">
+                      {user.displayName || user.email?.split('@')[0] || 'Athlete'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      await signOut(auth);
+                      window.location.reload(); 
+                    }}
+                    className="p-1 hover:text-rose-400 text-slate-400 ml-1 transition border-l border-slate-700 pl-2"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-2 rounded-xl transition shadow-md shadow-emerald-500/10"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* NAVIGATION TABS */}
+        <nav className="px-4">
+          <div className="max-w-5xl mx-auto flex overflow-x-auto space-x-1 scrollbar-none py-2">
+            {[
+              { id: 'roadmap', label: 'Skill Pathways', icon: Target },
+              { id: 'mobility', label: 'Mobility & Recovery', icon: HeartPulse },
+              { id: 'routines', label: 'Routines', icon: Layers },
+              { id: 'workout', label: 'Active Workout', icon: Activity },
+              { id: 'history', label: 'Log History', icon: BarChart3 }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                    isActive
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
 
       {/* MAIN CONTAINER */}
       <main className="max-w-5xl mx-auto px-4 py-6">
