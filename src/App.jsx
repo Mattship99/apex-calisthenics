@@ -475,18 +475,27 @@ export default function App() {
     setActiveTab('workout');
   };
 
-  const finishWorkout = async () => {
+  const finishWorkout = async (targetDate) => {
     const currentSets = activeWorkout.sets || [];
     if (currentSets.length === 0 && roundTally === 0) return;
 
+    const sessionDateObj = targetDate instanceof Date ? targetDate : new Date();
+    const y = sessionDateObj.getFullYear();
+    const m = String(sessionDateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(sessionDateObj.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    const hours = String(sessionDateObj.getHours()).padStart(2, '0');
+    const mins = String(sessionDateObj.getMinutes()).padStart(2, '0');
+    const secs = String(sessionDateObj.getSeconds()).padStart(2, '0');
+
     const completedSession = {
-      date: activeWorkout.date,
+      date: dateStr,
       title: activeWorkout.title,
       setsCount: currentSets.length,
       roundsCompleted: roundTally,
       sets: currentSets,
       notes: sessionNotes || '',
-      createdAt: `${activeWorkout.date}T${new Date().toTimeString().split(' ')[0]}.000Z`
+      createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`
     };
 
     if (user) {
