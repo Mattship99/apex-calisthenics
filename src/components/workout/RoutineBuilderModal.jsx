@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { MASTER_PATHWAYS } from '../../data/constants';
 
 export default function RoutineBuilderModal({ onClose, onSave }) {
@@ -14,8 +14,27 @@ export default function RoutineBuilderModal({ onClose, onSave }) {
     if (exists) {
       setSelectedItems(selectedItems.filter(i => !(i.trackId === track.id && i.level === level.level)));
     } else {
-      setSelectedItems([...selectedItems, { trackId: track.id, trackTitle: track.title, level: level.level, name: level.name, target: level.target, completed: false }]);
+      setSelectedItems([...selectedItems, { 
+        trackId: track.id, 
+        trackTitle: track.title, 
+        level: level.level, 
+        name: level.name, 
+        target: level.target || '10 reps', 
+        completed: false 
+      }]);
     }
+  };
+
+  const handleTargetChange = (trackId, levelNum, newTarget) => {
+    setSelectedItems(selectedItems.map(i => 
+      i.trackId === trackId && i.level === levelNum 
+        ? { ...i, target: newTarget } 
+        : i
+    ));
+  };
+
+  const handleRemoveItem = (trackId, levelNum) => {
+    setSelectedItems(selectedItems.filter(i => !(i.trackId === trackId && i.level === levelNum)));
   };
 
   const handleSaveRoutine = (e) => {
@@ -105,7 +124,7 @@ export default function RoutineBuilderModal({ onClose, onSave }) {
 
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-2">Select Exercises / Circuit Stations:</label>
-            <div className="max-h-60 overflow-y-auto space-y-3 pr-2 border border-slate-800 rounded-xl p-3 bg-slate-950/60">
+            <div className="max-h-48 overflow-y-auto space-y-3 pr-2 border border-slate-800 rounded-xl p-3 bg-slate-950/60">
               {MASTER_PATHWAYS.map(track => (
                 <div key={track.id} className="space-y-1.5">
                   <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{track.title}</span>
@@ -149,6 +168,39 @@ export default function RoutineBuilderModal({ onClose, onSave }) {
               ))}
             </div>
           </div>
+
+          {selectedItems.length > 0 && (
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-2">Configure Custom Rep Targets ({selectedItems.length}):</label>
+              <div className="max-h-44 overflow-y-auto space-y-2 pr-1 border border-slate-800 rounded-xl p-3 bg-slate-950/60">
+                {selectedItems.map((item) => (
+                  <div key={`selected-${item.trackId}-${item.level}`} className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-slate-200 truncate">{item.name}</div>
+                      <div className="text-[10px] text-slate-400">{item.trackTitle} (Lvl {item.level})</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={item.target}
+                        onChange={(e) => handleTargetChange(item.trackId, item.level, e.target.value)}
+                        placeholder="e.g. 10 reps"
+                        className="w-28 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-semibold text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(item.trackId, item.level)}
+                        className="text-slate-400 hover:text-rose-400 p-1 transition"
+                        title="Remove exercise"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="pt-2 flex gap-3">
             <button
