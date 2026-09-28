@@ -48,6 +48,23 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  // Helper utility to recursively sanitize objects/arrays for Firebase (converts undefined to null)
+  const sanitizeForFirebase = (data) => {
+    if (data === undefined) return null;
+    if (data === null || typeof data !== 'object') return data;
+
+    if (Array.isArray(data)) {
+      return data.map(item => sanitizeForFirebase(item));
+    }
+
+    const sanitized = {};
+    for (const key of Object.keys(data)) {
+      const val = data[key];
+      sanitized[key] = val === undefined ? null : sanitizeForFirebase(val);
+    }
+    return sanitized;
+  };
+
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('apex_active_tab') || 'roadmap';
   });
@@ -191,7 +208,8 @@ export default function App() {
     if (user) {
       try {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
-        await setDoc(activeWorkoutDocRef, { session: newWorkoutState }, { merge: true });
+        const sanitizedState = sanitizeForFirebase(newWorkoutState);
+        await setDoc(activeWorkoutDocRef, { session: sanitizedState }, { merge: true });
       } catch (err) {
         console.error("Failed to sync active workout state:", err);
       }
@@ -361,7 +379,8 @@ export default function App() {
 
       if (user) {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
-        setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
+        const sanitizedNextState = sanitizeForFirebase(nextState);
+        setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
        
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
@@ -376,7 +395,8 @@ export default function App() {
       const nextState = { ...prev, sets: updatedSets };
       if (user) {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
-        setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
+        const sanitizedNextState = sanitizeForFirebase(nextState);
+        setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
       return nextState;
     });
@@ -413,7 +433,8 @@ export default function App() {
       };
       if (user) {
         const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
-        setDoc(activeWorkoutDocRef, { session: nextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
+        const sanitizedNextState = sanitizeForFirebase(nextState);
+        setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
       }
       return nextState;
     });
@@ -508,7 +529,8 @@ export default function App() {
     if (user) {
       try {
         const sessionsRef = collection(db, 'users', user.uid, 'sessions');
-        await addDoc(sessionsRef, completedSession);
+        const sanitizedSession = sanitizeForFirebase(completedSession);
+        await addDoc(sessionsRef, sanitizedSession);
       } catch (err) {
         console.error("Save error:", err);
       }
@@ -837,6 +859,6 @@ export default function App() {
       )}
        
       <GlobalFeedback />
-    </div>
+  </div>
   );
 }
