@@ -56,10 +56,10 @@ export default function ActiveWorkoutView({
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-').map(Number);
     if (!year || !month || !day) return dateString;
-     
+    
     const date = new Date(year, month - 1, day);
     if (isNaN(date.getTime())) return dateString;
-     
+    
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
@@ -76,7 +76,26 @@ export default function ActiveWorkoutView({
     return `${hours}:${minutes} ${ampm}`;
   };
 
+  // Helper utility to recursively sanitize objects/arrays for Firebase (converts undefined to null)
+  const sanitizeForFirebase = (data) => {
+    if (data === undefined) return null;
+    if (data === null || typeof data !== 'object') return data;
+
+    if (Array.isArray(data)) {
+      return data.map(item => sanitizeForFirebase(item));
+    }
+
+    const sanitized = {};
+    for (const key of Object.keys(data)) {
+      const val = data[key];
+      // Skip undefined fields or convert them to null
+      sanitized[key] = val === undefined ? null : sanitizeForFirebase(val);
+    }
+    return sanitized;
+  };
+
   const handleFinish = () => {
+    let targetDate;
     if (workoutDate) {
       const [year, month, day] = workoutDate.split('-').map(Number);
       let hours = 0;
@@ -94,7 +113,7 @@ export default function ActiveWorkoutView({
         seconds = localNow.getSeconds();
       }
 
-      const targetDate = new Date(
+      targetDate = new Date(
         year, 
         month - 1, 
         day, 
@@ -102,10 +121,13 @@ export default function ActiveWorkoutView({
         minutes, 
         seconds
       );
-      finishWorkout(targetDate);
     } else {
-      finishWorkout(new Date());
+      targetDate = new Date();
     }
+
+    // Sanitize activeWorkout and pass sanitized payload upstream if applicable
+    const sanitizedWorkout = sanitizeForFirebase(activeWorkout);
+    finishWorkout(targetDate, sanitizedWorkout);
   };
 
   return (
@@ -251,7 +273,7 @@ export default function ActiveWorkoutView({
               >
                 Complete Full Round Fast-Forward
               </button>
-               
+              
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-400 block">Tap stations as you complete them. Completing all automatically logs a full round:</span>
                 {activeCircuit.items.map((item, idx) => {
@@ -317,7 +339,7 @@ export default function ActiveWorkoutView({
             {activeWorkout.plannedItems.map((item, idx) => {
               const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
               const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
-               
+              
               return (
                 <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
