@@ -1,110 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import { Lightbulb } from 'lucide-react';
-import { db, auth } from '../../services/firebase';
-import { VOLUME_CATEGORIES } from '../../data/constants'; // Adjust path as needed
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../../services/firebase';
 
-export default function VolumeSuggestion() {
-  const [suggestion, setSuggestion] = useState('');
-  const [loading, setLoading] = useState(true);
+export default function VolumeSuggestions() {
+  const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    const fetchAndAnalyzeVolume = async () => {
-      if (!auth.currentUser) {
-        setLoading(false);
+    const fetchVolumeData = async (user) => {
+      if (!user) {
+        console.log('[VolumeSuggestions] No authenticated user found.');
         return;
       }
 
       try {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
         const workoutsRef = collection(db, 'workouts');
+        // Modify your date filter query logic here if needed (e.g., filtering for past 7 days)
         const q = query(
           workoutsRef,
-          where('userId', '==', auth.currentUser.uid),
-          where('date', '>=', Timestamp.fromDate(sevenDaysAgo))
+          where('userId', '==', user.uid)
         );
 
         const snapshot = await getDocs(q);
         
-        // If no workouts in the last 7 days
-        if (snapshot.empty) {
-          setSuggestion("It's a fresh week! Let's get some sets in today.");
-          setLoading(false);
-          return;
-        }
+        // 1. Log raw workouts array fetched from Firestore
+        const rawWorkouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('[VolumeSuggestions] Raw workouts fetched from Firestore:', rawWorkouts);
 
-        // Tally volume (counting total sets) per category
-        const volumeTally = {};
-        
-        // Initialize tally with 0 for all known categories to ensure we catch skipped ones
-        Object.values(VOLUME_CATEGORIES).forEach(category => {
-          if (typeof category === 'string') {
-            volumeTally[category.toLowerCase()] = 0;
-          }
+        // Example Date Filter (adjust fields like doc.date / doc.createdAt to match your schema)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const filteredWorkouts = rawWorkouts.filter(w => {
+          const workoutDate = w.date?.toDate ? w.date.toDate() : new Date(w.date);
+          return workoutDate >= sevenDaysAgo;
         });
 
-        snapshot.forEach((doc) => {
-          const workout = doc.data();
-          
-          if (workout.exercises && Array.isArray(workout.exercises)) {
-            workout.exercises.forEach((exercise) => {
-              // Map the exercise to its category using the constants file
-              const categoryName = (exercise.category || VOLUME_CATEGORIES[exercise.name] || 'other').toLowerCase();
-              
-              if (categoryName !== 'other') {
-                const setsCompleted = exercise.sets ? exercise.sets.length : 0;
-                volumeTally[categoryName] = (volumeTally[categoryName] || 0) + setsCompleted;
-              }
+        // 2. Log how many sets were found matching date filters
+        let matchingSetsCount = 0;
+        filteredWorkouts.forEach((w, wIndex) => {
+          if (w.exercises && Array.isArray(w.exercises)) {
+            w.exercises.forEach((ex, exIndex) => {
+              const setCount = Array.isArray(ex.sets) ? ex.sets.length : (ex.setCount || 1);
+              matchingSetsCount += setCount;
+
+              // 3. Log what exercise names and RPE values it is evaluating
+              console.log(`[VolumeSuggestions] Matching Workout [${wIndex}] -> Exercise [${exIndex}]: "${ex.name}" | Sets Count: ${setCount} | RPE:`, ex.rpe || (ex.sets ? ex.sets.map(s => s.rpe) : 'N/A'));
             });
           }
         });
 
-        // Find the category with the absolute lowest volume
-        let lowestCategory = null;
-        let lowestVolume = Infinity;
+        console.log(`[VolumeSuggestions] Total sets found matching date filters (last 7 days): ${matchingSetsCount}`);
 
-        Object.entries(volumeTally).forEach(([category, volume]) => {
-          if (volume < lowestVolume) {
-            lowestVolume = volume;
-            lowestCategory = category;
-          }
-        });
-
-        // Generate a conversational suggestion
-        if (lowestCategory) {
-          const suggestions = [
-            `Hey, maybe try hitting more ${lowestCategory} today.`,
-            `Your ${lowestCategory} volume is pretty low this week, consider prioritizing it!`,
-            `Looks like a great day to sneak in some extra ${lowestCategory} sets.`,
-            `You've been neglecting your ${lowestCategory} recently. Time to give it some attention?`
-          ];
-          const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
-          setSuggestion(randomSuggestion);
-        } else {
-          setSuggestion("Your volume looks beautifully balanced this week. Keep it up!");
-        }
-
+        // Set your component state here based on processed volume calculations...
       } catch (error) {
-        console.error("Error fetching volume data:", error);
-        setSuggestion("Ready to crush today's session?");
-      } finally {
-        setLoading(false);
+        console.error('[VolumeSuggestions] Error fetching volume data:', error);
       }
     };
 
-    fetchAndAnalyzeVolume();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      fetchVolumeData(user);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  if (loading || !suggestion) return null;
-
-  return (
-    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/50 transition-opacity duration-500">
-      <Lightbulb className="w-4 h-4 text-emerald-500/70 shrink-0 mt-0.5" />
-      <p className="text-xs font-medium text-slate-400 leading-relaxed">
-        {suggestion}
-      </p>
-    </div>
-  );
+  return null; // Render your UI component here
 }
