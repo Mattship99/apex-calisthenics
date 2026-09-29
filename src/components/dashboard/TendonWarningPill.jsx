@@ -15,7 +15,6 @@ export default function TendonWarningPill() {
       }
 
       try {
-        // Query the last 4 workout sessions for the user
         const workoutsRef = collection(db, 'workouts');
         const q = query(
           workoutsRef,
@@ -26,29 +25,37 @@ export default function TendonWarningPill() {
 
         const snapshot = await getDocs(q);
         
-        // If they don't have at least 2 sessions, they can't have consecutive high-load days
         if (snapshot.empty || snapshot.size < 2) {
           setShowWarning(false);
           return;
         }
 
-        const workouts = snapshot.docs.map(doc => doc.data());
+        const workouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Helper to check if a single workout contains heavy tendon load
         const hasHeavyTendonLoad = (workout) => {
-          // Adjust 'exercises', 'name', or 'rpe' based on your exact Firestore document structure
           if (!workout.exercises || !Array.isArray(workout.exercises)) return false;
           
-          return workout.exercises.some(ex => 
-            TENDON_INTENSIVE_MOVEMENTS.includes(ex.name) && 
-            ex.rpe >= 9
-          );
+          return workout.exercises.some(ex => {
+            // Match name loosely or strictly (trimming whitespace & case-insensitivity helps prevent silent mismatches)
+            const exerciseName = (ex.name || '').trim();
+            const isIntensive = TENDON_INTENSIVE_MOVEMENTS.some(
+              m => m.toLowerCase() === exerciseName.toLowerCase()
+            );
+
+            if (!isIntensive) return false;
+
+            // Check if RPE is directly on the exercise or inside sets array
+            const directRpeValid = typeof ex.rpe === 'number' && ex.rpe >= 9;
+            const setsRpeValid = Array.isArray(ex.sets) && ex.sets.some(set => (set.rpe || 0) >= 9);
+
+            return directRpeValid || setsRpeValid;
+          });
         };
 
-        // Check for consecutive sessions with high tendon load
         let warningTriggered = false;
         
-        // Loop through the recent sessions to check for consecutive triggers
+        // Check consecutive sessions
         for (let i = 0; i < workouts.length - 1; i++) {
           const currentSessionHeavy = hasHeavyTendonLoad(workouts[i]);
           const previousSessionHeavy = hasHeavyTendonLoad(workouts[i + 1]);
@@ -66,7 +73,6 @@ export default function TendonWarningPill() {
       }
     };
 
-    // Use onAuthStateChanged to ensure the user object is ready before querying
     const unsubscribe = auth.onAuthStateChanged((user) => {
       checkTendonLoad(user);
     });
