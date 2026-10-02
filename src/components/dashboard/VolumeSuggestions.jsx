@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 
 export default function VolumeSuggestions() {
@@ -13,45 +13,44 @@ export default function VolumeSuggestions() {
       }
 
       try {
-        const workoutsRef = collection(db, 'workouts');
-        // Modify your date filter query logic here if needed (e.g., filtering for past 7 days)
-        const q = query(
-          workoutsRef,
-          where('userId', '==', user.uid)
-        );
-
-        const snapshot = await getDocs(q);
+        // Query the correct user sessions subcollection
+        const sessionsRef = collection(db, 'users', user.uid, 'sessions');
+        const snapshot = await getDocs(sessionsRef);
         
-        // 1. Log raw workouts array fetched from Firestore
         const rawWorkouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('[VolumeSuggestions] Raw workouts fetched from Firestore:', rawWorkouts);
 
-        // Example Date Filter (adjust fields like doc.date / doc.createdAt to match your schema)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+        // Filter by date locally
         const filteredWorkouts = rawWorkouts.filter(w => {
-          const workoutDate = w.date?.toDate ? w.date.toDate() : new Date(w.date);
+          const workoutDate = w.date?.toDate ? w.date.toDate() : new Date(w.createdAt || w.date);
           return workoutDate >= sevenDaysAgo;
         });
 
-        // 2. Log how many sets were found matching date filters
         let matchingSetsCount = 0;
         filteredWorkouts.forEach((w, wIndex) => {
-          if (w.exercises && Array.isArray(w.exercises)) {
-            w.exercises.forEach((ex, exIndex) => {
+          const exercisesArr = w.exercises || [];
+          const setsArr = w.sets || [];
+
+          if (exercisesArr.length > 0) {
+            exercisesArr.forEach((ex, exIndex) => {
               const setCount = Array.isArray(ex.sets) ? ex.sets.length : (ex.setCount || 1);
               matchingSetsCount += setCount;
-
-              // 3. Log what exercise names and RPE values it is evaluating
               console.log(`[VolumeSuggestions] Matching Workout [${wIndex}] -> Exercise [${exIndex}]: "${ex.name}" | Sets Count: ${setCount} | RPE:`, ex.rpe || (ex.sets ? ex.sets.map(s => s.rpe) : 'N/A'));
+            });
+          } else if (setsArr.length > 0) {
+            matchingSetsCount += setsArr.length;
+            setsArr.forEach((set, setIndex) => {
+              console.log(`[VolumeSuggestions] Matching Workout [${wIndex}] -> Set [${setIndex}]: "${set.exerciseName}" | RPE: ${set.rpe}`);
             });
           }
         });
 
         console.log(`[VolumeSuggestions] Total sets found matching date filters (last 7 days): ${matchingSetsCount}`);
 
-        // Set your component state here based on processed volume calculations...
+        // Update state with your processed volume calculations if needed
       } catch (error) {
         console.error('[VolumeSuggestions] Error fetching volume data:', error);
       }
@@ -64,5 +63,5 @@ export default function VolumeSuggestions() {
     return () => unsubscribe();
   }, []);
 
-  return null; // Render your UI component here
+  return null;
 }
