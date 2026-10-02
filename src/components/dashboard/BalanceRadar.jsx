@@ -1,37 +1,58 @@
-import React from 'react';
-import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants'; // Adjust the import path as necessary
+import React, { useMemo } from 'react';
+import { PILLAR_MAPPINGS } from '../../data/constants'; // Adjust import as necessary
 
-export default function BalanceRadar({ userProgress }) {
-  // Utility function to calculate the 0-100 score for each pillar
-  const calculatePillarScores = () => {
-    const scores = [];
+export default function BalanceRadar({ workouts = [] }) {
+  // Utility function to calculate 0-100 scores based on actual logged workout history
+  const pillarScores = useMemo(() => {
+    // 1. Initialize volume counters for each pillar found in PILLAR_MAPPINGS
+    const pillarVolumes = {};
+    const pillarKeys = Object.keys(PILLAR_MAPPINGS); // e.g., ["Push", "Pull", "Legs", ...]
     
-    // Assumes PILLAR_MAPPINGS maps a pillar name to a pathway key 
-    // e.g., { "Push": "pushups", "Pull": "pullups", ... }
-    Object.entries(PILLAR_MAPPINGS).forEach(([pillarName, pathwayKey]) => {
-      // Safely get the user's current level, defaulting to 0
-      const currentLevel = userProgress?.[pathwayKey] || 0;
-      
-      // Look up the pathway definition
-      const pathwayDef = MASTER_PATHWAYS[pathwayKey];
-      
-      // Determine max level depending on how MASTER_PATHWAYS is structured
-      const maxLevel = pathwayDef?.levels?.length || pathwayDef?.maxLevel || 10;
-      
-      // Calculate percentage, ensuring we don't divide by zero or exceed 100
-      const rawPercentage = maxLevel > 0 ? (currentLevel / maxLevel) * 100 : 0;
-      const score = Math.min(100, Math.round(rawPercentage));
-      
-      scores.push({
-        name: pillarName,
-        score: score
+    pillarKeys.forEach((pillarName) => {
+      pillarVolumes[pillarName] = 0;
+    });
+
+    // 2. Iterate through logged workouts and completed sets
+    workouts.forEach((workout) => {
+      // Assuming each workout has an array of exercises or sets
+      // Adjust `workout.exercises` or `workout.sets` to match your Firestore schema
+      const exercises = workout.exercises || workout.sets || [];
+
+      exercises.forEach((item) => {
+        // Map the exercise/pathway/movement to its pillar using PILLAR_MAPPINGS or exercise metadata
+        // Example: item.pathwayKey or item.exerciseName matches PILLAR_MAPPINGS values
+        const movementKey = item.pathwayKey || item.exerciseName;
+        
+        // Find which pillar this movement belongs to
+        const matchedPillar = Object.entries(PILLAR_MAPPINGS).find(
+          ([_, pathwayKey]) => pathwayKey === movementKey
+        )?.[0];
+
+        if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
+          // Count completed working sets (default to 1 if it's an entry, or sum up item.sets / reps)
+          const completedSets = item.completedSets || item.sets?.filter(s => s.completed)?.length || 1;
+          pillarVolumes[matchedPillar] += completedSets;
+        }
       });
     });
-    
-    return scores;
-  };
 
-  const pillarScores = calculatePillarScores();
+    // 3. Find the maximum volume among all pillars to normalize percentages (0-100%)
+    const volumes = Object.values(pillarVolumes);
+    const maxVolume = Math.max(...volumes, 1); // Prevent division by zero
+
+    // 4. Transform into final score objects formatted for the UI
+    return pillarKeys.map((pillarName) => {
+      const volume = pillarVolumes[pillarName];
+      const rawPercentage = (volume / maxVolume) * 100;
+      const score = Math.min(100, Math.round(rawPercentage));
+
+      return {
+        name: pillarName,
+        score: score,
+        totalVolume: volume,
+      };
+    });
+  }, [workouts]);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl p-6 space-y-4">
