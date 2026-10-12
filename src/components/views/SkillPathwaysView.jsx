@@ -15,7 +15,6 @@ export default function SkillPathwaysView({
   setPathwaySearch,
   selectedCategory,
   setSelectedCategory,
-  filteredPathways,
   expandedPathway,
   setExpandedPathway,
   unlockedPhases,
@@ -26,6 +25,22 @@ export default function SkillPathwaysView({
   setSelectedExerciseDemo,
   setLoggingExercise
 }) {
+  // Dynamically extract unique categories from the imported MASTER_PATHWAYS
+  const uniqueCategories = [
+    'All', 
+    ...new Set(MASTER_PATHWAYS.map(track => track.category).filter(Boolean))
+  ];
+
+  // Filter pathways based on selected category and search input
+  const displayedPathways = MASTER_PATHWAYS.filter(track => {
+    const matchesCategory = selectedCategory === 'All' || track.category === selectedCategory;
+    const matchesSearch = !pathwaySearch || 
+      track.title?.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
+      track.description?.toLowerCase().includes(pathwaySearch.toLowerCase());
+      
+    return matchesCategory && matchesSearch;
+  });
+
   return (
     <div className="space-y-6">
       <TendonWarningPill workoutHistory={workoutHistory} />
@@ -62,7 +77,7 @@ export default function SkillPathwaysView({
         </div>
 
         <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
-          {['All', 'Beginner', 'Intermediate', 'Advanced', 'Elite', 'Unilateral', 'Legs', 'Pulling', 'Pushing', 'Balance', 'Core'].map((cat) => (
+          {uniqueCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -78,7 +93,7 @@ export default function SkillPathwaysView({
         </div>
       </div>
 
-      {filteredPathways.length === 0 ? (
+      {displayedPathways.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
           <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 font-medium text-sm">No skill tracks matched your search.</p>
@@ -90,7 +105,7 @@ export default function SkillPathwaysView({
           </button>
         </div>
       ) : (
-        filteredPathways.map((track) => {
+        displayedPathways.map((track) => {
           const currentLevel = (userLevels || {})[track.id] || 1;
           const isExpanded = expandedPathway === track.id;
           
@@ -113,7 +128,7 @@ export default function SkillPathwaysView({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                      {track.badge}
+                      {track.badge || track.category}
                     </span>
                     <span className="text-xs text-slate-400 font-medium">Level {currentLevel} of {has10Levels ? 10 : 5}</span>
                   </div>
