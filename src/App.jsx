@@ -837,7 +837,7 @@ export default function App() {
             updateLevel={updateLevel}
             setSelectedExerciseDemo={setSelectedExerciseDemo}
             setLoggingExercise={setLoggingExercise}
-            handleAddToCart={handleAddToCart}
+            onAddToCart={handleAddToCart}
           />
         )}
           
@@ -965,6 +965,6 @@ export default function App() {
       )}
         
       <GlobalFeedback />
-  </div>
+    </div>
   );
 }
