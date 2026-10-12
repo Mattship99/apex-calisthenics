@@ -245,11 +245,11 @@ export const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3,
 
 export const PILLAR_MAPPINGS = {
   'Vertical Pull': ['pulling', 'muscle_up'],
-  'Horizontal Pull': [], 
-  'Vertical Push': ['inversion-master'],
+  'Horizontal Pull': ['pulling', 'dragon-flag'], 
+  'Vertical Push': ['inversion-master', 'muscle_up', 'lsit_core'],
   'Horizontal Push': ['pushing', 'one_arm_pushup'],
   'Leg Power': ['dragon_squat', 'pistol_squat'],
-  'Core': ['dragon-flag', 'lsit_core']
+  'Core': ['dragon-flag', 'lsit_core', 'inversion-master', 'one_arm_pushup']
 };
 
 export const VOLUME_CATEGORIES = {
