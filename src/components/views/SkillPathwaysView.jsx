@@ -3,7 +3,7 @@ import {
   Trophy, Search, X, Lock as LockIcon, Target, Eye, Plus, 
   CheckCircle, ShieldAlert, ChevronDown, ChevronRight 
 } from 'lucide-react';
-import { MASTER_PATHWAYS } from '../../data/constants';
+import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants';
 import TendonWarningPill from '../dashboard/TendonWarningPill';
 import BalanceRadar from '../dashboard/BalanceRadar';
 import VolumeSuggestion from '../dashboard/VolumeSuggestions.jsx';
@@ -13,7 +13,7 @@ export default function SkillPathwaysView({
   userLevels,
   pathwaySearch,
   setPathwaySearch,
-  selectedCategory,
+  selectedCategory = 'All', // Defaulting to 'All'
   setSelectedCategory,
   expandedPathway,
   setExpandedPathway,
@@ -25,15 +25,18 @@ export default function SkillPathwaysView({
   setSelectedExerciseDemo,
   setLoggingExercise
 }) {
-  // Dynamically extract unique categories from the imported MASTER_PATHWAYS
+  // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
     'All', 
-    ...new Set(MASTER_PATHWAYS.map(track => track.category).filter(Boolean))
+    ...Object.keys(PILLAR_MAPPINGS)
   ];
 
-  // Filter pathways based on selected category and search input
+  // Filter pathways based on selected category (using PILLAR_MAPPINGS) and search input
   const displayedPathways = MASTER_PATHWAYS.filter(track => {
-    const matchesCategory = selectedCategory === 'All' || track.category === selectedCategory;
+    const matchesCategory = 
+      selectedCategory === 'All' || 
+      (PILLAR_MAPPINGS[selectedCategory] && PILLAR_MAPPINGS[selectedCategory].includes(track.id));
+      
     const matchesSearch = !pathwaySearch || 
       track.title?.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
       track.description?.toLowerCase().includes(pathwaySearch.toLowerCase());
