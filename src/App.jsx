@@ -75,7 +75,7 @@ export default function App() {
   // Accordion UI States for Menus
   const [expandedPathway, setExpandedPathway] = useState(null);
   const [expandedRoutine, setExpandedRoutine] = useState(null);
-   
+    
   // Accordion UI States for Logs (De-Clutter Feature)
   const [expandedActiveLogs, setExpandedActiveLogs] = useState({});
   const [expandedHistoryLogs, setExpandedHistoryLogs] = useState({});
@@ -85,6 +85,7 @@ export default function App() {
   const [pendingUnlockTrack, setPendingUnlockTrack] = useState(null);
 
   const [activeWorkout, setActiveWorkout] = useState({
+    sessionId: null, // Track the generated session ID
     date: new Date().toISOString().split('T')[0],
     title: 'Calisthenics Progression Session',
     sets: [],
@@ -335,7 +336,7 @@ export default function App() {
 
     let maxLevel = track.levels6to10 ? 10 : 5;
     const newLevelNum = Math.max(1, Math.min(maxLevel, currentItem.level + direction));
-     
+      
     const newLevelData = track.levels1to5?.find(l => l.level === newLevelNum) || 
                          track.levels6to10?.find(l => l.level === newLevelNum);
                          
@@ -351,9 +352,29 @@ export default function App() {
     updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: items });
   };
 
-  const handleSaveSet = (newSet) => {
-    setActiveWorkout(prev => {
-      const currentSets = prev.sets || [];
+  const handleSaveSet = async (newSet) => {
+    try {
+      let currentWorkout = { ...activeWorkout };
+      let activeWorkoutDocRef;
+
+      // 1 & 2. Ensure that if an active workout does not yet exist, strictly await its creation first.
+      if (user && !currentWorkout.sessionId) {
+        // 3. Capture the newly generated Firebase document ID
+        const sessionsRef = collection(db, 'users', user.uid, 'sessions');
+        const newSessionDoc = doc(sessionsRef);
+        currentWorkout.sessionId = newSessionDoc.id;
+
+        activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
+        const sanitizedInit = sanitizeForFirebase(currentWorkout);
+        
+        // strictly await creation of the new workout document before proceeding
+        await setDoc(activeWorkoutDocRef, { session: sanitizedInit }, { merge: true });
+      } else if (user) {
+        activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
+      }
+
+      // Process the new set data
+      const currentSets = currentWorkout.sets || [];
       const existingIndex = currentSets.findIndex(s => s.id === newSet.id);
       let updatedSets;
       if (existingIndex >= 0) {
@@ -363,7 +384,7 @@ export default function App() {
         updatedSets = [...currentSets, newSet];
       }
 
-      let updatedPlannedItems = prev.plannedItems;
+      let updatedPlannedItems = currentWorkout.plannedItems;
       if (updatedPlannedItems && updatedPlannedItems.length > 0) {
         const matchIndex = updatedPlannedItems.findIndex(item => item.name === newSet.exerciseName);
         if (matchIndex >= 0) {
@@ -372,21 +393,24 @@ export default function App() {
       }
 
       const nextState = {
-        ...prev,
+        ...currentWorkout,
         sets: updatedSets,
         plannedItems: updatedPlannedItems && updatedPlannedItems.length > 0 ? updatedPlannedItems : null
       };
 
-      if (user) {
-        const activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
+      // 4. The database write for the logged set must never execute until the active workout doc is guaranteed to exist.
+      if (user && activeWorkoutDocRef) {
         const sanitizedNextState = sanitizeForFirebase(nextState);
-        setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true }).catch(err => console.error("Cloud sync err:", err));
+        await setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true });
       }
-       
+
+      // Finally update local state once safely persisted in Firestore
+      setActiveWorkout(nextState);
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
-      return nextState;
-    });
+    } catch (err) {
+      console.error("Cloud sync err during set save:", err);
+    }
   };
 
   const removeSet = (setId) => {
@@ -478,6 +502,7 @@ export default function App() {
     }
 
     const sessionState = {
+      sessionId: null, // Reset session ID for a brand new routine session
       date: new Date().toISOString().split('T')[0],
       title: routine.name,
       sets: activeWorkout.sets || [],
@@ -530,20 +555,28 @@ export default function App() {
       try {
         const sessionsRef = collection(db, 'users', user.uid, 'sessions');
         const sanitizedSession = sanitizeForFirebase(completedSession);
-        await addDoc(sessionsRef, sanitizedSession);
+        
+        // If a generated sessionId already exists, we can use it to maintain ID consistency
+        if (activeWorkout.sessionId) {
+          const specificDocRef = doc(sessionsRef, activeWorkout.sessionId);
+          await setDoc(specificDocRef, sanitizedSession);
+        } else {
+          await addDoc(sessionsRef, sanitizedSession);
+        }
       } catch (err) {
         console.error("Save error:", err);
       }
     }
 
     updateActiveWorkoutInCloud({
+      sessionId: null, // Clear out ID for the next session
       date: new Date().toISOString().split('T')[0],
       title: 'Calisthenics Progression Session',
       sets: [],
       restDuration: 90,
       plannedItems: null
     });
-     
+      
     setActiveCircuit(null);
     setRoundTally(0);
     setSessionNotes('');
@@ -572,7 +605,7 @@ export default function App() {
         const hours = String(newLocalDate.getHours()).padStart(2, '0');
         const mins = String(newLocalDate.getMinutes()).padStart(2, '0');
         const secs = String(newLocalDate.getSeconds()).padStart(2, '0');
-         
+          
         await setDoc(sessionDocRef, { 
           date: dateStr,
           createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`
@@ -599,13 +632,13 @@ export default function App() {
   const filteredPathways = MASTER_PATHWAYS.filter(t => {
     const matchesCat = selectedCategory === 'All' || t.category === selectedCategory;
     const searchLower = pathwaySearch.trim().toLowerCase();
-     
+      
     const matchesSearch = !searchLower || 
       t.title?.toLowerCase().includes(searchLower) ||
       t.description?.toLowerCase().includes(searchLower) ||
       t.levels1to5?.some(l => l.name?.toLowerCase().includes(searchLower)) ||
       t.levels6to10?.some(l => l.name?.toLowerCase().includes(searchLower));
-       
+        
     return matchesCat && matchesSearch;
   });
 
@@ -750,7 +783,7 @@ export default function App() {
             setLoggingExercise={setLoggingExercise}
           />
         )}
-         
+          
         {/* --- TAB: MOBILITY & RECOVERY --- */}
         {activeTab === 'mobility' && (
           <MobilityView />
@@ -813,7 +846,7 @@ export default function App() {
 
       {/* MODALS */}
       {pendingUnlockTrack && <UnlockConfirmModal trackTitle={pendingUnlockTrack.title} onConfirm={handleConfirmUnlock} onClose={() => setPendingUnlockTrack(null)} />}
-       
+        
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
@@ -821,7 +854,7 @@ export default function App() {
       {showAccountModal && user && (
         <AccountSettingsModal user={user} onClose={() => setShowAccountModal(false)} />
       )}
-   
+    
       {selectedExerciseDemo && (
         <ExerciseFormVisualizer 
           exercise={selectedExerciseDemo} 
@@ -857,7 +890,7 @@ export default function App() {
           onStartTimer={startTimer}
         />
       )}
-       
+        
       <GlobalFeedback />
   </div>
   );
