@@ -23,7 +23,7 @@ export default function SkillPathwaysView({
   setPendingUnlockTrack,
   updateLevel,
   setSelectedExerciseDemo,
-  setLoggingExercise
+  onAddToCart // Replaced setLoggingExercise with onAddToCart
 }) {
   // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
@@ -218,12 +218,13 @@ export default function SkillPathwaysView({
                         View Animated Demo
                       </button>
 
+                      {/* Replaced log button with Add to Cart workflow */}
                       <button
-                        onClick={() => setLoggingExercise({ trackId: track.id, levelData: activeLevelData })}
+                        onClick={() => onAddToCart({ trackId: track.id, levelData: activeLevelData })}
                         className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
                       >
                         <Plus className="w-4 h-4 stroke-[3]" />
-                        Log Set
+                        Add to Workout
                       </button>
                     </div>
                   </div>
