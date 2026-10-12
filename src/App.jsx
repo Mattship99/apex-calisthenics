@@ -10,7 +10,8 @@ import {
   setDoc, 
   onSnapshot, 
   addDoc, 
-  deleteDoc 
+  deleteDoc,
+  getDoc
 } from 'firebase/firestore';
 
 // IMPORTING FIREBASE AND CONSTANTS
@@ -44,7 +45,7 @@ import {
   Play, Pause, RotateCcw, Plus, Trash2, Target, Award, 
   Zap, BarChart3, Activity, Check, Cloud, Eye, X, MessageSquare, 
   Layers, CheckSquare, ChevronUp, ChevronDown, Edit3, LogIn, LogOut, 
-  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert
+  User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, ShoppingCart
 } from 'lucide-react';
 
 export default function App() {
@@ -91,6 +92,10 @@ export default function App() {
     sets: [],
     restDuration: 90
   });
+  
+  // Workout Cart / Draft Workout State
+  const [draftWorkout, setDraftWorkout] = useState(null);
+
   const [sessionNotes, setSessionNotes] = useState('');
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const [selectedExerciseDemo, setSelectedExerciseDemo] = useState(null);
@@ -195,14 +200,65 @@ export default function App() {
       }
     });
 
+    // Load Draft Workout (Cart) safely
+    const draftWorkoutDocRef = doc(db, 'users', user.uid, 'workouts', 'draft');
+    const unsubscribeDraftWorkout = onSnapshot(draftWorkoutDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setDraftWorkout(docSnap.data());
+      } else {
+        setDraftWorkout(null);
+      }
+    });
+
     return () => {
       unsubscribeSessions();
       unsubscribeLevels();
       unsubscribePhases();
       unsubscribeRoutines();
       unsubscribeActiveWorkout();
+      unsubscribeDraftWorkout();
     };
   }, [user]);
+
+  // Handle adding an exercise to the Workout Cart (Draft Workout)
+  const handleAddToCart = async (exercise) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      const draftRef = doc(db, 'users', user.uid, 'workouts', 'draft');
+      
+      const queuedExercise = sanitizeForFirebase({
+        ...exercise,
+        defaultRest: exercise.defaultRest || 90, // Ensure defaultRest is included
+        addedAt: new Date().toISOString(),
+        cartId: Date.now() + Math.random().toString(36).substr(2, 9)
+      });
+
+      // Fetch the latest document to verify existence before writing
+      const docSnap = await getDoc(draftRef);
+
+      if (docSnap.exists()) {
+        const currentData = docSnap.data();
+        await setDoc(draftRef, {
+          queuedExercises: [...(currentData.queuedExercises || []), queuedExercise],
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } else {
+        // Await creation if it doesn't exist
+        await setDoc(draftRef, {
+          status: 'draft',
+          queuedExercises: [queuedExercise],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error("Error adding to workout cart:", err);
+    }
+  };
 
   const updateActiveWorkoutInCloud = async (newWorkoutState) => {
     setActiveWorkout(newWorkoutState);
@@ -664,7 +720,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24 relative">
       {/* STICKY HEADER & NAVIGATION WRAPPER */}
       <div className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-lg">
         {/* HEADER */}
@@ -781,6 +837,7 @@ export default function App() {
             updateLevel={updateLevel}
             setSelectedExerciseDemo={setSelectedExerciseDemo}
             setLoggingExercise={setLoggingExercise}
+            handleAddToCart={handleAddToCart}
           />
         )}
           
@@ -843,6 +900,22 @@ export default function App() {
         )}
 
       </main>
+
+      {/* FLOATING WORKOUT CART PILL */}
+      {draftWorkout && draftWorkout.queuedExercises && draftWorkout.queuedExercises.length > 0 && activeTab !== 'workout' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
+          <button
+            onClick={() => setActiveTab('workout')}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 px-5 py-3 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all font-bold group"
+          >
+            <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span>Workout Cart</span>
+            <span className="bg-slate-950 text-emerald-400 w-6 h-6 rounded-full flex items-center justify-center text-xs ml-1">
+              {draftWorkout.queuedExercises.length}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* MODALS */}
       {pendingUnlockTrack && <UnlockConfirmModal trackTitle={pendingUnlockTrack.title} onConfirm={handleConfirmUnlock} onClose={() => setPendingUnlockTrack(null)} />}
