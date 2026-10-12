@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Dumbbell, Trophy, Timer as TimerIcon, CheckCircle, ChevronRight, 
-  Play, Pause, RotateCcw, Plus, Trash2, Target, Award, 
+  Play, Pause, RotateCcw, Plus, Minus, Trash2, Target, Award, 
   Zap, BarChart3, Activity, Check, Cloud, Eye, X, MessageSquare, 
   Layers, CheckSquare, ChevronUp, ChevronDown, Edit3, LogIn, LogOut, 
   User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar, Clock
@@ -24,6 +24,7 @@ export default function ActiveWorkoutView({
   setActiveCircuit,
   clearRoutineChecklist,
   adjustPlannedItemLevel,
+  updatePlannedItemRest, // New prop to handle individual exercise rest times
   setLoggingExercise,
   groupedSets,
   expandedActiveLogs,
@@ -316,64 +317,89 @@ export default function ActiveWorkoutView({
         </div>
       )}
 
-      {/* Planned Routine Checklist (for standard workouts) */}
+      {/* Planned Routine Checklist (for standard workouts - Acts as "Workout Cart") */}
       {activeWorkout.plannedItems && activeWorkout.plannedItems.length > 0 && !activeCircuit && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              <CheckSquare className="w-4 h-4" />
-              Routine Checklist (Tap to Log Sets)
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                <CheckSquare className="w-4 h-4" />
+                Workout Cart
+              </div>
+              <span className="text-[11px] text-slate-400 mt-1">Adjust difficulty (▲/▼) or tweak rest time per exercise.</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] text-slate-400 hidden sm:inline">Use ▲/▼ to adjust difficulty</span>
-              <button
-                onClick={clearRoutineChecklist}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
-                title="Clear remaining routine checklist without affecting logged sets"
-              >
-                Clear Checklist
-              </button>
-            </div>
+            <button
+              onClick={clearRoutineChecklist}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
+              title="Clear remaining routine checklist without affecting logged sets"
+            >
+              Clear Cart
+            </button>
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-3 pt-2">
             {activeWorkout.plannedItems.map((item, idx) => {
               const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
               const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
               
+              // Resolve the specific rest duration for this exercise in the queue
+              const currentRest = item.restDuration !== undefined 
+                ? item.restDuration 
+                : (activeWorkout.restDuration || 90);
+              
               return (
-                <div key={idx} className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col gap-0.5">
+                <div key={idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-1">
                       <button
                         onClick={() => adjustPlannedItemLevel(idx, 1)}
-                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition"
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 hover:border-slate-700 transition"
                       >
                         <ChevronUp className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => adjustPlannedItemLevel(idx, -1)}
-                        className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition"
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 hover:border-slate-700 transition"
                       >
                         <ChevronDown className="w-3 h-3" />
                       </button>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
-                        <span className="text-xs font-bold text-slate-200">{item.name}</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
+                        <span className="text-sm font-bold text-slate-200">{item.name}</span>
                       </div>
-                      <span className="text-[11px] text-amber-400 block mt-0.5">Target: {item.target}</span>
+                      <span className="text-xs text-amber-400 font-medium">Target: {item.target}</span>
                     </div>
                   </div>
 
-                  {levelData && track && (
-                    <button
-                      onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/10 self-end sm:self-auto"
-                    >
-                      + Log Set
-                    </button>
-                  )}
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-3 self-end xl:self-auto w-full xl:w-auto border-t border-slate-800/50 xl:border-0 pt-3 xl:pt-0">
+                    {/* Exercise-specific Rest Timer Adjuster */}
+                    <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-inner">
+                      <TimerIcon className="w-4 h-4 text-amber-500/70 ml-1.5 mr-1" />
+                      <button
+                        onClick={() => updatePlannedItemRest && updatePlannedItemRest(idx, Math.max(15, currentRest - 15))}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-xs font-mono font-medium text-slate-200 w-12 text-center">{currentRest}s</span>
+                      <button
+                        onClick={() => updatePlannedItemRest && updatePlannedItemRest(idx, currentRest + 15)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {levelData && track && (
+                      <button
+                        onClick={() => setLoggingExercise({ trackId: track.id, levelData, customRestTime: currentRest })}
+                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Set
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -433,14 +459,14 @@ export default function ActiveWorkoutView({
                       {levelData && track && (
                         <div className="flex justify-end mb-2">
                           <button
-                            onClick={() => setLoggingExercise({ trackId: track.id, levelData })}
+                            onClick={() => setLoggingExercise({ trackId: track.id, levelData, customRestTime: activeWorkout.restDuration || 90 })}
                             className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition"
                           >
                             <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Manual Set
                           </button>
                         </div>
                       )}
-                       
+                        
                       <div className="space-y-2">
                         {group.sets.map((set, sIdx) => (
                           <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
