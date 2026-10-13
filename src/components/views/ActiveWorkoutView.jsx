@@ -10,6 +10,7 @@ import { LADDER_RUNGS, MASTER_PATHWAYS } from '../../data/constants';
 
 export default function ActiveWorkoutView({
   activeWorkout,
+  draftWorkout,
   finishWorkout,
   timerSeconds,
   formatTime,
@@ -24,7 +25,7 @@ export default function ActiveWorkoutView({
   setActiveCircuit,
   clearRoutineChecklist,
   adjustPlannedItemLevel,
-  updatePlannedItemRest, // New prop to handle individual exercise rest times
+  updatePlannedItemRest, 
   setLoggingExercise,
   groupedSets,
   expandedActiveLogs,
@@ -64,7 +65,6 @@ export default function ActiveWorkoutView({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Helper to format 24h time string (HH:MM) into a clean 12-hour AM/PM display string
   const formatFriendlyTime = (timeString) => {
     if (!timeString) return 'Select Time';
     const [hStr, mStr] = timeString.split(':');
@@ -73,11 +73,10 @@ export default function ActiveWorkoutView({
     if (isNaN(hours)) return timeString;
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = hours ? hours : 12; 
     return `${hours}:${minutes} ${ampm}`;
   };
 
-  // Helper utility to recursively sanitize objects/arrays for Firebase (converts undefined to null)
   const sanitizeForFirebase = (data) => {
     if (data === undefined) return null;
     if (data === null || typeof data !== 'object') return data;
@@ -89,7 +88,6 @@ export default function ActiveWorkoutView({
     const sanitized = {};
     for (const key of Object.keys(data)) {
       const val = data[key];
-      // Skip undefined fields or convert them to null
       sanitized[key] = val === undefined ? null : sanitizeForFirebase(val);
     }
     return sanitized;
@@ -126,13 +124,15 @@ export default function ActiveWorkoutView({
       targetDate = new Date();
     }
 
-    // Sanitize activeWorkout and pass sanitized payload upstream if applicable
     const sanitizedWorkout = sanitizeForFirebase(activeWorkout);
     finishWorkout(targetDate, sanitizedWorkout);
   };
 
-  // Safely resolve queued items from any possible property name variant used across views/Firestore schemas
-  const plannedItems = activeWorkout?.plannedItems || activeWorkout?.exercises || activeWorkout?.cart || activeWorkout?.queuedExercises || [];
+  // Safely resolve the items. If there's an active routine/workout plan, use it. 
+  // Otherwise default to the dynamic draft workout cart items.
+  const plannedItems = (activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0)
+    ? activeWorkout.plannedItems
+    : (draftWorkout?.queuedExercises || []);
 
   return (
     <div className="space-y-6">
