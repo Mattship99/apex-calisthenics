@@ -4,7 +4,7 @@ import {
   onAuthStateChanged,
   signInAnonymously
 } from 'firebase/auth';
-import { vccx
+import { 
   collection, 
   doc, 
   setDoc, 
@@ -862,6 +862,8 @@ export default function App() {
         {activeTab === 'workout' && (
           <ActiveWorkoutView
             activeWorkout={activeWorkout}
+            draftWorkout={draftWorkout}
+            user={user}
             finishWorkout={finishWorkout}
             timerSeconds={timerSeconds}
             formatTime={formatTime}
