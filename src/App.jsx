@@ -227,17 +227,22 @@ export default function App() {
       return;
     }
 
+    const queuedExercise = sanitizeForFirebase({
+      ...exercise,
+      defaultRest: exercise.defaultRest || 90,
+      addedAt: new Date().toISOString(),
+      cartId: Date.now() + Math.random().toString(36).substr(2, 9)
+    });
+
+    // Optimistically update local state for an instant UI reaction
+    setDraftWorkout(prev => ({
+      ...prev,
+      status: 'draft',
+      queuedExercises: [...(prev?.queuedExercises || []), queuedExercise]
+    }));
+
     try {
       const draftRef = doc(db, 'users', user.uid, 'workouts', 'draft');
-      
-      const queuedExercise = sanitizeForFirebase({
-        ...exercise,
-        defaultRest: exercise.defaultRest || 90, // Ensure defaultRest is included
-        addedAt: new Date().toISOString(),
-        cartId: Date.now() + Math.random().toString(36).substr(2, 9)
-      });
-
-      // Fetch the latest document to verify existence before writing
       const docSnap = await getDoc(draftRef);
 
       if (docSnap.exists()) {
@@ -247,7 +252,6 @@ export default function App() {
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } else {
-        // Await creation if it doesn't exist
         await setDoc(draftRef, {
           status: 'draft',
           queuedExercises: [queuedExercise],
@@ -383,9 +387,20 @@ export default function App() {
     updateLevel(trackId, 6, true);
   };
 
-  const adjustPlannedItemLevel = (itemIndex, direction) => {
-    if (!activeWorkout.plannedItems) return;
-    const items = [...activeWorkout.plannedItems];
+  // Upgraded to handle both activeWorkout.plannedItems and draftWorkout.queuedExercises
+  const adjustPlannedItemLevel = async (itemIndex, direction) => {
+    let items = [];
+    let isDraft = false;
+
+    if (activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0) {
+      items = [...activeWorkout.plannedItems];
+    } else if (draftWorkout?.queuedExercises && draftWorkout.queuedExercises.length > 0) {
+      items = [...draftWorkout.queuedExercises];
+      isDraft = true;
+    } else {
+      return;
+    }
+
     const currentItem = items[itemIndex];
     const track = MASTER_PATHWAYS.find(t => t.id === currentItem.trackId);
     if (!track) return;
@@ -405,7 +420,40 @@ export default function App() {
       target: newLevelData.target
     };
 
-    updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: items });
+    if (isDraft) {
+      setDraftWorkout({ ...draftWorkout, queuedExercises: items });
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid, 'workouts', 'draft'), { queuedExercises: items, updatedAt: new Date().toISOString() }, { merge: true });
+      }
+    } else {
+      updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: items });
+    }
+  };
+
+  // Extracted function to update individual rest times
+  const updatePlannedItemRest = async (itemIndex, newRest) => {
+    let items = [];
+    let isDraft = false;
+
+    if (activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0) {
+      items = [...activeWorkout.plannedItems];
+    } else if (draftWorkout?.queuedExercises && draftWorkout.queuedExercises.length > 0) {
+      items = [...draftWorkout.queuedExercises];
+      isDraft = true;
+    } else {
+      return;
+    }
+
+    items[itemIndex] = { ...items[itemIndex], restDuration: newRest };
+
+    if (isDraft) {
+      setDraftWorkout({ ...draftWorkout, queuedExercises: items });
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid, 'workouts', 'draft'), { queuedExercises: items, updatedAt: new Date().toISOString() }, { merge: true });
+      }
+    } else {
+      updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: items });
+    }
   };
 
   const handleSaveSet = async (newSet) => {
@@ -413,9 +461,7 @@ export default function App() {
       let currentWorkout = { ...activeWorkout };
       let activeWorkoutDocRef;
 
-      // 1 & 2. Ensure that if an active workout does not yet exist, strictly await its creation first.
       if (user && !currentWorkout.sessionId) {
-        // 3. Capture the newly generated Firebase document ID
         const sessionsRef = collection(db, 'users', user.uid, 'sessions');
         const newSessionDoc = doc(sessionsRef);
         currentWorkout.sessionId = newSessionDoc.id;
@@ -423,13 +469,11 @@ export default function App() {
         activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
         const sanitizedInit = sanitizeForFirebase(currentWorkout);
         
-        // strictly await creation of the new workout document before proceeding
         await setDoc(activeWorkoutDocRef, { session: sanitizedInit }, { merge: true });
       } else if (user) {
         activeWorkoutDocRef = doc(db, 'users', user.uid, 'settings', 'activeWorkoutState');
       }
 
-      // Process the new set data
       const currentSets = currentWorkout.sets || [];
       const existingIndex = currentSets.findIndex(s => s.id === newSet.id);
       let updatedSets;
@@ -440,11 +484,21 @@ export default function App() {
         updatedSets = [...currentSets, newSet];
       }
 
+      // Check off activeWorkout.plannedItems OR draftWorkout.queuedExercises upon log
       let updatedPlannedItems = currentWorkout.plannedItems;
       if (updatedPlannedItems && updatedPlannedItems.length > 0) {
         const matchIndex = updatedPlannedItems.findIndex(item => item.name === newSet.exerciseName);
         if (matchIndex >= 0) {
           updatedPlannedItems = updatedPlannedItems.filter((_, idx) => idx !== matchIndex);
+        }
+      } else if (draftWorkout?.queuedExercises && draftWorkout.queuedExercises.length > 0) {
+        const matchIndex = draftWorkout.queuedExercises.findIndex(item => item.name === newSet.exerciseName);
+        if (matchIndex >= 0) {
+          const newDraftItems = draftWorkout.queuedExercises.filter((_, idx) => idx !== matchIndex);
+          setDraftWorkout({ ...draftWorkout, queuedExercises: newDraftItems });
+          if (user) {
+            setDoc(doc(db, 'users', user.uid, 'workouts', 'draft'), { queuedExercises: newDraftItems }, { merge: true }).catch(err => console.error(err));
+          }
         }
       }
 
@@ -454,13 +508,11 @@ export default function App() {
         plannedItems: updatedPlannedItems && updatedPlannedItems.length > 0 ? updatedPlannedItems : null
       };
 
-      // 4. The database write for the logged set must never execute until the active workout doc is guaranteed to exist.
       if (user && activeWorkoutDocRef) {
         const sanitizedNextState = sanitizeForFirebase(nextState);
         await setDoc(activeWorkoutDocRef, { session: sanitizedNextState }, { merge: true });
       }
 
-      // Finally update local state once safely persisted in Firestore
       setActiveWorkout(nextState);
       setExpandedActiveLogs(current => ({ ...current, [newSet.exerciseName]: true }));
 
@@ -482,8 +534,16 @@ export default function App() {
     });
   };
 
-  const clearRoutineChecklist = () => {
+  const clearRoutineChecklist = async () => {
     updateActiveWorkoutInCloud({ ...activeWorkout, plannedItems: null });
+    setDraftWorkout(null);
+    if (user) {
+      try {
+        await deleteDoc(doc(db, 'users', user.uid, 'workouts', 'draft'));
+      } catch (err) {
+        console.error("Error clearing draft:", err);
+      }
+    }
   };
 
   const logCircuitRound = (currentRoundIndex) => {
@@ -612,7 +672,6 @@ export default function App() {
         const sessionsRef = collection(db, 'users', user.uid, 'sessions');
         const sanitizedSession = sanitizeForFirebase(completedSession);
         
-        // If a generated sessionId already exists, we can use it to maintain ID consistency
         if (activeWorkout.sessionId) {
           const specificDocRef = doc(sessionsRef, activeWorkout.sessionId);
           await setDoc(specificDocRef, sanitizedSession);
@@ -625,7 +684,7 @@ export default function App() {
     }
 
     updateActiveWorkoutInCloud({
-      sessionId: null, // Clear out ID for the next session
+      sessionId: null,
       date: new Date().toISOString().split('T')[0],
       title: 'Calisthenics Progression Session',
       sets: [],
@@ -878,6 +937,7 @@ export default function App() {
             setActiveCircuit={setActiveCircuit}
             clearRoutineChecklist={clearRoutineChecklist}
             adjustPlannedItemLevel={adjustPlannedItemLevel}
+            updatePlannedItemRest={updatePlannedItemRest}
             setLoggingExercise={setLoggingExercise}
             groupedSets={groupedSets}
             expandedActiveLogs={expandedActiveLogs}
@@ -948,7 +1008,7 @@ export default function App() {
         <LogSetModal
           levelData={loggingExercise.levelData}
           trackId={loggingExercise.trackId}
-          restDuration={activeWorkout.restDuration || 90}
+          restDuration={loggingExercise.customRestTime || activeWorkout.restDuration || 90}
           onClose={() => setLoggingExercise(null)}
           onSave={handleSaveSet}
           onStartTimer={startTimer}
