@@ -30,9 +30,10 @@ export default function LogSetModal({
   // Stopwatch state
   const [timerState, setTimerState] = useState('idle'); // idle, countdown, running, stopped
   const [countdown, setCountdown] = useState(5);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0); // Tracks milliseconds
   const timerRef = useRef(null);
   const countdownRef = useRef(null);
+  const startTimeRef = useRef(null); // Used to calculate precise time against Date.now()
 
   useEffect(() => {
     if (activeExercise?.isIsometric || activeExercise?.type === 'hold') {
@@ -49,6 +50,7 @@ export default function LogSetModal({
     setTimerState('idle');
     setCountdown(5);
     setElapsedTime(0);
+    startTimeRef.current = null;
   }, [currentExerciseIndex, isCircuitMode, activeExercise, initialSetData]);
 
   // Stopwatch interval logic
@@ -58,6 +60,7 @@ export default function LogSetModal({
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(countdownRef.current);
+            startTimeRef.current = Date.now();
             setTimerState('running');
             return 5;
           }
@@ -65,9 +68,10 @@ export default function LogSetModal({
         });
       }, 1000);
     } else if (timerState === 'running') {
+      if (!startTimeRef.current) startTimeRef.current = Date.now();
       timerRef.current = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
+        setElapsedTime(Date.now() - startTimeRef.current);
+      }, 10);
     }
 
     return () => {
@@ -80,25 +84,29 @@ export default function LogSetModal({
     setTimerState('countdown');
     setCountdown(5);
     setElapsedTime(0);
+    startTimeRef.current = null;
+  };
+
+  const formatTime = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    const hundredths = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
+    return `${minutes}:${seconds}.${hundredths}`;
   };
 
   const handleStopTimer = () => {
     setTimerState('stopped');
     clearInterval(timerRef.current);
-    setReps(`${elapsedTime}s`);
+    setReps(formatTime(elapsedTime));
   };
 
   const handleResetTimer = () => {
     setTimerState('idle');
     setElapsedTime(0);
     setCountdown(5);
+    startTimeRef.current = null;
     setReps(activeExercise?.targetReps || '30s');
-  };
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
   };
 
   const handleSubmit = (e) => {
@@ -108,7 +116,7 @@ export default function LogSetModal({
     let finalReps = reps;
     if (mode === 'stopwatch' && timerState === 'running') {
       handleStopTimer();
-      finalReps = `${elapsedTime}s`;
+      finalReps = formatTime(elapsedTime);
     }
 
     const savedData = {
@@ -223,7 +231,7 @@ export default function LogSetModal({
                     {countdown}
                   </div>
                 ) : (
-                  <div className={`text-6xl font-mono font-bold tracking-tight ${timerState === 'stopped' ? 'text-emerald-400' : 'text-slate-100'}`}>
+                  <div className={`text-5xl font-mono font-bold tracking-tight ${timerState === 'stopped' ? 'text-emerald-400' : 'text-slate-100'}`}>
                     {formatTime(elapsedTime)}
                   </div>
                 )}
@@ -268,7 +276,7 @@ export default function LogSetModal({
                 
                 {timerState === 'stopped' && (
                   <div className="flex-1 py-2.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl flex items-center justify-center border border-slate-700">
-                    Logged: {elapsedTime}s
+                    Logged: {formatTime(elapsedTime)}
                   </div>
                 )}
               </div>
