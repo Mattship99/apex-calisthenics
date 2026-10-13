@@ -360,7 +360,12 @@ export default function ActiveWorkoutView({
                 // Use item.id as fallback for trackId since some formats use `id` for the root track identifier
                 const trackIdFallback = item?.trackId || item?.id;
                 const track = MASTER_PATHWAYS.find(t => t.id === trackIdFallback);
-                const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
+                
+                const exerciseName = item?.levelData?.name || item?.name || 'Unknown Exercise';
+                const exerciseLevel = item?.levelData?.level || item?.level || '-';
+                const exerciseTarget = item?.levelData?.target || item?.target || 'Not specified';
+                
+                const levelData = track?.levels1to5?.find(l => l.level === exerciseLevel) || track?.levels6to10?.find(l => l.level === exerciseLevel);
                 
                 // Resolve the specific rest duration for this exercise in the queue
                 const currentRest = item?.restDuration !== undefined 
@@ -386,10 +391,10 @@ export default function ActiveWorkoutView({
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">Lvl {item?.level || '-'}</span>
-                          <span className="text-sm font-bold text-slate-200">{item?.name || 'Unknown Exercise'}</span>
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">Lvl {exerciseLevel}</span>
+                          <span className="text-sm font-bold text-slate-200">{exerciseName}</span>
                         </div>
-                        <span className="text-xs text-amber-400 font-medium">Target: {item?.target || 'Not specified'}</span>
+                        <span className="text-xs text-amber-400 font-medium">Target: {exerciseTarget}</span>
                       </div>
                     </div>
 
