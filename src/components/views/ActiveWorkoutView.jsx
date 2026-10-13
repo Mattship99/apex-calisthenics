@@ -253,7 +253,7 @@ export default function ActiveWorkoutView({
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
-              <h3 className="text-base font-bold text-slate-100">{activeCircuit.name}</h3>
+              <h3 className="text-base font-bold text-slate-100">{activeCircuit.name || 'Active Circuit'}</h3>
             </div>
             <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
               <span>Completed Rounds:</span>
@@ -283,7 +283,7 @@ export default function ActiveWorkoutView({
                 {activeCircuit.items.map((item, idx) => {
                   const isLadder = activeCircuit.type === 'ladder';
                   const currentRungReps = isLadder ? LADDER_RUNGS[Math.min(roundTally, LADDER_RUNGS.length - 1)] : null;
-                  const displayTarget = isLadder ? `${currentRungReps} Reps` : item.target;
+                  const displayTarget = isLadder ? `${currentRungReps} Reps` : (item?.target || 'N/A');
 
                   return (
                     <div
@@ -295,7 +295,7 @@ export default function ActiveWorkoutView({
                           : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
                       }`}
                     >
-                      <span className="text-xs font-bold">{item.name}</span>
+                      <span className="text-xs font-bold">{item?.name || 'Unknown Station'}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-amber-400">{displayTarget}</span>
                         <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${item.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700'}`}>
@@ -357,13 +357,15 @@ export default function ActiveWorkoutView({
           ) : (
             <div className="grid gap-3 pt-2">
               {plannedItems.map((item, idx) => {
-                const track = MASTER_PATHWAYS.find(t => t.id === item.trackId);
+                // Use item.id as fallback for trackId since some formats use `id` for the root track identifier
+                const trackIdFallback = item?.trackId || item?.id;
+                const track = MASTER_PATHWAYS.find(t => t.id === trackIdFallback);
                 const levelData = track?.levels1to5?.find(l => l.level === item.level) || track?.levels6to10?.find(l => l.level === item.level);
                 
                 // Resolve the specific rest duration for this exercise in the queue
-                const currentRest = item.restDuration !== undefined 
+                const currentRest = item?.restDuration !== undefined 
                   ? item.restDuration 
-                  : (activeWorkout?.restDuration || 90);
+                  : (item?.defaultRest !== undefined ? item.defaultRest : (activeWorkout?.restDuration || 90));
                 
                 return (
                   <div key={idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -384,10 +386,10 @@ export default function ActiveWorkoutView({
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">Lvl {item.level}</span>
-                          <span className="text-sm font-bold text-slate-200">{item.name}</span>
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">Lvl {item?.level || '-'}</span>
+                          <span className="text-sm font-bold text-slate-200">{item?.name || 'Unknown Exercise'}</span>
                         </div>
-                        <span className="text-xs text-amber-400 font-medium">Target: {item.target}</span>
+                        <span className="text-xs text-amber-400 font-medium">Target: {item?.target || 'Not specified'}</span>
                       </div>
                     </div>
 
@@ -410,14 +412,13 @@ export default function ActiveWorkoutView({
                         </button>
                       </div>
 
-                      {levelData && track && (
-                        <button
-                          onClick={() => setLoggingExercise({ trackId: track.id, levelData, customRestTime: currentRest })}
-                          className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-1.5"
-                        >
-                          <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Set
-                        </button>
-                      )}
+                      {/* Always render the Log Set button even if track mapping fails to prevent being stuck */}
+                      <button
+                        onClick={() => setLoggingExercise({ trackId: track?.id || trackIdFallback, levelData: levelData || item, customRestTime: currentRest })}
+                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Set
+                      </button>
                     </div>
                   </div>
                 );
@@ -463,7 +464,7 @@ export default function ActiveWorkoutView({
                   >
                     <div>
                       <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{trackTitle}</span>
-                      <h4 className="font-bold text-slate-100 text-base">{group.exerciseName}</h4>
+                      <h4 className="font-bold text-slate-100 text-base">{group.exerciseName || 'Unknown Exercise'}</h4>
                     </div>
 
                     <div className="flex items-center gap-4">
