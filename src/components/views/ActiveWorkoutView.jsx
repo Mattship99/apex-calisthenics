@@ -77,6 +77,12 @@ export default function ActiveWorkoutView({
     return `${hours}:${minutes} ${ampm}`;
   };
 
+  const formatSecondsToMSS = (totalSeconds) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const sanitizeForFirebase = (data) => {
     if (data === undefined) return null;
     if (data === null || typeof data !== 'object') return data;
@@ -213,19 +219,19 @@ export default function ActiveWorkoutView({
             onClick={() => startTimer(60)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout?.restDuration === 60 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
           >
-            60s
+            1:00
           </button>
           <button
             onClick={() => startTimer(90)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout?.restDuration === 90 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
           >
-            90s
+            1:30
           </button>
           <button
             onClick={() => startTimer(180)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${activeWorkout?.restDuration === 180 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'}`}
           >
-            3 min
+            3:00
           </button>
 
           <div className="h-6 w-px bg-slate-800 mx-1" />
@@ -408,7 +414,7 @@ export default function ActiveWorkoutView({
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="text-xs font-mono font-medium text-slate-200 w-12 text-center">{currentRest}s</span>
+                        <span className="text-xs font-mono font-medium text-slate-200 w-12 text-center">{formatSecondsToMSS(currentRest)}</span>
                         <button
                           onClick={() => updatePlannedItemRest && updatePlannedItemRest(idx, currentRest + 15)}
                           className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition"
