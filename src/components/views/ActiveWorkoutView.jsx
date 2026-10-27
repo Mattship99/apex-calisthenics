@@ -24,6 +24,7 @@ export default function ActiveWorkoutView({
   handleToggleCircuitItem,
   setActiveCircuit,
   clearRoutineChecklist,
+  onClearRoutine,
   adjustPlannedItemLevel,
   updatePlannedItemRest, 
   onRemoveFromCart,
@@ -54,6 +55,7 @@ export default function ActiveWorkoutView({
 
   const [workoutDate, setWorkoutDate] = useState(getCurrentLocalDate());
   const [workoutTime, setWorkoutTime] = useState(getCurrentLocalTime());
+  const [confirmingClearRoutine, setConfirmingClearRoutine] = useState(false);
 
   const formatFriendlyDate = (dateString) => {
     if (!dateString) return '';
@@ -135,11 +137,23 @@ export default function ActiveWorkoutView({
     finishWorkout(targetDate, sanitizedWorkout);
   };
 
+  const handleConfirmClearRoutine = () => {
+    if (onClearRoutine) {
+      onClearRoutine();
+    } else if (setActiveCircuit) {
+      setActiveCircuit(null);
+    }
+    setConfirmingClearRoutine(false);
+  };
+
   // Safely resolve the items. If there's an active routine/workout plan, use it. 
   // Otherwise default to the dynamic draft workout cart items.
-  const plannedItems = (activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0)
+  const hasActiveRoutineItems = Boolean(activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0);
+  const plannedItems = hasActiveRoutineItems
     ? activeWorkout.plannedItems
     : (draftWorkout?.queuedExercises || []);
+
+  const canFinishSession = (activeWorkout?.sets || []).length > 0 || roundTally > 0;
 
   return (
     <div className="space-y-6">
@@ -190,15 +204,15 @@ export default function ActiveWorkoutView({
 
           <button
             onClick={handleFinish}
-            disabled={((activeWorkout?.sets || []).length === 0 && roundTally === 0)}
+            disabled={!canFinishSession}
             className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition ${
-              (activeWorkout?.sets || []).length > 0 || roundTally > 0
+              canFinishSession
                 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
           >
             <Award className="w-4 h-4" />
-            Save & Finish Session
+            Finish & Save Session
           </button>
         </div>
       </div>
@@ -257,12 +271,12 @@ export default function ActiveWorkoutView({
       {/* Active Circuit Tracker & Fractional Round Calculator */}
       {activeCircuit && activeCircuit.items && (
         <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
             <div>
               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Circuit Protocol</span>
               <h3 className="text-base font-bold text-slate-100">{activeCircuit.name || 'Active Circuit'}</h3>
             </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2 self-start sm:self-auto">
               <span>Completed Rounds:</span>
               <span className="text-base font-black text-emerald-300">
                 {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
@@ -316,36 +330,85 @@ export default function ActiveWorkoutView({
             </>
           )}
 
+          {/* 2-Step Non-Destructive Routine Clearing Confirmation */}
           <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => setActiveCircuit(null)}
-              className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
-            >
-              Close Circuit Without Saving
-            </button>
+            {!confirmingClearRoutine ? (
+              <button
+                onClick={() => setConfirmingClearRoutine(true)}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Clear Routine
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  onClick={handleConfirmClearRoutine}
+                  className="flex-1 py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                  Confirm Clear Routine?
+                </button>
+                <button
+                  onClick={() => setConfirmingClearRoutine(false)}
+                  className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Planned Routine Checklist (for standard workouts - Acts as "Workout Cart") */}
+      {/* Planned Routine Checklist / Workout Cart (for standard workouts) */}
       {!activeCircuit && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
                 <CheckSquare className="w-4 h-4" />
-                Workout Cart
+                {hasActiveRoutineItems ? 'Active Routine Checklist' : 'Workout Cart'}
               </div>
               <span className="text-[11px] text-slate-400 mt-1">Adjust difficulty (▲/▼) or tweak rest time per exercise.</span>
             </div>
+
             {plannedItems.length > 0 && (
-              <button
-                onClick={clearRoutineChecklist}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition"
-                title="Clear remaining routine checklist without affecting logged sets"
-              >
-                Clear Cart
-              </button>
+              hasActiveRoutineItems ? (
+                !confirmingClearRoutine ? (
+                  <button
+                    onClick={() => setConfirmingClearRoutine(true)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition self-start sm:self-auto"
+                    title="Clear active routine without affecting logged sets or workout cart"
+                  >
+                    Clear Routine
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                      onClick={handleConfirmClearRoutine}
+                      className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold rounded-lg border border-rose-500/40 transition flex items-center gap-1.5"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                      Confirm Clear Routine?
+                    </button>
+                    <button
+                      onClick={() => setConfirmingClearRoutine(false)}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg border border-slate-700 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )
+              ) : (
+                <button
+                  onClick={clearRoutineChecklist}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-lg border border-slate-700 transition self-start sm:self-auto"
+                  title="Clear remaining workout cart without affecting logged sets"
+                >
+                  Clear Cart
+                </button>
+              )
             )}
           </div>
 
@@ -582,6 +645,22 @@ export default function ActiveWorkoutView({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Bottom Full-Width Finish & Save Session Action Section */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <button
+          onClick={handleFinish}
+          disabled={!canFinishSession}
+          className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl font-bold text-sm transition ${
+            canFinishSession
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
+              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+          }`}
+        >
+          <Award className="w-5 h-5" />
+          <span>Finish & Save Session</span>
+        </button>
       </div>
     </div>
   );
