@@ -264,6 +264,40 @@ export default function App() {
     }
   };
 
+  // Handle removing an individual exercise from the Workout Cart / Planned Items without affecting logged sets
+  const handleRemoveFromCart = async (indexToRemove) => {
+    if (activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0) {
+      const updatedPlanned = activeWorkout.plannedItems.filter((_, index) => index !== indexToRemove);
+      const nextState = {
+        ...activeWorkout,
+        plannedItems: updatedPlanned.length > 0 ? updatedPlanned : null
+      };
+      await updateActiveWorkoutInCloud(nextState);
+    } else if (draftWorkout?.queuedExercises && draftWorkout.queuedExercises.length > 0) {
+      const updatedQueued = draftWorkout.queuedExercises.filter((_, index) => index !== indexToRemove);
+      const updatedAt = new Date().toISOString();
+
+      // Immediately update local React state while preserving any other draft fields
+      setDraftWorkout(prev => prev ? {
+        ...prev,
+        queuedExercises: updatedQueued,
+        updatedAt
+      } : null);
+
+      if (user) {
+        try {
+          const draftRef = doc(db, 'users', user.uid, 'workouts', 'draft');
+          await setDoc(draftRef, {
+            queuedExercises: sanitizeForFirebase(updatedQueued),
+            updatedAt
+          }, { merge: true });
+        } catch (err) {
+          console.error("Error removing exercise from workout cart:", err);
+        }
+      }
+    }
+  };
+
   const updateActiveWorkoutInCloud = async (newWorkoutState) => {
     setActiveWorkout(newWorkoutState);
     if (user) {
@@ -938,6 +972,7 @@ export default function App() {
             clearRoutineChecklist={clearRoutineChecklist}
             adjustPlannedItemLevel={adjustPlannedItemLevel}
             updatePlannedItemRest={updatePlannedItemRest}
+            onRemoveFromCart={handleRemoveFromCart}
             setLoggingExercise={setLoggingExercise}
             groupedSets={groupedSets}
             expandedActiveLogs={expandedActiveLogs}
