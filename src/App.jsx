@@ -580,6 +580,55 @@ export default function App() {
     }
   };
 
+  // Detach/clear active routine without ending or wiping out the active workout session or cart
+  const handleClearRoutine = async () => {
+    // 1. Clear active circuit state and reset round tally
+    setActiveCircuit(null);
+    setRoundTally(0);
+
+    // 2. Stop and reset the global Work/Routine timer engine back to default rest duration
+    const fallbackRest = activeWorkout?.restDuration || 90;
+    setTimerActive(false);
+    setTimerInitial(fallbackRest);
+    setTimerSeconds(fallbackRest);
+
+    // 3. Remove routine plannedItems and reset routine title while preserving logged sets & sessionId
+    const updatedWorkoutState = {
+      ...activeWorkout,
+      title: 'Calisthenics Progression Session',
+      plannedItems: null,
+      activeRoutine: null,
+      routine: null
+    };
+    await updateActiveWorkoutInCloud(updatedWorkoutState);
+
+    // 4. If draftWorkout has routine fields stored, nullify only the routine fields while preserving queuedExercises & sets
+    if (draftWorkout) {
+      const updatedAt = new Date().toISOString();
+      setDraftWorkout(prev => prev ? {
+        ...prev,
+        activeRoutine: null,
+        routine: null,
+        plannedItems: null,
+        updatedAt
+      } : null);
+
+      if (user) {
+        try {
+          const draftRef = doc(db, 'users', user.uid, 'workouts', 'draft');
+          await setDoc(draftRef, {
+            activeRoutine: null,
+            routine: null,
+            plannedItems: null,
+            updatedAt
+          }, { merge: true });
+        } catch (err) {
+          console.error("Error clearing routine from draft workout:", err);
+        }
+      }
+    }
+  };
+
   const logCircuitRound = (currentRoundIndex) => {
     if (!activeCircuit || !activeCircuit.items) return;
 
@@ -652,7 +701,7 @@ export default function App() {
     }
 
     const sessionState = {
-      sessionId: null, // Reset session ID for a brand new routine session
+      sessionId: activeWorkout.sessionId || null,
       date: new Date().toISOString().split('T')[0],
       title: routine.name,
       sets: activeWorkout.sets || [],
@@ -970,6 +1019,7 @@ export default function App() {
             handleToggleCircuitItem={handleToggleCircuitItem}
             setActiveCircuit={setActiveCircuit}
             clearRoutineChecklist={clearRoutineChecklist}
+            onClearRoutine={handleClearRoutine}
             adjustPlannedItemLevel={adjustPlannedItemLevel}
             updatePlannedItemRest={updatePlannedItemRest}
             onRemoveFromCart={handleRemoveFromCart}
