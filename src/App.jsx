@@ -761,10 +761,16 @@ export default function App() {
         } else {
           await addDoc(sessionsRef, sanitizedSession);
         }
+
+        // Automatically clear out the Workout Cart (Draft Workout) upon saving
+        await deleteDoc(doc(db, 'users', user.uid, 'workouts', 'draft'));
       } catch (err) {
         console.error("Save error:", err);
       }
     }
+
+    // Reset local draft workout state
+    setDraftWorkout(null);
 
     updateActiveWorkoutInCloud({
       sessionId: null,
