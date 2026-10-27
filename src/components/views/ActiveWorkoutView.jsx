@@ -26,6 +26,7 @@ export default function ActiveWorkoutView({
   clearRoutineChecklist,
   adjustPlannedItemLevel,
   updatePlannedItemRest, 
+  onRemoveFromCart,
   setLoggingExercise,
   groupedSets,
   expandedActiveLogs,
@@ -379,7 +380,7 @@ export default function ActiveWorkoutView({
                   : (item?.defaultRest !== undefined ? item.defaultRest : (activeWorkout?.restDuration || 90));
                 
                 return (
-                  <div key={idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <div key={item?.cartId || idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col gap-1">
                         <button
@@ -404,7 +405,7 @@ export default function ActiveWorkoutView({
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-3 self-end xl:self-auto w-full xl:w-auto border-t border-slate-800/50 xl:border-0 pt-3 xl:pt-0">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2.5 self-end xl:self-auto w-full xl:w-auto border-t border-slate-800/50 xl:border-0 pt-3 xl:pt-0">
                       {/* Exercise-specific Rest Timer Adjuster */}
                       <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-inner">
                         <TimerIcon className="w-4 h-4 text-amber-500/70 ml-1.5 mr-1" />
@@ -426,9 +427,18 @@ export default function ActiveWorkoutView({
                       {/* Always render the Log Set button even if track mapping fails to prevent being stuck */}
                       <button
                         onClick={() => setLoggingExercise({ trackId: track?.id || trackIdFallback, levelData: levelData || item, customRestTime: currentRest })}
-                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-1.5"
+                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 flex-1 sm:flex-initial whitespace-nowrap flex items-center justify-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Set
+                      </button>
+
+                      {/* Remove individual exercise from Workout Cart */}
+                      <button
+                        onClick={() => onRemoveFromCart && onRemoveFromCart(idx)}
+                        className="p-2.5 bg-slate-900 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 rounded-xl transition shrink-0"
+                        title="Remove from Workout Cart"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
