@@ -1,5 +1,15 @@
 import React, { useMemo } from 'react';
-import { PILLAR_MAPPINGS } from '../../data/constants'; // Adjust import as necessary
+import { PILLAR_MAPPINGS as EXTERNAL_PILLAR_MAPPINGS } from '../../data/constants';
+
+// Default fallback mappings for the 6 primary calisthenics pillars
+const DEFAULT_PILLAR_MAPPINGS = {
+  'Vertical Pull': ['pullup', 'chinup', 'pulldown', 'lat', 'front lever', 'vertical pull'],
+  'Horizontal Pull': ['row', 'australian', 'inverted', 'back lever', 'horizontal pull'],
+  'Vertical Push': ['handstand', 'pike', 'dip', 'overhead', 'vertical push'],
+  'Horizontal Push': ['pushup', 'push-up', 'planche', 'bench', 'horizontal push'],
+  'Leg Power': ['squat', 'pistol', 'lunge', 'calf', 'jump', 'leg', 'lower body'],
+  'Core': ['plank', 'leg raise', 'hollow', 'wiper', 'core', 'ab', 'crunch']
+};
 
 // Helper utility to normalize strings for reliable matching (removes casing, spaces, underscores, and hyphens)
 const normalizeStr = (str) => String(str || '').toLowerCase().replace(/[\s_\-]/g, '');
@@ -7,12 +17,24 @@ const normalizeStr = (str) => String(str || '').toLowerCase().replace(/[\s_\-]/g
 export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
   // Support either workoutHistory or workouts prop naming safely
   const activeWorkouts = useMemo(() => {
-    return workoutHistory.length > 0 ? workoutHistory : workouts;
+    return Array.isArray(workoutHistory) && workoutHistory.length > 0 
+      ? workoutHistory 
+      : Array.isArray(workouts) 
+      ? workouts 
+      : [];
   }, [workoutHistory, workouts]);
+
+  // Merge external mappings with defaults as a safeguard against empty/missing imports
+  const pillarMappings = useMemo(() => {
+    if (EXTERNAL_PILLAR_MAPPINGS && Object.keys(EXTERNAL_PILLAR_MAPPINGS).length > 0) {
+      return EXTERNAL_PILLAR_MAPPINGS;
+    }
+    return DEFAULT_PILLAR_MAPPINGS;
+  }, []);
 
   // Utility function to calculate 0-100 scores based on actual logged workout history
   const pillarScores = useMemo(() => {
-    const pillarKeys = Object.keys(PILLAR_MAPPINGS || {});
+    const pillarKeys = Object.keys(pillarMappings);
     const pillarVolumes = {};
 
     pillarKeys.forEach((pillarName) => {
@@ -23,6 +45,8 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
     // 1. Iterate through logged workouts and completed sets/exercises
     activeWorkouts.forEach((workout) => {
+      if (!workout) return;
+
       // Support various Firestore schema structures (exercises, sets, items, or flat workout records)
       const exercises = Array.isArray(workout.exercises)
         ? workout.exercises
@@ -30,11 +54,15 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         ? workout.sets
         : Array.isArray(workout.items)
         ? workout.items
+        : Array.isArray(workout.workoutItems)
+        ? workout.workoutItems
         : [workout];
 
       exercises.forEach((item) => {
+        if (!item) return;
+
         // Extract potential identifiers from the exercise record
-        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || '';
+        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || item.exercise || '';
         const explicitPillar = item.pillar || item.category || workout.pillar || workout.category || '';
 
         let matchedPillar = null;
@@ -50,10 +78,10 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
           }
         }
 
-        // Strategy B: Look up via PILLAR_MAPPINGS using normalized comparison
+        // Strategy B: Look up via pillarMappings using normalized comparison
         if (!matchedPillar && movementKey) {
           const normMovement = normalizeStr(movementKey);
-          for (const [pillarName, mapping] of Object.entries(PILLAR_MAPPINGS)) {
+          for (const [pillarName, mapping] of Object.entries(pillarMappings)) {
             if (Array.isArray(mapping)) {
               if (
                 mapping.some((m) => {
@@ -92,14 +120,25 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
         // 2. Aggregate volume if a valid pillar is matched
         if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
-          const completedSets =
-            item.completedSets ||
-            (Array.isArray(item.sets) ? item.sets.filter((s) => s.completed || (s.reps !== undefined && s.reps > 0)).length : 0) ||
-            item.setsCount ||
-            (item.reps ? 1 : 0) ||
-            1;
+          // Calculate volume based on sets, reps, or fallback weight
+          let itemVolume = 1;
+          
+          if (Array.isArray(item.sets)) {
+            const completedSets = item.sets.filter((s) => s && (s.completed || s.reps > 0));
+            if (completedSets.length > 0) {
+              itemVolume = completedSets.reduce((sum, s) => sum + (Number(s.reps) || 1), 0);
+            } else {
+              itemVolume = item.sets.length;
+            }
+          } else if (item.completedSets) {
+            itemVolume = Number(item.completedSets) || 1;
+          } else if (item.reps) {
+            itemVolume = Number(item.reps) || 1;
+          } else if (item.setsCount) {
+            itemVolume = Number(item.setsCount) || 1;
+          }
 
-          pillarVolumes[matchedPillar] += completedSets;
+          pillarVolumes[matchedPillar] += itemVolume;
         }
       });
     });
@@ -120,11 +159,11 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         totalVolume: volume,
       };
     });
-  }, [activeWorkouts]);
+  }, [activeWorkouts, pillarMappings]);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl p-6 space-y-4">
-      {/* Header section styled identically to AuthModal */}
+      {/* Header section */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
