@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { PILLAR_MAPPINGS as EXTERNAL_PILLAR_MAPPINGS } from '../../data/constants';
 
-// Default fallback mappings for the 6 primary calisthenics pillars
 const DEFAULT_PILLAR_MAPPINGS = {
   'Vertical Pull': ['pullup', 'chinup', 'pulldown', 'lat', 'front lever', 'vertical pull', 'pull-up'],
   'Horizontal Pull': ['row', 'australian', 'inverted', 'back lever', 'horizontal pull'],
@@ -14,6 +13,10 @@ const DEFAULT_PILLAR_MAPPINGS = {
 const normalizeStr = (str) => String(str || '').toLowerCase().replace(/[\s_\-]/g, '');
 
 export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
+  // Debug what data is actually arriving into BalanceRadar
+  console.log('[BalanceRadar] Received workoutHistory:', workoutHistory);
+  console.log('[BalanceRadar] Received workouts:', workouts);
+
   const activeWorkouts = useMemo(() => {
     return Array.isArray(workoutHistory) && workoutHistory.length > 0 
       ? workoutHistory 
@@ -38,7 +41,6 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
     if (pillarKeys.length === 0) return [];
 
-    // Helper to match text or categories against pillars
     const addVolumeToPillar = (textToMatch, volume) => {
       const normText = normalizeStr(textToMatch);
       let matched = null;
@@ -52,7 +54,6 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         }
       }
 
-      // Fallback matching against pillar name directly
       if (!matched) {
         for (const pillarName of pillarKeys) {
           if (normText.includes(normalizeStr(pillarName))) {
@@ -67,28 +68,20 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
       }
     };
 
-    // Iterate through all saved workouts in history
-    activeWorkouts.forEach((workout, wIdx) => {
+    activeWorkouts.forEach((workout) => {
       if (!workout) return;
 
-      // Flatten out all possible ways sets/exercises are stored in a saved workout session
+      // Gather items from all possible Firestore schema variations
       let itemsToParse = [];
-      
-      if (Array.isArray(workout.sets)) {
-        itemsToParse = workout.sets;
-      } else if (Array.isArray(workout.exercises)) {
-        itemsToParse = workout.exercises;
-      } else if (Array.isArray(workout.items)) {
-        itemsToParse = workout.items;
-      } else if (typeof workout === 'object') {
-        // If the workout object itself is a flat set record or contains properties
-        itemsToParse = [workout];
-      }
+      if (Array.isArray(workout.sets)) itemsToParse = workout.sets;
+      else if (Array.isArray(workout.exercises)) itemsToParse = workout.exercises;
+      else if (Array.isArray(workout.items)) itemsToParse = workout.items;
+      else if (Array.isArray(workout.loggedSets)) itemsToParse = workout.loggedSets;
+      else itemsToParse = [workout];
 
       itemsToParse.forEach((item) => {
         if (!item) return;
 
-        // Case 1: Item is a direct string representation (e.g., "10 Push-ups")
         if (typeof item === 'string') {
           let vol = 1;
           const match = item.match(/^(\d+)/);
@@ -97,7 +90,6 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
           return;
         }
 
-        // Case 2: Item is an object (could be a set log or an exercise container)
         const nameProp = item.name || item.exerciseName || item.title || item.exercise || item.text || '';
         const categoryProp = item.category || item.pillar || '';
         
@@ -109,10 +101,8 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
           if (match) vol = parseInt(match[1], 10) || 1;
         }
 
-        // Match using both its name and explicit category if available
         addVolumeToPillar(`${nameProp} ${categoryProp}`, vol);
 
-        // Case 3: If the item has a nested sets array inside it
         if (Array.isArray(item.sets)) {
           item.sets.forEach((nestedSet) => {
             if (!nestedSet) return;
@@ -131,14 +121,13 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
       });
     });
 
-    // Calculate max volume for relative 0-100% scaling
-    const volumes = Object.values(pillarVolumes);
-    const maxVol = Math.max(...volumes, 1);
+    // Calculate total combined volume across ALL pillars for true percentage share calculation
+    const totalCombinedVolume = Object.values(pillarVolumes).reduce((sum, v) => sum + v, 0);
 
     return pillarKeys.map((pillarName) => {
       const volume = pillarVolumes[pillarName] || 0;
-      const rawPercentage = (volume / maxVol) * 100;
-      const score = volume > 0 ? Math.max(10, Math.min(100, Math.round(rawPercentage))) : 0;
+      // Exact percentage share of total lifetime volume
+      const score = totalCombinedVolume > 0 ? Math.round((volume / totalCombinedVolume) * 100) : 0;
 
       return {
         name: pillarName,
@@ -174,7 +163,7 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
                   {pillar.name}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">
-                  {pillar.score}% ({pillar.totalVolume} sets/reps)
+                  {pillar.score}%
                 </span>
               </div>
               
