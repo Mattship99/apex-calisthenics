@@ -23,16 +23,22 @@ export default function VolumeSuggestions() {
         const rawWorkouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('[VolumeSuggestions] Raw workouts fetched from Firestore:', rawWorkouts);
 
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // Requirement 1: Strict 7-day rolling window from current timestamp (includes today fully)
+        const sevenDaysAgoTime = Date.now() - (7 * 24 * 60 * 60 * 1000);
 
-        // Filter sessions within the last 7 days locally
         const filteredWorkouts = rawWorkouts.filter(w => {
-          const workoutDate = w.date?.toDate ? w.date.toDate() : new Date(w.createdAt || w.date);
-          return workoutDate >= sevenDaysAgo;
+          let workoutDate;
+          if (w.date?.toDate) {
+            workoutDate = w.date.toDate();
+          } else if (w.date instanceof Date) {
+            workoutDate = w.date;
+          } else {
+            workoutDate = new Date(w.createdAt || w.date || Date.now());
+          }
+          return workoutDate.getTime() >= sevenDaysAgoTime;
         });
 
-        // Track set counts per category (e.g., Push, Pull, Legs, Core, etc.)
+        // Track set counts per normalized category
         const categoryVolume = {};
 
         filteredWorkouts.forEach((w) => {
@@ -44,14 +50,18 @@ export default function VolumeSuggestions() {
             const exName = (ex.name || '').trim().toLowerCase();
             const setCount = Array.isArray(ex.sets) ? ex.sets.length : (ex.setCount || 1);
             
-            // Find category from MASTER_PATHWAYS case-insensitively
+            // Match against MASTER_PATHWAYS case-insensitively
             const matchedTrack = MASTER_PATHWAYS.find(t => 
               t.title?.toLowerCase() === exName ||
               t.levels1to5?.some(l => l.name?.toLowerCase() === exName) ||
               t.levels6to10?.some(l => l.name?.toLowerCase() === exName)
             );
 
-            const category = matchedTrack ? matchedTrack.category : 'General / Other';
+            // Requirement 4: Guard against missing/mismatched keys by normalizing category names
+            const rawCategory = matchedTrack?.category || ex.category || 'General / Other';
+            const normalizedCategory = rawCategory.trim();
+            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
+
             categoryVolume[category] = (categoryVolume[category] || 0) + setCount;
           });
 
@@ -67,33 +77,45 @@ export default function VolumeSuggestions() {
               t.levels6to10?.some(l => l.name?.toLowerCase() === exerciseName)
             );
 
-            const category = matchedTrack ? (matchedTrack.category || 'Upper Body') : 'Core / Movement';
+            const rawCategory = matchedTrack?.category || set.category || 'Upper Body';
+            const normalizedCategory = rawCategory.trim();
+            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
+
             categoryVolume[category] = (categoryVolume[category] || 0) + 1;
           });
         });
 
         console.log('[VolumeSuggestions] Calculated Category Volumes (Last 7 Days):', categoryVolume);
 
-        // Generate dynamic suggestions based on volume balance
+        // Requirement 3: Proactive smart recommendation engine based on 7-day volume balance
         const generatedSuggestions = [];
-        const categories = Object.keys(categoryVolume);
+        const entries = Object.entries(categoryVolume);
 
-        if (categories.length === 0) {
+        if (entries.length === 0) {
           setSuggestions([]);
         } else {
-          // Find lowest and highest volume categories to provide balance recommendations
-          const sortedCategories = Object.entries(categoryVolume).sort((a, b) => b[1] - a[1]);
+          // Sort categories by volume descending
+          const sortedCategories = entries.sort((a, b) => b[1] - a[1]);
           const highest = sortedCategories[0];
-          const lowest = sortedCategories[sortedCategories.length - 1];
 
           if (highest && highest[1] >= 6) {
-            generatedSuggestions.push(`High volume logged in ${highest[0]} (${highest[1]} sets). Make sure to prioritize adequate recovery.`);
+            generatedSuggestions.push(`High volume logged in ${highest[0]} (${highest[1]} sets) over the past 7 days. Ensure you prioritize adequate recovery before hitting this pattern again.`);
+          } else if (highest) {
+            generatedSuggestions.push(`Your highest focus this week is ${highest[0]} with ${highest[1]} sets logged.`);
           }
-          if (lowest && lowest[1] < 3) {
-            generatedSuggestions.push(`Consider adding more volume to ${lowest[0]} this week to maintain balance across pathways.`);
-          }
-          if (generatedSuggestions.length === 0) {
-            generatedSuggestions.push("Your weekly training volume distribution across categories looks well-balanced!");
+
+          // Check for core movement targets (Push, Pull, Legs, Core)
+          const coreTargets = ['push', 'pull', 'legs', 'core'];
+          const underRepresented = coreTargets.filter(target => {
+            const foundKey = Object.keys(categoryVolume).find(k => k.toLowerCase().includes(target));
+            return !foundKey || categoryVolume[foundKey] < 2;
+          });
+
+          if (underRepresented.length > 0) {
+            const formattedNames = underRepresented.map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(', ');
+            generatedSuggestions.push(`Consider adding volume to under-represented movement patterns (${formattedNames}) this week to maintain balance across your calisthenics pathways.`);
+          } else {
+            generatedSuggestions.push("Your weekly training volume distribution across categories looks well-balanced and comprehensive!");
           }
 
           setSuggestions(generatedSuggestions);
