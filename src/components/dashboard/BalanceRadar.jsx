@@ -8,7 +8,7 @@ const DEFAULT_PILLAR_MAPPINGS = {
   'Vertical Push': ['handstand', 'pike', 'dip', 'overhead', 'vertical push'],
   'Horizontal Push': ['pushup', 'push-up', 'planche', 'bench', 'horizontal push'],
   'Leg Power': ['squat', 'pistol', 'lunge', 'calf', 'jump', 'leg', 'lower body'],
-  'Core': ['plank', 'leg raise', 'hollow', 'wiper', 'core', 'ab', 'crunch']
+  'Core': ['plank', 'leg raise', 'hollow', 'wiper', 'core', 'ab', 'crunch', 'leg lower']
 };
 
 // Helper utility to normalize strings for reliable matching (removes casing, spaces, underscores, and hyphens)
@@ -43,12 +43,84 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
     if (pillarKeys.length === 0) return [];
 
+    // Helper to match movement keys/strings against pillars and accumulate volume
+    const matchAndAddVolume = (movementKey, volume, item = {}, workout = {}) => {
+      const explicitPillar = 
+        item.pillar || 
+        item.category || 
+        item.levelData?.category || 
+        item.levelData?.pillar || 
+        item.exerciseData?.category || 
+        item.exerciseData?.pillar ||
+        workout.pillar || 
+        workout.category || 
+        '';
+
+      let matchedPillar = null;
+
+      // Strategy A: Check if the exercise record explicitly specifies its pillar or category
+      if (explicitPillar) {
+        const normExplicit = normalizeStr(explicitPillar);
+        for (const pillarName of pillarKeys) {
+          if (normalizeStr(pillarName) === normExplicit || normExplicit.includes(normalizeStr(pillarName)) || normalizeStr(pillarName).includes(normExplicit)) {
+            matchedPillar = pillarName;
+            break;
+          }
+        }
+      }
+
+      // Strategy B: Look up via pillarMappings using normalized comparison against movement keys
+      if (!matchedPillar && movementKey) {
+        const normMovement = normalizeStr(movementKey);
+        for (const [pillarName, mapping] of Object.entries(pillarMappings)) {
+          if (Array.isArray(mapping)) {
+            if (
+              mapping.some((m) => {
+                const normM = normalizeStr(m);
+                return normM === normMovement || normMovement.includes(normM) || normM.includes(normMovement);
+              })
+            ) {
+              matchedPillar = pillarName;
+              break;
+            }
+          } else if (typeof mapping === 'string') {
+            const normMapping = normalizeStr(mapping);
+            if (
+              normMapping === normMovement ||
+              normMovement.includes(normMapping) ||
+              normMapping.includes(normMovement)
+            ) {
+              matchedPillar = pillarName;
+              break;
+            }
+          }
+        }
+      }
+
+      // Strategy C: Fallback keyword matching if still unmatched
+      if (!matchedPillar) {
+        const searchStr = normalizeStr(movementKey + ' ' + explicitPillar);
+        for (const pillarName of pillarKeys) {
+          const normPillar = normalizeStr(pillarName);
+          if (searchStr.includes(normPillar)) {
+            matchedPillar = pillarName;
+            break;
+          }
+        }
+      }
+
+      // Aggregate volume if a valid pillar is matched
+      if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
+        pillarVolumes[matchedPillar] += volume;
+      }
+    };
+
     // 1. Iterate through logged workouts and completed sets/exercises
     activeWorkouts.forEach((workout) => {
       if (!workout) return;
 
       // Support various Firestore schema structures (exercises, sets, items, or flat workout records)
-      const exercises = Array.isArray(workout.exercises)
+      const rawItems = Array.isArray(workout.exercises)
         ? workout.exercises
         : Array.isArray(workout.sets)
         ? workout.sets
@@ -58,104 +130,72 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         ? workout.workoutItems
         : [workout];
 
-      exercises.forEach((item) => {
+      rawItems.forEach((item) => {
         if (!item) return;
 
-        // Extract potential identifiers and nested category/pillar attributes safely
-        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || item.exercise || '';
-        const explicitPillar = 
-          item.pillar || 
-          item.category || 
-          item.levelData?.category || 
-          item.levelData?.pillar || 
-          item.exerciseData?.category || 
-          item.exerciseData?.pillar ||
-          workout.pillar || 
-          workout.category || 
-          '';
-
-        let matchedPillar = null;
-
-        // Strategy A: Check if the exercise record explicitly specifies its pillar or category
-        if (explicitPillar) {
-          const normExplicit = normalizeStr(explicitPillar);
-          for (const pillarName of pillarKeys) {
-            if (normalizeStr(pillarName) === normExplicit || normExplicit.includes(normalizeStr(pillarName)) || normalizeStr(pillarName).includes(normExplicit)) {
-              matchedPillar = pillarName;
-              break;
-            }
-          }
-        }
-
-        // Strategy B: Look up via pillarMappings using normalized comparison against movement keys
-        if (!matchedPillar && movementKey) {
-          const normMovement = normalizeStr(movementKey);
-          for (const [pillarName, mapping] of Object.entries(pillarMappings)) {
-            if (Array.isArray(mapping)) {
-              if (
-                mapping.some((m) => {
-                  const normM = normalizeStr(m);
-                  return normM === normMovement || normMovement.includes(normM) || normM.includes(normMovement);
-                })
-              ) {
-                matchedPillar = pillarName;
-                break;
-              }
-            } else if (typeof mapping === 'string') {
-              const normMapping = normalizeStr(mapping);
-              if (
-                normMapping === normMovement ||
-                normMovement.includes(normMapping) ||
-                normMapping.includes(normMovement)
-              ) {
-                matchedPillar = pillarName;
-                break;
-              }
-            }
-          }
-        }
-
-        // Strategy C: Fallback keyword matching if still unmatched
-        if (!matchedPillar) {
-          const searchStr = normalizeStr(movementKey + ' ' + explicitPillar);
-          for (const pillarName of pillarKeys) {
-            const normPillar = normalizeStr(pillarName);
-            if (searchStr.includes(normPillar)) {
-              matchedPillar = pillarName;
-              break;
-            }
-          }
-        }
-
-        // 2. Aggregate volume if a valid pillar is matched
-        if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
+        // Handle case where item itself is a string representation of a set (e.g., "10 Push-ups")
+        if (typeof item === 'string') {
           let itemVolume = 1;
-          
-          if (Array.isArray(item.sets)) {
-            const completedSets = item.sets.filter((s) => s && (s.completed || s.reps > 0));
-            if (completedSets.length > 0) {
-              itemVolume = completedSets.reduce((sum, s) => sum + (Number(s.reps) || 1), 0);
+          const repMatch = item.match(/^(\d+)/);
+          if (repMatch) {
+            itemVolume = parseInt(repMatch[1], 10) || 1;
+          }
+          matchAndAddVolume(item, itemVolume, {}, workout);
+          return;
+        }
+
+        // Extract potential identifiers safely
+        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || item.exercise || '';
+
+        // If item contains a nested sets array (e.g., set strings or set objects)
+        if (Array.isArray(item.sets)) {
+          item.sets.forEach((set) => {
+            if (!set) return;
+
+            if (typeof set === 'string') {
+              let setVolume = 1;
+              const repMatch = set.match(/^(\d+)/);
+              if (repMatch) {
+                setVolume = parseInt(repMatch[1], 10) || 1;
+              }
+              // Combine base exercise name with set string for accurate keyword matching
+              const combinedKey = `${movementKey} ${set}`;
+              matchAndAddVolume(combinedKey, setVolume, item, workout);
             } else {
-              itemVolume = item.sets.length;
+              // Set is an object with properties like reps, name, etc.
+              const setMovementKey = set.name || set.exercise || set.exerciseName || movementKey;
+              const setVolume = Number(set.reps) || Number(set.completedSets) || 1;
+              matchAndAddVolume(setMovementKey, setVolume, item, workout);
             }
+          });
+        } else {
+          // Standard item object without nested sets array
+          let itemVolume = 1;
+          if (item.reps) {
+            itemVolume = Number(item.reps) || 1;
           } else if (item.completedSets) {
             itemVolume = Number(item.completedSets) || 1;
-          } else if (item.reps) {
-            itemVolume = Number(item.reps) || 1;
           } else if (item.setsCount) {
             itemVolume = Number(item.setsCount) || 1;
+          } else if (typeof movementKey === 'string') {
+            const repMatch = movementKey.match(/^(\d+)/);
+            if (repMatch) {
+              itemVolume = parseInt(repMatch[1], 10) || 1;
+            }
           }
 
-          pillarVolumes[matchedPillar] += itemVolume;
+          if (movementKey) {
+            matchAndAddVolume(movementKey, itemVolume, item, workout);
+          }
         }
       });
     });
 
-    // 3. Find the maximum volume among all pillars to normalize percentages (0-100%)
+    // 2. Find the maximum volume among all pillars to normalize percentages (0-100%)
     const volumes = Object.values(pillarVolumes);
     const maxVolume = Math.max(...volumes, 1); // Prevent division by zero
 
-    // 4. Transform into final score objects formatted for the UI
+    // 3. Transform into final score objects formatted for the UI
     return pillarKeys.map((pillarName) => {
       const volume = pillarVolumes[pillarName] || 0;
       const rawPercentage = (volume / maxVolume) * 100;
