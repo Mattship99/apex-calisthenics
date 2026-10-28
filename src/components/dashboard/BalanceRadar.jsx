@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { PILLAR_MAPPINGS } from '../../data/constants'; // Adjust import as necessary
 
+// Helper utility to normalize strings for reliable matching (removes casing, spaces, underscores, and hyphens)
+const normalizeStr = (str) => String(str || '').toLowerCase().replace(/[\s_\-]/g, '');
+
 export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
   // Support either workoutHistory or workouts prop naming safely
   const activeWorkouts = useMemo(() => {
@@ -20,34 +23,53 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
     // 1. Iterate through logged workouts and completed sets/exercises
     activeWorkouts.forEach((workout) => {
-      // Support various Firestore schema structures (exercises, sets, items)
-      const exercises = workout.exercises || workout.sets || workout.items || [];
+      // Support various Firestore schema structures (exercises, sets, items, or flat workout records)
+      const exercises = Array.isArray(workout.exercises)
+        ? workout.exercises
+        : Array.isArray(workout.sets)
+        ? workout.sets
+        : Array.isArray(workout.items)
+        ? workout.items
+        : [workout];
 
       exercises.forEach((item) => {
         // Extract potential identifiers from the exercise record
-        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || '';
-        const explicitPillar = item.pillar || item.category || '';
+        const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || '';
+        const explicitPillar = item.pillar || item.category || workout.pillar || workout.category || '';
 
         let matchedPillar = null;
 
         // Strategy A: Check if the exercise record explicitly specifies its pillar or category
-        if (explicitPillar && pillarVolumes[explicitPillar] !== undefined) {
-          matchedPillar = explicitPillar;
-        } else {
-          // Strategy B: Look up via PILLAR_MAPPINGS (supports both arrays of keys and direct strings)
+        if (explicitPillar) {
+          const normExplicit = normalizeStr(explicitPillar);
+          for (const pillarName of pillarKeys) {
+            if (normalizeStr(pillarName) === normExplicit || normExplicit.includes(normalizeStr(pillarName))) {
+              matchedPillar = pillarName;
+              break;
+            }
+          }
+        }
+
+        // Strategy B: Look up via PILLAR_MAPPINGS using normalized comparison
+        if (!matchedPillar && movementKey) {
+          const normMovement = normalizeStr(movementKey);
           for (const [pillarName, mapping] of Object.entries(PILLAR_MAPPINGS)) {
             if (Array.isArray(mapping)) {
               if (
-                mapping.includes(movementKey) ||
-                mapping.some((m) => String(m).toLowerCase() === String(movementKey).toLowerCase())
+                mapping.some((m) => {
+                  const normM = normalizeStr(m);
+                  return normM === normMovement || normMovement.includes(normM) || normM.includes(normMovement);
+                })
               ) {
                 matchedPillar = pillarName;
                 break;
               }
             } else if (typeof mapping === 'string') {
+              const normMapping = normalizeStr(mapping);
               if (
-                mapping === movementKey ||
-                String(mapping).toLowerCase() === String(movementKey).toLowerCase()
+                normMapping === normMovement ||
+                normMovement.includes(normMapping) ||
+                normMapping.includes(normMovement)
               ) {
                 matchedPillar = pillarName;
                 break;
@@ -57,10 +79,11 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         }
 
         // Strategy C: Fallback keyword matching if still unmatched
-        if (!matchedPillar && movementKey) {
-          const lowerKey = String(movementKey).toLowerCase();
+        if (!matchedPillar) {
+          const searchStr = normalizeStr(movementKey + ' ' + explicitPillar);
           for (const pillarName of pillarKeys) {
-            if (lowerKey.includes(pillarName.toLowerCase())) {
+            const normPillar = normalizeStr(pillarName);
+            if (searchStr.includes(normPillar)) {
               matchedPillar = pillarName;
               break;
             }
@@ -71,8 +94,9 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
           const completedSets =
             item.completedSets ||
-            (Array.isArray(item.sets) ? item.sets.filter((s) => s.completed || s.reps > 0).length : 0) ||
+            (Array.isArray(item.sets) ? item.sets.filter((s) => s.completed || (s.reps !== undefined && s.reps > 0)).length : 0) ||
             item.setsCount ||
+            (item.reps ? 1 : 0) ||
             1;
 
           pillarVolumes[matchedPillar] += completedSets;
