@@ -2,7 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { BarChart3, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { auth, db } from '../../services/firebase';
-import { MASTER_PATHWAYS } from '../../data/constants';
+
+const PILLARS = ['Vertical Pull', 'Horizontal Pull', 'Vertical Push', 'Horizontal Push', 'Leg Power', 'Core'];
+
+const categorizeExercise = (name) => {
+  const n = (name || '').toLowerCase();
+  if (/pull[\s-]?up|chin[\s-]?up|muscle[\s-]?up|front lever|pulldown|rope climb/.test(n)) return 'Vertical Pull';
+  if (/row|inverted|face pull|back lever|australian/.test(n)) return 'Horizontal Pull';
+  if (/dip|handstand|pike push|hspu|overhead press|ohp/.test(n)) return 'Vertical Push';
+  if (/push[\s-]?up|pushup|planche|bench press|chest fly/.test(n)) return 'Horizontal Push';
+  if (/squat|lunge|jump|leg|calf|nordic|step[\s-]?up|extension|curl|pistol/.test(n)) return 'Leg Power';
+  if (/plank|hollow|leg raise|l-sit|wiper|toes to bar|crunch|sit[\s-]?up|ab wheel|v-up|flag/.test(n)) return 'Core';
+  
+  // Broader keyword fallbacks
+  if (/pull|chin/.test(n)) return 'Vertical Pull';
+  if (/push/.test(n)) return 'Horizontal Push';
+  if (/leg|squat|calf|jump/.test(n)) return 'Leg Power';
+  if (/core|ab|plank/.test(n)) return 'Core';
+  
+  return 'Horizontal Push'; // Default fallback
+};
 
 export default function VolumeSuggestions() {
   const [suggestions, setSuggestions] = useState([]);
@@ -23,7 +42,7 @@ export default function VolumeSuggestions() {
         const rawWorkouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('[VolumeSuggestions] Raw workouts fetched from Firestore:', rawWorkouts);
 
-        // Requirement 1: Strict 7-day rolling window from current timestamp (includes today fully)
+        // Strict 7-day rolling window from current timestamp (includes today fully)
         const sevenDaysAgoTime = Date.now() - (7 * 24 * 60 * 60 * 1000);
 
         const filteredWorkouts = rawWorkouts.filter(w => {
@@ -40,15 +59,22 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Filtered workouts (last 7 days):', filteredWorkouts);
 
-        // Requirement 4: Only show empty prompt if 0 workouts exist in the last 7 days
+        // Show empty prompt only if 0 workouts exist in the last 7 days
         if (filteredWorkouts.length === 0) {
           setSuggestions([]);
           setLoading(false);
           return;
         }
 
-        // Track set counts per normalized category
-        const categoryVolume = {};
+        // Initialize pillar volume tracking
+        const pillarVolume = {
+          'Vertical Pull': 0,
+          'Horizontal Pull': 0,
+          'Vertical Push': 0,
+          'Horizontal Push': 0,
+          'Leg Power': 0,
+          'Core': 0
+        };
 
         filteredWorkouts.forEach((w) => {
           let countedForWorkout = false;
@@ -57,99 +83,69 @@ export default function VolumeSuggestions() {
 
           // Process standard exercises array if present
           exercisesArr.forEach((ex) => {
-            const exName = typeof ex === 'string' ? ex.trim().toLowerCase() : (ex.name || '').trim().toLowerCase();
+            const exName = typeof ex === 'string' ? ex : (ex.name || ex.exerciseName || '');
             const setCount = typeof ex === 'object' && Array.isArray(ex.sets) ? ex.sets.length : (ex.setCount || 1);
             
-            // Match against MASTER_PATHWAYS case-insensitively
-            const matchedTrack = MASTER_PATHWAYS.find(t => 
-              t.title?.toLowerCase() === exName ||
-              t.levels1to5?.some(l => l.name?.toLowerCase() === exName) ||
-              t.levels6to10?.some(l => l.name?.toLowerCase() === exName)
-            );
-
-            const rawCategory = matchedTrack?.category || (typeof ex === 'object' ? ex.category : null) || w.category || 'Upper Body';
-            const normalizedCategory = rawCategory.trim();
-            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
-
-            categoryVolume[category] = (categoryVolume[category] || 0) + setCount;
+            const pillar = categorizeExercise(exName);
+            pillarVolume[pillar] = (pillarVolume[pillar] || 0) + setCount;
             countedForWorkout = true;
           });
 
           // Process flat sets array saved by session logs
           setsArr.forEach((set) => {
-            const exerciseName = typeof set === 'string' ? set.trim().toLowerCase() : (set.exerciseName || set.name || '').trim().toLowerCase();
+            const setName = typeof set === 'string' ? set : (set.exerciseName || set.name || set.trackId || '');
             
-            // Match against MASTER_PATHWAYS by trackId or exercise name
-            const matchedTrack = MASTER_PATHWAYS.find(t => 
-              t.id === set.trackId ||
-              t.title?.toLowerCase() === exerciseName ||
-              t.levels1to5?.some(l => l.name?.toLowerCase() === exerciseName) ||
-              t.levels6to10?.some(l => l.name?.toLowerCase() === exerciseName)
-            );
-
-            const rawCategory = matchedTrack?.category || (typeof set === 'object' ? set.category : null) || w.category || 'Upper Body';
-            const normalizedCategory = rawCategory.trim();
-            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
-
-            categoryVolume[category] = (categoryVolume[category] || 0) + 1;
+            const pillar = categorizeExercise(setName);
+            pillarVolume[pillar] = (pillarVolume[pillar] || 0) + 1;
             countedForWorkout = true;
           });
 
           // Handle case where w.sets is stored as a direct number
           if (typeof w.sets === 'number' && w.sets > 0) {
-            const rawCategory = w.category || 'Upper Body';
-            const normalizedCategory = rawCategory.trim();
-            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
-            categoryVolume[category] = (categoryVolume[category] || 0) + w.sets;
+            const pillar = categorizeExercise(w.category || 'Push');
+            pillarVolume[pillar] = (pillarVolume[pillar] || 0) + w.sets;
             countedForWorkout = true;
           }
 
-          // Fallback guarantee: ensure any logged workout unlocks suggestions immediately even if structure varies
+          // Fallback guarantee: ensure any logged workout unlocks suggestions immediately
           if (!countedForWorkout) {
-            const rawCategory = w.category || 'Upper Body';
-            const normalizedCategory = rawCategory.trim();
-            const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
-            categoryVolume[category] = (categoryVolume[category] || 0) + (w.setCount || 1);
+            const pillar = categorizeExercise(w.category || 'Push');
+            pillarVolume[pillar] = (pillarVolume[pillar] || 0) + (w.setCount || 1);
           }
         });
 
-        console.log('[VolumeSuggestions] Calculated Category Volumes (Last 7 Days):', categoryVolume);
+        console.log('[VolumeSuggestions] Calculated Pillar Volumes (Last 7 Days):', pillarVolume);
 
-        // Requirements 2 & 3: True Gap Analysis Coach Engine
+        // Gap-Analysis Coach Engine
         const generatedSuggestions = [];
-        const standardCategories = ['Push', 'Pull', 'Legs', 'Core'];
+        const pillars = PILLARS.map(p => ({
+          pillar: p,
+          sets: pillarVolume[p] || 0
+        }));
 
-        // Map standard categories with their recorded volume (defaulting to 0 if untracked)
-        const distribution = standardCategories.map(cat => {
-          const matchingKey = Object.keys(categoryVolume).find(k => k.toLowerCase() === cat.toLowerCase());
-          return {
-            category: cat,
-            sets: matchingKey ? categoryVolume[matchingKey] : (categoryVolume[cat] || 0)
-          };
-        });
-
-        const activeCats = distribution.filter(d => d.sets > 0);
-        const zeroCats = distribution.filter(d => d.sets === 0);
+        const activePillars = pillars.filter(p => p.sets > 0);
+        const zeroPillars = pillars.filter(p => p.sets === 0);
 
         // Sort active descending by set count
-        activeCats.sort((a, b) => b.sets - a.sets);
+        activePillars.sort((a, b) => b.sets - a.sets);
 
-        if (activeCats.length > 0) {
-          const highest = activeCats[0];
+        if (activePillars.length > 0) {
+          const highest = activePillars[0];
 
-          // If there are unworked movement patterns (gaps), call them out explicitly
-          if (zeroCats.length > 0) {
-            const activeNames = activeCats.map(c => c.category).join(', ');
-            const zeroNames = zeroCats.map(c => c.category).join(' and ');
-            const exampleCategory = zeroCats[0].category.toLowerCase();
+          if (zeroPillars.length > 0) {
+            const activeNames = activePillars.map(p => p.pillar).join(', ');
+            const zeroNames = zeroPillars.map(p => p.pillar).join(' and ');
+            const samplePillar = zeroPillars[0].pillar;
+            const sampleEx = samplePillar.toLowerCase().includes('pull') ? 'pull-ups' :
+                             samplePillar.toLowerCase().includes('push') ? 'push-ups' :
+                             samplePillar.toLowerCase().includes('leg') ? 'squats' : 'planks';
             
             generatedSuggestions.push(
-              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} patterns are at zero. Try mixing in some ${exampleCategory} exercises next!`
+              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} patterns are at zero. Try mixing in some ${sampleEx} next!`
             );
           } else {
-            // All pillars have volume; check if truly well-rounded
             generatedSuggestions.push(
-              `Your training volume is active across all major patterns, led by ${highest.category} (${highest.sets} sets). Keep up the consistent work!`
+              `Your training volume is active across all major patterns, led by ${highest.pillar} (${highest.sets} sets). Keep up the consistent work!`
             );
             generatedSuggestions.push(
               "Your weekly training distribution across movement patterns looks well-rounded and structured."
@@ -157,9 +153,9 @@ export default function VolumeSuggestions() {
           }
 
           // High-volume recovery caution if applicable
-          if (highest.sets >= 8) {
+          if (highest.sets >= 10) {
             generatedSuggestions.push(
-              `High cumulative volume detected in ${highest.category}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
+              `High cumulative volume detected in ${highest.pillar}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
             );
           }
         }
