@@ -40,7 +40,7 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Filtered workouts (last 7 days):', filteredWorkouts);
 
-        // Requirement 3: Only show empty prompt if 0 workouts exist in the last 7 days
+        // Requirement 4: Only show empty prompt if 0 workouts exist in the last 7 days
         if (filteredWorkouts.length === 0) {
           setSuggestions([]);
           setLoading(false);
@@ -115,7 +115,7 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Calculated Category Volumes (Last 7 Days):', categoryVolume);
 
-        // Requirements 2 & 4: Proactive smart coaching recommendation engine
+        // Requirements 2 & 3: True Gap Analysis Coach Engine
         const generatedSuggestions = [];
         const standardCategories = ['Push', 'Pull', 'Legs', 'Core'];
 
@@ -128,32 +128,40 @@ export default function VolumeSuggestions() {
           };
         });
 
-        // Sort descending by set count
-        distribution.sort((a, b) => b.sets - a.sets);
+        const activeCats = distribution.filter(d => d.sets > 0);
+        const zeroCats = distribution.filter(d => d.sets === 0);
 
-        const highest = distribution[0];
-        const lowest = distribution[distribution.length - 1];
+        // Sort active descending by set count
+        activeCats.sort((a, b) => b.sets - a.sets);
 
-        // Generate dynamic, category-specific coaching feedback
-        if (highest.sets > 0 && lowest.sets < highest.sets) {
-          generatedSuggestions.push(
-            `Hey, you've logged a lot of ${highest.category} this week (${highest.sets} sets)—try prioritizing ${lowest.category} next to keep your body balanced.`
-          );
-        } else if (highest.sets > 0) {
-          generatedSuggestions.push(
-            `Your training volume is currently centered around ${highest.category} (${highest.sets} sets) over the past 7 days. Keep up the consistent work!`
-          );
-        }
+        if (activeCats.length > 0) {
+          const highest = activeCats[0];
 
-        // Additional high-volume recovery caution if applicable
-        if (highest.sets >= 8) {
-          generatedSuggestions.push(
-            `High cumulative volume detected in ${highest.category}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
-          );
-        } else {
-          generatedSuggestions.push(
-            "Your weekly training distribution across movement patterns looks well-rounded and structured."
-          );
+          // If there are unworked movement patterns (gaps), call them out explicitly
+          if (zeroCats.length > 0) {
+            const activeNames = activeCats.map(c => c.category).join(', ');
+            const zeroNames = zeroCats.map(c => c.category).join(' and ');
+            const exampleCategory = zeroCats[0].category.toLowerCase();
+            
+            generatedSuggestions.push(
+              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} patterns are at zero. Try mixing in some ${exampleCategory} exercises next!`
+            );
+          } else {
+            // All pillars have volume; check if truly well-rounded
+            generatedSuggestions.push(
+              `Your training volume is active across all major patterns, led by ${highest.category} (${highest.sets} sets). Keep up the consistent work!`
+            );
+            generatedSuggestions.push(
+              "Your weekly training distribution across movement patterns looks well-rounded and structured."
+            );
+          }
+
+          // High-volume recovery caution if applicable
+          if (highest.sets >= 8) {
+            generatedSuggestions.push(
+              `High cumulative volume detected in ${highest.category}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
+            );
+          }
         }
 
         setSuggestions(generatedSuggestions);
