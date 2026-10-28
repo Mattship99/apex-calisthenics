@@ -57,7 +57,6 @@ export default function VolumeSuggestions() {
               t.levels6to10?.some(l => l.name?.toLowerCase() === exName)
             );
 
-            // Requirement 4: Guard against missing/mismatched keys by normalizing category names
             const rawCategory = matchedTrack?.category || ex.category || 'General / Other';
             const normalizedCategory = rawCategory.trim();
             const category = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1).toLowerCase();
@@ -87,35 +86,50 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Calculated Category Volumes (Last 7 Days):', categoryVolume);
 
-        // Requirement 3: Proactive smart recommendation engine based on 7-day volume balance
+        // Requirements 2, 3 & 4: Proactive smart coaching recommendation engine
         const generatedSuggestions = [];
-        const entries = Object.entries(categoryVolume);
+        const standardCategories = ['Push', 'Pull', 'Legs', 'Core'];
 
-        if (entries.length === 0) {
+        // Map standard categories with their recorded volume (defaulting to 0 if untracked)
+        const distribution = standardCategories.map(cat => {
+          const matchingKey = Object.keys(categoryVolume).find(k => k.toLowerCase() === cat.toLowerCase());
+          return {
+            category: cat,
+            sets: matchingKey ? categoryVolume[matchingKey] : (categoryVolume[cat] || 0)
+          };
+        });
+
+        const totalRecordedSets = distribution.reduce((sum, item) => sum + item.sets, 0);
+
+        if (totalRecordedSets === 0) {
           setSuggestions([]);
         } else {
-          // Sort categories by volume descending
-          const sortedCategories = entries.sort((a, b) => b[1] - a[1]);
-          const highest = sortedCategories[0];
+          // Sort descending by set count
+          distribution.sort((a, b) => b.sets - a.sets);
 
-          if (highest && highest[1] >= 6) {
-            generatedSuggestions.push(`High volume logged in ${highest[0]} (${highest[1]} sets) over the past 7 days. Ensure you prioritize adequate recovery before hitting this pattern again.`);
-          } else if (highest) {
-            generatedSuggestions.push(`Your highest focus this week is ${highest[0]} with ${highest[1]} sets logged.`);
+          const highest = distribution[0];
+          const lowest = distribution[distribution.length - 1];
+
+          // Generate dynamic, category-specific coaching feedback
+          if (highest.sets > 0 && lowest.sets < highest.sets) {
+            generatedSuggestions.push(
+              `Hey, you've logged a lot of ${highest.category} this week (${highest.sets} sets)—try prioritizing ${lowest.category} next to keep your body balanced.`
+            );
+          } else if (highest.sets > 0) {
+            generatedSuggestions.push(
+              `Your training volume is currently centered around ${highest.category} (${highest.sets} sets) over the past 7 days. Keep up the consistent work!`
+            );
           }
 
-          // Check for core movement targets (Push, Pull, Legs, Core)
-          const coreTargets = ['push', 'pull', 'legs', 'core'];
-          const underRepresented = coreTargets.filter(target => {
-            const foundKey = Object.keys(categoryVolume).find(k => k.toLowerCase().includes(target));
-            return !foundKey || categoryVolume[foundKey] < 2;
-          });
-
-          if (underRepresented.length > 0) {
-            const formattedNames = underRepresented.map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(', ');
-            generatedSuggestions.push(`Consider adding volume to under-represented movement patterns (${formattedNames}) this week to maintain balance across your calisthenics pathways.`);
+          // Additional high-volume recovery caution if applicable
+          if (highest.sets >= 8) {
+            generatedSuggestions.push(
+              `High cumulative volume detected in ${highest.category}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
+            );
           } else {
-            generatedSuggestions.push("Your weekly training volume distribution across categories looks well-balanced and comprehensive!");
+            generatedSuggestions.push(
+              "Your weekly training distribution across movement patterns looks well-rounded and structured."
+            );
           }
 
           setSuggestions(generatedSuggestions);
@@ -145,14 +159,14 @@ export default function VolumeSuggestions() {
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-100">Weekly Volume Balance</h3>
-          <p className="text-[11px] text-slate-400">Insights based on your past 7 days of training</p>
+          <p className="text-[11px] text-slate-400">Proactive coaching insights based on your past 7 days</p>
         </div>
       </div>
 
       {suggestions.length === 0 ? (
         <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 text-center">
           <TrendingUp className="w-6 h-6 text-slate-500 mx-auto mb-2" />
-          <p className="text-xs text-slate-300 font-medium">Log more workouts to see volume balance suggestions.</p>
+          <p className="text-xs text-slate-300 font-medium">Log more workouts to unlock your smart coach suggestions.</p>
           <p className="text-[10px] text-slate-500 mt-0.5">Complete and save sessions in the Active Workout tab to track progress.</p>
         </div>
       ) : (
