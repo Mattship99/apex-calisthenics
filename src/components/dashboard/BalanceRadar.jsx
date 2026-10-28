@@ -61,9 +61,18 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
       exercises.forEach((item) => {
         if (!item) return;
 
-        // Extract potential identifiers from the exercise record
+        // Extract potential identifiers and nested category/pillar attributes safely
         const movementKey = item.pathwayKey || item.exerciseId || item.exerciseName || item.name || item.title || item.exercise || '';
-        const explicitPillar = item.pillar || item.category || workout.pillar || workout.category || '';
+        const explicitPillar = 
+          item.pillar || 
+          item.category || 
+          item.levelData?.category || 
+          item.levelData?.pillar || 
+          item.exerciseData?.category || 
+          item.exerciseData?.pillar ||
+          workout.pillar || 
+          workout.category || 
+          '';
 
         let matchedPillar = null;
 
@@ -71,14 +80,14 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
         if (explicitPillar) {
           const normExplicit = normalizeStr(explicitPillar);
           for (const pillarName of pillarKeys) {
-            if (normalizeStr(pillarName) === normExplicit || normExplicit.includes(normalizeStr(pillarName))) {
+            if (normalizeStr(pillarName) === normExplicit || normExplicit.includes(normalizeStr(pillarName)) || normalizeStr(pillarName).includes(normExplicit)) {
               matchedPillar = pillarName;
               break;
             }
           }
         }
 
-        // Strategy B: Look up via pillarMappings using normalized comparison
+        // Strategy B: Look up via pillarMappings using normalized comparison against movement keys
         if (!matchedPillar && movementKey) {
           const normMovement = normalizeStr(movementKey);
           for (const [pillarName, mapping] of Object.entries(pillarMappings)) {
@@ -120,7 +129,6 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
 
         // 2. Aggregate volume if a valid pillar is matched
         if (matchedPillar && pillarVolumes[matchedPillar] !== undefined) {
-          // Calculate volume based on sets, reps, or fallback weight
           let itemVolume = 1;
           
           if (Array.isArray(item.sets)) {
