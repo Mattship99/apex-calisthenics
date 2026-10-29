@@ -181,7 +181,7 @@ export const DEFAULT_CIRCUITS = [
     id: 'def_cindy',
     name: 'The "Cindy" (20m AMRAP)',
     type: 'amrap',
-    duration: 20 * 60, // 20 minutes countdown
+    duration: 20 * 60,
     restDuration: 60,
     items: [
       { name: '5 Pull-ups', completed: false, target: '5 Reps', defaultRest: 60 },
@@ -245,11 +245,11 @@ export const LADDER_RUNGS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, 8, 7, 6, 5, 4, 3,
 
 export const PILLAR_MAPPINGS = {
   'Vertical Pull': ['pulling', 'muscle_up'],
-  'Horizontal Pull': ['pulling', 'dragon-flag'], 
+  'Horizontal Pull': ['pulling', 'dragon-flag'],  
   'Vertical Push': ['inversion-master', 'muscle_up', 'lsit_core'],
   'Horizontal Push': ['pushing', 'one_arm_pushup'],
-  'Leg Power': ['dragon_squat', 'pistol_squat'],
-  'Core': ['dragon-flag', 'lsit_core', 'inversion-master', 'one_arm_pushup']
+  'Leg Power': ['dragon_squat', 'pistol_squat', 'lsit_core', 'dragon-flag'],
+  'Core': ['dragon-flag', 'lsit_core', 'inversion-master', 'one_arm_pushup', 'dragon_squat']
 };
 
 export const VOLUME_CATEGORIES = {
