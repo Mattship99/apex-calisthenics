@@ -116,7 +116,7 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Calculated Pillar Volumes (Last 7 Days):', pillarVolume);
 
-        // Gap-Analysis Coach Engine
+        // Gap-Analysis Coach Engine (Pillar-focused)
         const generatedSuggestions = [];
         const pillars = PILLARS.map(p => ({
           pillar: p,
@@ -135,13 +135,9 @@ export default function VolumeSuggestions() {
           if (zeroPillars.length > 0) {
             const activeNames = activePillars.map(p => p.pillar).join(', ');
             const zeroNames = zeroPillars.map(p => p.pillar).join(' and ');
-            const samplePillar = zeroPillars[0].pillar;
-            const sampleEx = samplePillar.toLowerCase().includes('pull') ? 'pull-ups' :
-                             samplePillar.toLowerCase().includes('push') ? 'push-ups' :
-                             samplePillar.toLowerCase().includes('leg') ? 'squats' : 'planks';
             
             generatedSuggestions.push(
-              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} patterns are at zero. Try mixing in some ${sampleEx} next!`
+              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} movement patterns are at zero. Try incorporating some volume here next!`
             );
           } else {
             generatedSuggestions.push(
