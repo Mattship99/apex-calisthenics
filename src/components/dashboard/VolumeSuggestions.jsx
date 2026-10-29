@@ -116,35 +116,35 @@ export default function VolumeSuggestions() {
 
         console.log('[VolumeSuggestions] Calculated Pillar Volumes (Last 7 Days):', pillarVolume);
 
-        // Gap-Analysis Coach Engine (Pillar-focused)
+        // Smart Targeted Gap-Analysis Coach Engine
         const generatedSuggestions = [];
         const pillars = PILLARS.map(p => ({
           pillar: p,
           sets: pillarVolume[p] || 0
         }));
 
-        const activePillars = pillars.filter(p => p.sets > 0);
-        const zeroPillars = pillars.filter(p => p.sets === 0);
+        const sortedDesc = [...pillars].sort((a, b) => b.sets - a.sets);
+        const highest = sortedDesc[0];
 
-        // Sort active descending by set count
-        activePillars.sort((a, b) => b.sets - a.sets);
+        // Find gaps: prioritize zero-volume pillars first, then lowest-volume pillars (excluding highest)
+        const candidateGaps = pillars
+          .filter(p => p.pillar !== highest.pillar)
+          .sort((a, b) => a.sets - b.sets);
 
-        if (activePillars.length > 0) {
-          const highest = activePillars[0];
+        const targetGaps = candidateGaps.filter(p => p.sets === 0);
+        const gapsToRecommend = targetGaps.length > 0 ? targetGaps.slice(0, 2) : candidateGaps.slice(0, 2);
 
-          if (zeroPillars.length > 0) {
-            const activeNames = activePillars.map(p => p.pillar).join(', ');
-            const zeroNames = zeroPillars.map(p => p.pillar).join(' and ');
-            
+        if (highest && highest.sets > 0) {
+          if (gapsToRecommend.length > 0) {
+            const gapNames = gapsToRecommend.map(p => p.pillar);
+            const gapText = gapNames.length === 2 ? `${gapNames[0]} or ${gapNames[1]}` : gapNames[0];
+
             generatedSuggestions.push(
-              `You've been putting in work on ${activeNames} this week, but your ${zeroNames} movement patterns are at zero. Try incorporating some volume here next!`
+              `You've been putting in heavy work on ${highest.pillar} this week. Try prioritizing some ${gapText} work next to keep your physique balanced.`
             );
           } else {
             generatedSuggestions.push(
               `Your training volume is active across all major patterns, led by ${highest.pillar} (${highest.sets} sets). Keep up the consistent work!`
-            );
-            generatedSuggestions.push(
-              "Your weekly training distribution across movement patterns looks well-rounded and structured."
             );
           }
 
