@@ -6,21 +6,29 @@ const PILLARS = ['Vertical Pull', 'Horizontal Pull', 'Vertical Push', 'Horizonta
 
 const categorizeExercise = (name) => {
   const n = (name || '').toLowerCase();
+  const matchedPillars = new Set();
   
-  if (/pull[\s-]?up|chin[\s-]?up|muscle[\s-]?up|front lever|pulldown|rope climb/.test(n)) return 'Vertical Pull';
-  if (/row|inverted|face pull|back lever|australian/.test(n)) return 'Horizontal Pull';
-  if (/dip|handstand|pike push|hspu|overhead press|ohp/.test(n)) return 'Vertical Push';
-  if (/push[\s-]?up|pushup|planche|bench press|chest fly/.test(n)) return 'Horizontal Push';
-  if (/squat|lunge|jump|leg|calf|nordic|step[\s-]?up|extension|curl|pistol/.test(n)) return 'Leg Power';
-  if (/plank|hollow|leg raise|l-sit|wiper|toes to bar|crunch|sit[\s-]?up|ab wheel|v-up|flag/.test(n)) return 'Core';
+  if (/pull[\s-]?up|chin[\s-]?up|muscle[\s-]?up|front lever|pulldown|rope climb/.test(n)) matchedPillars.add('Vertical Pull');
+  if (/row|inverted|face pull|back lever|australian/.test(n)) matchedPillars.add('Horizontal Pull');
+  if (/dip|handstand|pike push|hspu|overhead press|ohp/.test(n)) matchedPillars.add('Vertical Push');
+  if (/push[\s-]?up|pushup|planche|bench press|chest fly/.test(n)) matchedPillars.add('Horizontal Push');
+  if (/squat|lunge|jump|leg|calf|nordic|step[\s-]?up|extension|curl|pistol/.test(n)) matchedPillars.add('Leg Power');
+  if (/plank|hollow|leg raise|l-sit|wiper|toes to bar|crunch|sit[\s-]?up|ab wheel|v-up|flag|compression/.test(n)) matchedPillars.add('Core');
   
   // Broader keyword fallbacks
-  if (/pull|chin/.test(n)) return 'Vertical Pull';
-  if (/push/.test(n)) return 'Horizontal Push';
-  if (/leg|squat|calf|jump/.test(n)) return 'Leg Power';
-  if (/core|ab|plank/.test(n)) return 'Core';
+  if (matchedPillars.size === 0) {
+    if (/pull|chin/.test(n)) matchedPillars.add('Vertical Pull');
+    if (/push/.test(n)) matchedPillars.add('Horizontal Push');
+    if (/leg|squat|calf|jump/.test(n)) matchedPillars.add('Leg Power');
+    if (/core|ab|plank/.test(n)) matchedPillars.add('Core');
+  }
   
-  return 'Horizontal Push'; // Default fallback
+  // Default fallback if no match found
+  if (matchedPillars.size === 0) {
+    matchedPillars.add('Horizontal Push');
+  }
+
+  return Array.from(matchedPillars);
 };
 
 export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
@@ -95,7 +103,7 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
       const setsArr = Array.isArray(w.sets) ? w.sets : [];
       let countedForWorkout = false;
 
-      // 1. Process structured exercises array
+      // 1. Process structured exercises array (supports multi-pillar attribution)
       exercisesArr.forEach((ex) => {
         if (!ex) return;
         const exName = typeof ex === 'string' 
@@ -114,8 +122,10 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
           setCount = ex.repsOrHold.length;
         }
 
-        const pillar = categorizeExercise(exName);
-        pillarVolume[pillar] = (pillarVolume[pillar] || 0) + setCount;
+        const pillars = categorizeExercise(exName);
+        pillars.forEach((pillar) => {
+          pillarVolume[pillar] = (pillarVolume[pillar] || 0) + setCount;
+        });
         countedForWorkout = true;
       });
 
@@ -126,23 +136,30 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
           ? set 
           : (set.exerciseName || set.name || set.title || set.trackId || '');
         
-        const pillar = categorizeExercise(setName);
-        pillarVolume[pillar] = (pillarVolume[pillar] || 0) + 1;
+        const pillars = categorizeExercise(setName);
+        pillars.forEach((pillar) => {
+          pillarVolume[pillar] = (pillarVolume[pillar] || 0) + 1;
+        });
         countedForWorkout = true;
       });
 
       // 3. Handle case where w.sets or w.setCount is stored as a direct number
       if (typeof w.sets === 'number' && w.sets > 0) {
-        const pillar = categorizeExercise(w.category || w.workoutType || 'Push');
-        pillarVolume[pillar] = (pillarVolume[pillar] || 0) + w.sets;
+        const pillars = categorizeExercise(w.category || w.workoutType || 'Push');
+        pillars.forEach((pillar) => {
+          pillarVolume[pillar] = (pillarVolume[pillar] || 0) + w.sets;
+        });
         countedForWorkout = true;
       }
 
       // 4. Fallback guarantee for generic workouts
       if (!countedForWorkout) {
         const fallbackName = w.category || w.title || w.name || 'Push';
-        const pillar = categorizeExercise(fallbackName);
-        pillarVolume[pillar] = (pillarVolume[pillar] || 0) + (w.setCount || 1);
+        const pillars = categorizeExercise(fallbackName);
+        const volumeToAdd = w.setCount || 1;
+        pillars.forEach((pillar) => {
+          pillarVolume[pillar] = (pillarVolume[pillar] || 0) + volumeToAdd;
+        });
       }
     });
 
@@ -189,7 +206,7 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
                   {pillar.name}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">
-                  {pillar.score}% ({pillar.totalVolume} sets)
+                  {pillar.score}%
                 </span>
               </div>
               
