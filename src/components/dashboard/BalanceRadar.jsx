@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db, auth } from '../firebase'; // Adjust path to your firebase config if necessary
 
 const PILLARS = ['Vertical Pull', 'Horizontal Pull', 'Vertical Push', 'Horizontal Push', 'Leg Power', 'Core'];
 
 const categorizeExercise = (name) => {
   const n = (name || '').toLowerCase();
+  
   if (/pull[\s-]?up|chin[\s-]?up|muscle[\s-]?up|front lever|pulldown|rope climb/.test(n)) return 'Vertical Pull';
   if (/row|inverted|face pull|back lever|australian/.test(n)) return 'Horizontal Pull';
   if (/dip|handstand|pike push|hspu|overhead press|ohp/.test(n)) return 'Vertical Push';
@@ -21,13 +24,51 @@ const categorizeExercise = (name) => {
 };
 
 export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
-  const activeWorkouts = useMemo(() => {
-    return Array.isArray(workoutHistory) && workoutHistory.length > 0 
-      ? workoutHistory 
-      : Array.isArray(workouts) 
-      ? workouts 
-      : [];
+  const [fetchedWorkouts, setFetchedWorkouts] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fallback direct Firestore fetch if no props are provided
+  useEffect(() => {
+    const hasProps = (Array.isArray(workoutHistory) && workoutHistory.length > 0) || 
+                     (Array.isArray(workouts) && workouts.length > 0);
+
+    if (hasProps) {
+      setFetchedWorkouts([]);
+      return;
+    }
+
+    const fetchWorkoutsFromFirestore = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        setLoading(true);
+        // Attempt fetching from 'sessions' collection
+        let snapshot = await getDocs(collection(db, 'users', user.uid, 'sessions'));
+        let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // If empty, try 'workouts' collection as a secondary path
+        if (data.length === 0) {
+          snapshot = await getDocs(collection(db, 'users', user.uid, 'workouts'));
+          data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        setFetchedWorkouts(data);
+      } catch (err) {
+        console.error("Error fetching workouts in BalanceRadar:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkoutsFromFirestore();
   }, [workoutHistory, workouts]);
+
+  const activeWorkouts = useMemo(() => {
+    if (Array.isArray(workoutHistory) && workoutHistory.length > 0) return workoutHistory;
+    if (Array.isArray(workouts) && workouts.length > 0) return workouts;
+    return fetchedWorkouts;
+  }, [workoutHistory, workouts, fetchedWorkouts]);
 
   const pillarScores = useMemo(() => {
     const pillarVolume = {
@@ -42,39 +83,65 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
     activeWorkouts.forEach((w) => {
       if (!w) return;
 
-      const exercisesArr = Array.isArray(w.exercises) ? w.exercises : [];
+      // Extract exercises from various possible Firestore schema properties
+      const exercisesArr = Array.isArray(w.exercises) 
+        ? w.exercises 
+        : Array.isArray(w.completedExercises) 
+        ? w.completedExercises 
+        : Array.isArray(w.sessionExercises)
+        ? w.sessionExercises
+        : [];
+
       const setsArr = Array.isArray(w.sets) ? w.sets : [];
       let countedForWorkout = false;
 
-      // Process standard exercises array if present
+      // 1. Process structured exercises array
       exercisesArr.forEach((ex) => {
-        const exName = typeof ex === 'string' ? ex : (ex.name || ex.exerciseName || '');
-        const setCount = typeof ex === 'object' && Array.isArray(ex.sets) ? ex.sets.length : (ex.setCount || 1);
-        
+        if (!ex) return;
+        const exName = typeof ex === 'string' 
+          ? ex 
+          : (ex.exerciseName || ex.name || ex.title || ex.exercise?.name || '');
+
+        // Determine set count or volume weight
+        let setCount = 1;
+        if (Array.isArray(ex.sets)) {
+          setCount = ex.sets.length > 0 ? ex.sets.length : 1;
+        } else if (typeof ex.completedSets === 'number') {
+          setCount = ex.completedSets;
+        } else if (typeof ex.setCount === 'number') {
+          setCount = ex.setCount;
+        } else if (Array.isArray(ex.repsOrHold)) {
+          setCount = ex.repsOrHold.length;
+        }
+
         const pillar = categorizeExercise(exName);
         pillarVolume[pillar] = (pillarVolume[pillar] || 0) + setCount;
         countedForWorkout = true;
       });
 
-      // Process flat sets array saved by session logs
+      // 2. Process flat sets array saved by session logs
       setsArr.forEach((set) => {
-        const setName = typeof set === 'string' ? set : (set.exerciseName || set.name || set.trackId || '');
+        if (!set) return;
+        const setName = typeof set === 'string' 
+          ? set 
+          : (set.exerciseName || set.name || set.title || set.trackId || '');
         
         const pillar = categorizeExercise(setName);
         pillarVolume[pillar] = (pillarVolume[pillar] || 0) + 1;
         countedForWorkout = true;
       });
 
-      // Handle case where w.sets is stored as a direct number
+      // 3. Handle case where w.sets or w.setCount is stored as a direct number
       if (typeof w.sets === 'number' && w.sets > 0) {
-        const pillar = categorizeExercise(w.category || 'Push');
+        const pillar = categorizeExercise(w.category || w.workoutType || 'Push');
         pillarVolume[pillar] = (pillarVolume[pillar] || 0) + w.sets;
         countedForWorkout = true;
       }
 
-      // Fallback guarantee for generic workouts
+      // 4. Fallback guarantee for generic workouts
       if (!countedForWorkout) {
-        const pillar = categorizeExercise(w.category || 'Push');
+        const fallbackName = w.category || w.title || w.name || 'Push';
+        const pillar = categorizeExercise(fallbackName);
         pillarVolume[pillar] = (pillarVolume[pillar] || 0) + (w.setCount || 1);
       }
     });
@@ -104,6 +171,9 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
             Strength Balance
           </h3>
         </div>
+        {loading && (
+          <span className="text-xs text-slate-400 animate-pulse">Syncing...</span>
+        )}
       </div>
 
       <div className="space-y-5 pt-2">
@@ -119,7 +189,7 @@ export default function BalanceRadar({ workoutHistory = [], workouts = [] }) {
                   {pillar.name}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400">
-                  {pillar.score}%
+                  {pillar.score}% ({pillar.totalVolume} sets)
                 </span>
               </div>
               
