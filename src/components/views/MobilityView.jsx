@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeartPulse, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { MOBILITY_RECOVERY_MODULE } from '../../data/constants';
-import { db, auth } from '../../../firebase'; // Adjusted path to reach src/firebase
+import { db, auth } from '../../services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function MobilityView() {
