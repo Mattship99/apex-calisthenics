@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeartPulse, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { MOBILITY_RECOVERY_MODULE } from '../../data/constants';
-import { db, auth } from '../../firebase'; // Adjust path to your firebase config if needed
+import { db, auth } from '../../firebase'; // <-- Adjust this path if your firebase file is in lib/, config/, etc.
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function MobilityView() {
@@ -14,7 +14,6 @@ export default function MobilityView() {
     setToastMessage('');
 
     try {
-      // Construct the workout history record payload
       const sessionRecord = {
         userId: auth.currentUser ? auth.currentUser.uid : 'anonymous',
         category: 'Mobility & Recovery',
@@ -29,14 +28,12 @@ export default function MobilityView() {
         createdAt: new Date().toISOString()
       };
 
-      // Save to Firestore workoutHistory collection
       await addDoc(collection(db, 'workoutHistory'), sessionRecord);
 
       setLoadingId(null);
       setSuccessId(mod.id);
       setToastMessage(`Successfully logged "${mod.title}" to workout history!`);
 
-      // Reset success indicator and toast after 4 seconds
       setTimeout(() => {
         setSuccessId(null);
         setToastMessage('');
