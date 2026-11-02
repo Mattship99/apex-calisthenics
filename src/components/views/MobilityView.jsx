@@ -3,11 +3,16 @@ import { HeartPulse, CheckCircle2, Loader2, Sparkles, Dumbbell } from 'lucide-re
 import { MOBILITY_RECOVERY_MODULE } from '../../data/constants';
 import { db, auth } from '../../services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import LogSetModal from '../workout/LogSetModal';
 
 export default function MobilityView() {
   const [loadingId, setLoadingId] = useState(null);
   const [successId, setSuccessId] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Modal State
+  const [activeModalExercise, setActiveModalExercise] = useState(null);
+  const [activeModule, setActiveModule] = useState(null);
 
   // Helper utility to recursively sanitize objects/arrays for Firebase
   const sanitizeForFirebase = (data) => {
@@ -84,16 +89,18 @@ export default function MobilityView() {
     }
   };
 
-  // Log an individual exercise from a protocol
-  const handleLogSingleExercise = async (mod, ex, exIdx) => {
-    if (!auth.currentUser) {
-      setToastMessage('Please sign in to log sessions.');
-      return;
-    }
+  // Handler when a single exercise is saved from LogSetModal
+  const handleSaveSingleExercise = async (savedSetData) => {
+    if (!auth.currentUser || !activeModalExercise || !activeModule) return;
 
-    const uniqueId = `${mod.id}-${exIdx}`;
+    const mod = activeModule;
+    const ex = activeModalExercise;
+    const uniqueId = `${mod.id}-${ex.index}`;
+
     setLoadingId(uniqueId);
     setToastMessage('');
+    setActiveModalExercise(null);
+    setActiveModule(null);
 
     try {
       const now = new Date();
@@ -111,13 +118,13 @@ export default function MobilityView() {
         category: 'Mobility & Recovery',
         setsCount: 1,
         sets: [{
-          id: Date.now(),
+          id: savedSetData.id || Date.now(),
           trackId: 'mobility',
           exerciseName: ex.name,
-          repsOrHold: ex.target || 'Completed',
-          rpe: '-',
-          formRating: 'Mobility',
-          notes: `Module: ${mod.title} | Focus: ${ex.focus}`,
+          repsOrHold: savedSetData.repsOrHold || ex.target || 'Completed',
+          rpe: savedSetData.rpe || '-',
+          formRating: savedSetData.formRating || 'Mobility',
+          notes: `Module: ${mod.title} | Focus: ${ex.focus}${savedSetData.notes ? ` | ${savedSetData.notes}` : ''}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }],
         createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`,
@@ -185,6 +192,15 @@ export default function MobilityView() {
                     const isExLogging = loadingId === exUniqueId;
                     const isExSuccess = successId === exUniqueId;
 
+                    // Map fields appropriately to match what LogSetModal expects
+                    const formattedExercise = {
+                      name: ex.name,
+                      targetReps: ex.target,
+                      type: ex.target?.toLowerCase().includes('s') ? 'hold' : 'reps',
+                      focus: ex.focus,
+                      index: i
+                    };
+
                     return (
                       <div key={i} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-3">
                         <div>
@@ -193,12 +209,18 @@ export default function MobilityView() {
                           <div className="text-slate-500 mt-0.5">Focus: {ex.focus}</div>
                         </div>
 
-                        {/* Upgraded Explicit Log Button */}
+                        {/* Explicit Log Exercise Button */}
                         <div className="pt-1 flex justify-end">
                           <button
-                            onClick={() => handleLogSingleExercise(mod, ex, i)}
+                            onClick={() => {
+                              if (!auth.currentUser) {
+                                setToastMessage('Please sign in to log sessions.');
+                                return;
+                              }
+                              setActiveModule(mod);
+                              setActiveModalExercise(formattedExercise);
+                            }}
                             disabled={isExLogging || isExSuccess}
-                            title={`Log ${ex.name}`}
                             className={`py-1.5 px-3 rounded-lg font-medium text-xs flex items-center gap-1.5 transition-all duration-150 ${
                               isExSuccess
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
@@ -266,6 +288,20 @@ export default function MobilityView() {
           );
         })}
       </div>
+
+      {/* LogSetModal Integration for Individual Exercises */}
+      {activeModalExercise && (
+        <LogSetModal
+          levelData={activeModalExercise}
+          trackId="mobility"
+          restDuration={30}
+          onClose={() => {
+            setActiveModalExercise(null);
+            setActiveModule(null);
+          }}
+          onSave={handleSaveSingleExercise}
+        />
+      )}
     </div>
   );
 }
