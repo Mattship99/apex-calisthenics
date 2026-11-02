@@ -186,31 +186,42 @@ export default function MobilityView() {
                     const isExSuccess = successId === exUniqueId;
 
                     return (
-                      <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-bold text-slate-200">{ex.name}</div>
-                            <div className="text-amber-400 font-medium mt-0.5">Target: {ex.target}</div>
-                            <div className="text-slate-500 mt-0.5">Focus: {ex.focus}</div>
-                          </div>
+                      <div key={i} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-3">
+                        <div>
+                          <div className="font-bold text-slate-200 text-sm">{ex.name}</div>
+                          <div className="text-amber-400 font-medium mt-1">Target: {ex.target}</div>
+                          <div className="text-slate-500 mt-0.5">Focus: {ex.focus}</div>
+                        </div>
+
+                        {/* Upgraded Explicit Log Button */}
+                        <div className="pt-1 flex justify-end">
                           <button
                             onClick={() => handleLogSingleExercise(mod, ex, i)}
                             disabled={isExLogging || isExSuccess}
                             title={`Log ${ex.name}`}
-                            className={`p-1.5 rounded-lg border transition shrink-0 ${
+                            className={`py-1.5 px-3 rounded-lg font-medium text-xs flex items-center gap-1.5 transition-all duration-150 ${
                               isExSuccess
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
                                 : isExLogging
-                                ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
-                                : 'bg-slate-900 hover:bg-emerald-600/20 text-emerald-400 border-slate-800 hover:border-emerald-500/40'
+                                ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                : 'bg-slate-900 hover:bg-emerald-600/20 text-emerald-400 border border-slate-800 hover:border-emerald-500/40 active:scale-95'
                             }`}
                           >
                             {isExLogging ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Logging...</span>
+                              </>
                             ) : isExSuccess ? (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Logged</span>
+                              </>
                             ) : (
-                              <Dumbbell className="w-3.5 h-3.5" />
+                              <>
+                                <Dumbbell className="w-3.5 h-3.5" />
+                                <span>Log Exercise</span>
+                              </>
                             )}
                           </button>
                         </div>
