@@ -11,18 +11,58 @@ export default function LogSetModal({
   onStartTimer,
   circuitExercises = [],
   circuitRound = 1,      
-  onNextCircuitExercise  
+  onNextCircuitExercise,
+  workoutHistory = []
 }) {
   const isCircuitMode = circuitExercises.length > 0;
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const activeExercise = isCircuitMode ? circuitExercises[currentExerciseIndex] : levelData;
 
+  // Helper utility to parse clean numeric value from targets like "3 x 15 Reps" -> "15"
+  const parseCleanTarget = (targetStr) => {
+    if (!targetStr) return '8';
+    const str = String(targetStr);
+    // If it's a hold/time string like "30s", keep it as is
+    if (str.toLowerCase().includes('s') && !str.toLowerCase().includes('rep')) {
+      return str;
+    }
+    // Extract numbers from the string
+    const matches = str.match(/\d+/g);
+    if (!matches || matches.length === 0) return '8';
+    // Return the last number found (typically the reps per set, e.g. 15 from "3 x 15")
+    return matches[matches.length - 1];
+  };
+
+  // Determine intelligent default reps:
+  // 1. initialSetData if editing
+  // 2. Last logged session history for this specific exercise name
+  // 3. Parsed target reps from activeExercise
+  // 4. Fallback '8' (or '30s' if hold)
+  const getInitialReps = () => {
+    if (initialSetData) return initialSetData.repsOrHold;
+
+    const exerciseName = activeExercise?.name;
+    if (exerciseName && workoutHistory && workoutHistory.length > 0) {
+      for (const session of workoutHistory) {
+        if (session.sets && Array.isArray(session.sets)) {
+          const lastSet = session.sets.find(s => s.exerciseName === exerciseName);
+          if (lastSet && lastSet.repsOrHold) {
+            return lastSet.repsOrHold;
+          }
+        }
+      }
+    }
+
+    const target = activeExercise?.targetReps || activeExercise?.repsOrHold || activeExercise?.target;
+    if (target) {
+      return parseCleanTarget(target);
+    }
+
+    return activeExercise?.type === 'hold' || activeExercise?.isIsometric ? '30s' : '8';
+  };
+
   const [mode, setMode] = useState('reps');
-  const [reps, setReps] = useState(
-    initialSetData 
-      ? initialSetData.repsOrHold 
-      : (activeExercise?.targetReps || activeExercise?.repsOrHold || (activeExercise?.type === 'hold' ? '30s' : '8'))
-  );
+  const [reps, setReps] = useState(getInitialReps);
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
   const [setNote, setSetNote] = useState(initialSetData ? (initialSetData.notes || '') : '');
@@ -36,14 +76,8 @@ export default function LogSetModal({
   const startTimeRef = useRef(null); // Used to calculate precise time against Date.now()
 
   useEffect(() => {
-    if (activeExercise?.isIsometric || activeExercise?.type === 'hold') {
-      setMode('stopwatch');
-    } else {
-      setMode('reps');
-    }
-    
     if (isCircuitMode && activeExercise && !initialSetData) {
-      setReps(activeExercise.targetReps || activeExercise.repsOrHold || (activeExercise?.type === 'hold' ? '30s' : '8'));
+      setReps(getInitialReps());
     }
     
     // Reset timer states on new exercise
@@ -106,7 +140,7 @@ export default function LogSetModal({
     setElapsedTime(0);
     setCountdown(5);
     startTimeRef.current = null;
-    setReps(activeExercise?.targetReps || '30s');
+    setReps(parseCleanTarget(activeExercise?.targetReps || activeExercise?.target) || '30s');
   };
 
   const handleSubmit = (e) => {
@@ -200,9 +234,9 @@ export default function LogSetModal({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-slate-300">Actual Reps / Hold:</label>
-                {activeExercise?.targetReps && (
+                {(activeExercise?.targetReps || activeExercise?.target) && (
                   <span className="text-[11px] text-emerald-400 font-medium">
-                    Target: {activeExercise.targetReps}
+                    Target: {activeExercise.targetReps || activeExercise.target}
                   </span>
                 )}
               </div>
@@ -218,9 +252,9 @@ export default function LogSetModal({
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col items-center justify-center relative overflow-hidden">
               <div className="flex justify-between items-center w-full mb-3">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Interval Timer</span>
-                {activeExercise?.targetReps && (
+                {(activeExercise?.targetReps || activeExercise?.target) && (
                   <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                    Target: {activeExercise.targetReps}
+                    Target: {activeExercise.targetReps || activeExercise.target}
                   </span>
                 )}
               </div>
