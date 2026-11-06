@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell } from 'lucide-react';
+import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell, Clock, Pause } from 'lucide-react';
 
 export default function LogSetModal({ 
   levelData, 
@@ -10,7 +10,7 @@ export default function LogSetModal({
   onSave, 
   onStartTimer,
   circuitExercises = [],
-  circuitRound = 1,      
+  circuitRound = 1,       
   onNextCircuitExercise,
   workoutHistory = []
 }) {
@@ -29,15 +29,22 @@ export default function LogSetModal({
     // Extract numbers from the string
     const matches = str.match(/\d+/g);
     if (!matches || matches.length === 0) return '8';
-    // Return the last number found (typically the reps per set, e.g. 15 from "3 x 15")
     return matches[matches.length - 1];
   };
 
-  // Determine intelligent default reps:
-  // 1. initialSetData if editing
-  // 2. Last logged session history for this specific exercise name
-  // 3. Parsed target reps from activeExercise
-  // 4. Fallback '8' (or '30s' if hold)
+  // Parse target seconds for Timer Mode (e.g., "60s" or "1 min" -> 60)
+  const parseTargetSeconds = (targetStr) => {
+    if (!targetStr) return 60;
+    const str = String(targetStr).toLowerCase();
+    const match = str.match(/(\d+)/);
+    if (!match) return 60;
+    const num = parseInt(match[1], 10);
+    if (str.includes('m') && !str.includes('s')) {
+      return num * 60;
+    }
+    return num;
+  };
+
   const getInitialReps = () => {
     if (initialSetData) return initialSetData.repsOrHold;
 
@@ -61,7 +68,7 @@ export default function LogSetModal({
     return activeExercise?.type === 'hold' || activeExercise?.isIsometric ? '30s' : '8';
   };
 
-  const [mode, setMode] = useState('reps');
+  const [mode, setMode] = useState('reps'); // 'reps' | 'stopwatch' | 'timer'
   const [reps, setReps] = useState(getInitialReps);
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
@@ -73,11 +80,19 @@ export default function LogSetModal({
   const [elapsedTime, setElapsedTime] = useState(0); // Tracks milliseconds
   const timerRef = useRef(null);
   const countdownRef = useRef(null);
-  const startTimeRef = useRef(null); // Used to calculate precise time against Date.now()
+  const startTimeRef = useRef(null);
+
+  // Timer Mode (Countdown Duration) state
+  const initialDuration = parseTargetSeconds(activeExercise?.targetReps || activeExercise?.target || '60s');
+  const [countdownDuration, setCountdownDuration] = useState(initialDuration);
+  const [countdownTimeLeft, setCountdownTimeLeft] = useState(initialDuration);
+  const [countdownTimerState, setCountdownTimerState] = useState('idle'); // idle, running, paused, finished
+  const countdownTimerRef = useRef(null);
 
   useEffect(() => {
     if (isCircuitMode && activeExercise && !initialSetData) {
       setReps(getInitialReps());
+      setCountdownDuration(parseTargetSeconds(activeExercise?.targetReps || activeExercise?.target || '60s'));
     }
     
     // Reset timer states on new exercise
@@ -85,7 +100,30 @@ export default function LogSetModal({
     setCountdown(5);
     setElapsedTime(0);
     startTimeRef.current = null;
+
+    setCountdownTimerState('idle');
+    const newDur = parseTargetSeconds(activeExercise?.targetReps || activeExercise?.target || '60s');
+    setCountdownDuration(newDur);
+    setCountdownTimeLeft(newDur);
   }, [currentExerciseIndex, isCircuitMode, activeExercise, initialSetData]);
+
+  // Audio Beep generator using Web Audio API
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.6);
+    } catch (e) {
+      // Audio context might be restricted before user interaction
+    }
+  };
 
   // Stopwatch interval logic
   useEffect(() => {
@@ -114,6 +152,27 @@ export default function LogSetModal({
     };
   }, [timerState]);
 
+  // Timer Mode (Countdown) interval logic
+  useEffect(() => {
+    if (countdownTimerState === 'running') {
+      countdownTimerRef.current = setInterval(() => {
+        setCountdownTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownTimerRef.current);
+            setCountdownTimerState('finished');
+            playBeep();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    };
+  }, [countdownTimerState]);
+
   const handleStartTimer = () => {
     setTimerState('countdown');
     setCountdown(5);
@@ -127,6 +186,12 @@ export default function LogSetModal({
     const seconds = (totalSeconds % 60).toString().padStart(2, '0');
     const hundredths = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
     return `${minutes}:${seconds}.${hundredths}`;
+  };
+
+  const formatSeconds = (totalSecs) => {
+    const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+    const secs = (totalSecs % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
   };
 
   const handleStopTimer = () => {
@@ -143,10 +208,26 @@ export default function LogSetModal({
     setReps(parseCleanTarget(activeExercise?.targetReps || activeExercise?.target) || '30s');
   };
 
+  const handleStartCountdownTimer = () => {
+    if (countdownTimerState === 'idle' || countdownTimerState === 'paused') {
+      setCountdownTimerState('running');
+    }
+  };
+
+  const handlePauseCountdownTimer = () => {
+    setCountdownTimerState('paused');
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+  };
+
+  const handleResetCountdownTimer = () => {
+    setCountdownTimerState('idle');
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    setCountdownTimeLeft(countdownDuration);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // If stopwatch is currently running, stop it and log the current time
     let finalReps = reps;
     if (mode === 'stopwatch' && timerState === 'running') {
       handleStopTimer();
@@ -207,19 +288,27 @@ export default function LogSetModal({
           </button>
         </div>
 
-        {/* Mode Toggle */}
+        {/* Mode Toggle (3 Modes) */}
         <div className="flex bg-slate-950 rounded-xl p-1 border border-slate-800">
           <button 
             type="button"
-            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-colors ${mode === 'reps' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-lg transition-colors ${mode === 'reps' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
             onClick={() => setMode('reps')}
           >
             <Dumbbell className="w-3.5 h-3.5" />
-            Rep Mode
+            Reps
           </button>
           <button 
             type="button"
-            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-colors ${mode === 'stopwatch' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-lg transition-colors ${mode === 'timer' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => setMode('timer')}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Timer Mode
+          </button>
+          <button 
+            type="button"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-lg transition-colors ${mode === 'stopwatch' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
             onClick={() => setMode('stopwatch')}
           >
             <Timer className="w-3.5 h-3.5" />
@@ -230,7 +319,7 @@ export default function LogSetModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {/* Dynamic Input Area */}
-          {mode === 'reps' ? (
+          {mode === 'reps' && (
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-slate-300">Actual Reps / Hold:</label>
@@ -248,10 +337,120 @@ export default function LogSetModal({
                 required
               />
             </div>
-          ) : (
+          )}
+
+          {mode === 'timer' && (
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center relative">
+              <div className="flex justify-between items-center w-full mb-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Countdown Timer</span>
+                {(activeExercise?.targetReps || activeExercise?.target) && (
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                    Target: {activeExercise.targetReps || activeExercise.target}
+                  </span>
+                )}
+              </div>
+
+              {/* Duration Presets (Only when idle) */}
+              {countdownTimerState === 'idle' && (
+                <div className="flex gap-1.5 mb-3 w-full">
+                  {[30, 45, 60, 90, 120].map((sec) => (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => {
+                        setCountdownDuration(sec);
+                        setCountdownTimeLeft(sec);
+                      }}
+                      className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition ${
+                        countdownDuration === sec 
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50' 
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      {sec >= 60 ? `${sec / 60}m` : `${sec}s`}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Timer Display */}
+              <div className="h-16 flex items-center justify-center">
+                <div className={`text-5xl font-mono font-bold tracking-tight ${countdownTimerState === 'finished' ? 'text-emerald-400 animate-bounce' : countdownTimerState === 'running' ? 'text-emerald-400' : 'text-slate-100'}`}>
+                  {formatSeconds(countdownTimeLeft)}
+                </div>
+              </div>
+
+              {/* Timer Controls */}
+              <div className="mt-3 w-full flex gap-2">
+                {countdownTimerState === 'idle' && (
+                  <button 
+                    type="button" 
+                    onClick={handleStartCountdownTimer}
+                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
+                  >
+                    <Play className="w-4 h-4 fill-slate-950" /> Start Timer
+                  </button>
+                )}
+
+                {countdownTimerState === 'running' && (
+                  <button 
+                    type="button" 
+                    onClick={handlePauseCountdownTimer}
+                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-amber-500/20"
+                  >
+                    <Pause className="w-4 h-4 fill-slate-950" /> Pause
+                  </button>
+                )}
+
+                {countdownTimerState === 'paused' && (
+                  <>
+                    <button 
+                      type="button" 
+                      onClick={handleStartCountdownTimer}
+                      className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-4 h-4 fill-slate-950" /> Resume
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleResetCountdownTimer}
+                      className="w-10 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 flex items-center justify-center shrink-0"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+
+                {countdownTimerState === 'finished' && (
+                  <button 
+                    type="button" 
+                    onClick={handleResetCountdownTimer}
+                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl transition border border-emerald-500/30 flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Time's Up! Reset Timer
+                  </button>
+                )}
+              </div>
+
+              {/* Reps input field below timer for logging completed reps in timeframe */}
+              <div className="mt-4 w-full pt-3 border-t border-slate-800">
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1">Total Reps Completed in Timer:</label>
+                <input
+                  type="text"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  placeholder="e.g. 24 reps"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-bold"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === 'stopwatch' && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col items-center justify-center relative overflow-hidden">
               <div className="flex justify-between items-center w-full mb-3">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Interval Timer</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stopwatch Mode</span>
                 {(activeExercise?.targetReps || activeExercise?.target) && (
                   <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
                     Target: {activeExercise.targetReps || activeExercise.target}
