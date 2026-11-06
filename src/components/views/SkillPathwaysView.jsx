@@ -7,7 +7,7 @@ import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants';
 import TendonWarningPill from '../dashboard/TendonWarningPill';
 import BalanceRadar from '../dashboard/BalanceRadar';
 import VolumeSuggestion from '../dashboard/VolumeSuggestions.jsx';
-import ExerciseGuideModal from '../modals/ExerciseGuideModal';
+import ExerciseGuideModal from '../workout/ExerciseGuideModal';
 
 export default function SkillPathwaysView({
   workoutHistory,
