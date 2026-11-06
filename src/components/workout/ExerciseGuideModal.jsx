@@ -3,18 +3,38 @@ import React from 'react';
 export default function ExerciseGuideModal({ exercise, onClose }) {
   if (!exercise) return null;
 
-  // Extract properties safely from the exercise object
+  // Extract base properties and support both direct fields or nested guide object
   const {
     level,
     name,
     target,
     cues = [],
     pitfalls = [],
-    primaryMuscles = [],
     focus,
     isIsometric,
-    defaultRest
+    defaultRest,
+    guide = {}
   } = exercise;
+
+  // Fallback or resolve from guide object vs top-level exercise props
+  const setupText = guide.setup || exercise.setup || 'Assume a rigid, controlled starting position. Ensure proper joint stacking, engage core bracing, and establish full tension before initiating movement.';
+  
+  const executionSteps = guide.execution || exercise.execution || [
+    {
+      title: 'Initiation',
+      description: 'Maintain strict form integrity from the first second. Do not rely on momentum or loose joint angles unless specifically programmed.'
+    },
+    {
+      title: 'Execution / Hold',
+      description: 'Execute through the full active range of motion or hold static tension smoothly, keeping breathing steady and controlled.'
+    },
+    {
+      title: 'Completion',
+      description: 'Return to the starting position safely without dropping abruptly or breaking core rigidity.'
+    }
+  ];
+
+  const primaryMuscles = guide.engagement || guide.primaryMuscles || exercise.primaryMuscles || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -63,21 +83,24 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
           </div>
         </div>
 
-        {/* Primary Muscles / Focus Area */}
+        {/* Primary Muscles / Engagement / Focus Area */}
         {(primaryMuscles.length > 0 || focus) && (
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">
               Primary Engagement
             </h3>
             <div className="flex flex-wrap gap-2">
-              {primaryMuscles.map((muscle, index) => (
-                <span 
-                  key={index}
-                  className="px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700/50"
-                >
-                  {muscle}
-                </span>
-              ))}
+              {primaryMuscles.map((muscle, index) => {
+                const label = typeof muscle === 'string' ? muscle : (muscle.name || muscle.muscle || JSON.stringify(muscle));
+                return (
+                  <span 
+                    key={index}
+                    className="px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700/50"
+                  >
+                    {label}
+                  </span>
+                );
+              })}
               {focus && (
                 <span className="px-3 py-1 text-xs font-medium bg-amber-950/40 text-amber-300 rounded-lg border border-amber-800/40">
                   {focus}
@@ -93,7 +116,7 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
             1. Setup & Positioning
           </h3>
           <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/30 p-3.5 rounded-xl border border-zinc-800/80">
-            Assume a rigid, controlled starting position. Ensure proper joint stacking (wrists, elbows, shoulders, or hips depending on the movement), engage core bracing with a posterior pelvic tilt where required, and establish full tension before initiating movement.
+            {setupText}
           </p>
         </div>
 
@@ -103,18 +126,21 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
             2. Step-by-Step Execution
           </h3>
           <ol className="space-y-2.5 text-sm text-zinc-300">
-            <li className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
-              <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">1</span>
-              <span><strong>Initiation:</strong> Maintain strict form integrity from the first second. Do not rely on momentum, kipping, or loose joint angles unless specifically programmed.</span>
-            </li>
-            <li className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
-              <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">2</span>
-              <span><strong>Execution / Hold:</strong> Execute through the full active range of motion or hold static tension smoothly, keeping breathing steady and controlled.</span>
-            </li>
-            <li className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
-              <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">3</span>
-              <span><strong>Completion:</strong> Return to the dead hang, plank, or starting lockout safely without dropping abruptly or breaking core rigidity.</span>
-            </li>
+            {executionSteps.map((step, index) => {
+              const stepTitle = typeof step === 'object' && step.title ? step.title : `Step ${index + 1}`;
+              const stepDesc = typeof step === 'object' ? (step.description || step.text || '') : step;
+              
+              return (
+                <li key={index} className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
+                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">
+                    {index + 1}
+                  </span>
+                  <span>
+                    <strong className="text-white">{stepTitle}:</strong> {stepDesc}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         </div>
 
