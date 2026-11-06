@@ -24,7 +24,7 @@ export const getAudioContext = async () => {
 
     return audioCtx;
   } catch (error) {
-    // Autoplay restrictions or browser unsupported
+    console.error("AudioContext initialization failed:", error);
     return null;
   }
 };
@@ -42,7 +42,7 @@ export const requestWakeLock = async () => {
         });
       }
     } catch (error) {
-      // Wake lock request failed (e.g., low battery mode)
+      console.warn("Wake lock request failed:", error);
     }
   }
 };
@@ -56,7 +56,7 @@ export const releaseWakeLock = async () => {
       await wakeLock.release();
       wakeLock = null;
     } catch (error) {
-      // Release failed
+      console.warn("Wake lock release failed:", error);
     }
   }
 };
@@ -81,44 +81,22 @@ const scheduleTone = (
   peakGain = 0.25,
   type = 'sine'
 ) => {
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
 
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, startTime);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
 
-    // Attack & exponential release to prevent audio clicking
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  // Attack & exponential release to prevent audio clicking
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(peakGain, 0.001), startTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
 
-    osc.start(startTime);
-    osc.stop(startTime + duration);
-  } catch (error) {
-    // Silent fail on scheduling errors
-  }
-};
-
-/**
- * Internal helper to schedule a distinct double-beep pattern (two quick tones with a pause).
- */
-const scheduleDoubleTone = (
-  ctx,
-  freq,
-  startTime,
-  beepDuration = 0.09,
-  pauseDuration = 0.07,
-  peakGain = 0.25,
-  type = 'sine'
-) => {
-  // First beep
-  scheduleTone(ctx, freq, startTime, beepDuration, peakGain, type);
-  // Second beep
-  scheduleTone(ctx, freq, startTime + beepDuration + pauseDuration, beepDuration, peakGain, type);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
 };
 
 /**
@@ -130,9 +108,17 @@ export const playPrepBeep = async () => {
     const ctx = await getAudioContext();
     if (!ctx) return;
 
-    scheduleDoubleTone(ctx, 660, ctx.currentTime, 0.09, 0.07, 0.25, 'sine');
+    // Add a 30ms safety buffer to ensure startTime is safely in the future
+    const now = ctx.currentTime + 0.03;
+    const beepDuration = 0.09; // 90ms per beep
+    const pauseDuration = 0.07; // 70ms pause between beeps
+
+    // First beep
+    scheduleTone(ctx, 660, now, beepDuration, 0.25, 'sine');
+    // Second beep
+    scheduleTone(ctx, 660, now + beepDuration + pauseDuration, beepDuration, 0.25, 'sine');
   } catch (error) {
-    // Fail silently on playback blocks
+    console.error("Error playing prep beep:", error);
   }
 };
 
@@ -145,9 +131,10 @@ export const playGoBeep = async () => {
     const ctx = await getAudioContext();
     if (!ctx) return;
 
-    scheduleTone(ctx, 880, ctx.currentTime, 0.35, 0.3, 'sine');
+    const now = ctx.currentTime + 0.03;
+    scheduleTone(ctx, 880, now, 0.35, 0.3, 'sine');
   } catch (error) {
-    // Fail silently on playback blocks
+    console.error("Error playing go beep:", error);
   }
 };
 
@@ -160,12 +147,12 @@ export const playFinishBeep = async () => {
     const ctx = await getAudioContext();
     if (!ctx) return;
 
-    const now = ctx.currentTime;
+    const now = ctx.currentTime + 0.03;
     // D5 (587Hz), G5 (784Hz), C6 (1046Hz)
     scheduleTone(ctx, 587.33, now, 0.16, 0.25, 'sine');
     scheduleTone(ctx, 783.99, now + 0.16, 0.16, 0.25, 'sine');
     scheduleTone(ctx, 1046.5, now + 0.32, 0.45, 0.3, 'sine');
   } catch (error) {
-    // Fail silently on playback blocks
+    console.error("Error playing finish beep:", error);
   }
 };
