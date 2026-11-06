@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell, Clock, Pause } from 'lucide-react';
+import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell, Clock, Pause, Shield } from 'lucide-react';
 
 export default function LogSetModal({ 
   levelData, 
@@ -10,7 +10,7 @@ export default function LogSetModal({
   onSave, 
   onStartTimer,
   circuitExercises = [],
-  circuitRound = 1,       
+  circuitRound = 1,        
   onNextCircuitExercise,
   workoutHistory = []
 }) {
@@ -73,6 +73,10 @@ export default function LogSetModal({
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
   const [setNote, setSetNote] = useState(initialSetData ? (initialSetData.notes || '') : '');
+
+  // Assistance / Band state
+  const [isAssisted, setIsAssisted] = useState(initialSetData ? !!initialSetData.isAssisted : false);
+  const [assistanceDetails, setAssistanceDetails] = useState(initialSetData ? (initialSetData.assistanceDetails || '') : '');
 
   // Stopwatch state
   const [timerState, setTimerState] = useState('idle'); // idle, countdown, running, stopped
@@ -242,6 +246,8 @@ export default function LogSetModal({
       rpe,
       formRating: formQuality,
       notes: setNote,
+      isAssisted,
+      assistanceDetails: isAssisted ? assistanceDetails.trim() : '',
       round: isCircuitMode ? circuitRound : undefined,
       timestamp: initialSetData ? initialSetData.timestamp : new Date().toISOString()
     };
@@ -263,8 +269,8 @@ export default function LogSetModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl p-6 space-y-4 my-auto animate-in fade-in zoom-in duration-150">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -515,6 +521,40 @@ export default function LogSetModal({
               </div>
             </div>
           )}
+
+          {/* Assistance / Band Toggle Section */}
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <label className="text-xs font-semibold text-slate-300 cursor-pointer select-none" htmlFor="assistance-toggle">
+                  Assisted / Banded Set
+                </label>
+              </div>
+              <input
+                id="assistance-toggle"
+                type="checkbox"
+                checked={isAssisted}
+                onChange={(e) => setIsAssisted(e.target.checked)}
+                className="w-4 h-4 accent-emerald-500 rounded bg-slate-900 border-slate-800 cursor-pointer"
+              />
+            </div>
+
+            {isAssisted && (
+              <div className="pt-2 border-t border-slate-800/80">
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">
+                  Band Resistance / Assistance Details:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 18 lb resistance band, light green band"
+                  value={assistanceDetails}
+                  onChange={(e) => setAssistanceDetails(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 placeholder-slate-600 font-medium"
+                />
+              </div>
+            )}
+          </div>
 
           {/* RPE Selector */}
           <div>
