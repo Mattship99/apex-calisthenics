@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Trophy, Search, X, Lock as LockIcon, Target, Eye, Plus, 
-  CheckCircle, ShieldAlert, ChevronDown, ChevronRight 
+  CheckCircle, ShieldAlert, ChevronDown, ChevronRight, Info
 } from 'lucide-react';
 import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants';
 import TendonWarningPill from '../dashboard/TendonWarningPill';
 import BalanceRadar from '../dashboard/BalanceRadar';
 import VolumeSuggestion from '../dashboard/VolumeSuggestions.jsx';
+import ExerciseGuideModal from '../modals/ExerciseGuideModal';
 
 export default function SkillPathwaysView({
   workoutHistory,
@@ -25,6 +26,9 @@ export default function SkillPathwaysView({
   setSelectedExerciseDemo,
   onAddToCart // Replaced setLoggingExercise with onAddToCart
 }) {
+  // State for the Exercise Guide Modal
+  const [guideExercise, setGuideExercise] = useState(null);
+
   // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
     'All', 
@@ -210,6 +214,16 @@ export default function SkillPathwaysView({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {/* Exercise Guide Info Button */}
+                      <button
+                        onClick={() => setGuideExercise(activeLevelData)}
+                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                        title="Exercise Guide"
+                      >
+                        <Info className="w-4 h-4 text-cyan-400" />
+                        <span className="hidden sm:inline">Guide</span>
+                      </button>
+
                       <button
                         onClick={() => setSelectedExerciseDemo(activeLevelData)}
                         className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
@@ -218,7 +232,7 @@ export default function SkillPathwaysView({
                         View Animated Demo
                       </button>
 
-                      {/* Replaced log button with Add to Cart workflow */}
+                      {/* Add to Cart workflow */}
                       <button
                         onClick={() => onAddToCart({ trackId: track.id, levelData: activeLevelData })}
                         className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
@@ -291,15 +305,28 @@ export default function SkillPathwaysView({
                               {isLocked ? (
                                 <LockIcon className="w-3 h-3 text-amber-400" />
                               ) : (
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedExerciseDemo(lvl);
-                                  }}
-                                  className="text-slate-400 hover:text-amber-300"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setGuideExercise(lvl);
+                                    }}
+                                    className="text-slate-400 hover:text-cyan-300"
+                                    title="Exercise Guide"
+                                  >
+                                    <Info className="w-3 h-3" />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedExerciseDemo(lvl);
+                                    }}
+                                    className="text-slate-400 hover:text-amber-300"
+                                    title="Animated Demo"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </button>
+                                </div>
                               )}
                             </div>
                             <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
@@ -313,6 +340,14 @@ export default function SkillPathwaysView({
             </div>
           );
         })
+      )}
+
+      {/* Exercise Guide Modal */}
+      {guideExercise && (
+        <ExerciseGuideModal
+          exercise={guideExercise}
+          onClose={() => setGuideExercise(null)}
+        />
       )}
     </div>
   );
