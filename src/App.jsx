@@ -686,8 +686,41 @@ export default function App() {
     setActiveCircuit({ ...activeCircuit, items: resetItems });
   };
 
-  const startRoutineSession = (routine) => {
+  const startRoutineSession = async (routine) => {
     if (!routine || !routine.items) return;
+
+    // 1. Isolate and auto-save prior completed sets if any exist under a previous session
+    if (activeWorkout.sets && activeWorkout.sets.length > 0) {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const secs = String(now.getSeconds()).padStart(2, '0');
+
+      const priorSession = {
+        date: dateStr,
+        title: activeWorkout.title || 'Calisthenics Progression Session',
+        setsCount: activeWorkout.sets.length,
+        roundsCompleted: roundTally,
+        sets: activeWorkout.sets,
+        notes: sessionNotes || '',
+        createdAt: `${dateStr}T${hours}:${mins}:${secs}.000Z`
+      };
+
+      if (user) {
+        try {
+          const sessionsRef = collection(db, 'users', user.uid, 'sessions');
+          const sanitizedPrior = sanitizeForFirebase(priorSession);
+          if (activeWorkout.sessionId) {
+            await setDoc(doc(sessionsRef, activeWorkout.sessionId), sanitizedPrior);
+          } else {
+            await addDoc(sessionsRef, sanitizedPrior);
+          }
+        } catch (err) {
+          console.error("Error auto-saving prior sets session:", err);
+        }
+      }
+    }
 
     const isCircuit = routine.type === 'amrap' || routine.type === 'stopwatch' || routine.type === 'open' || routine.type === 'ladder';
     if (isCircuit) {
@@ -698,17 +731,19 @@ export default function App() {
       setRoundTally(0);
     } else {
       setActiveCircuit(null);
+      setRoundTally(0);
     }
 
     const sessionState = {
-      sessionId: activeWorkout.sessionId || null,
+      sessionId: null, // Reset session ID so next set generation assigns a fresh session doc
       date: new Date().toISOString().split('T')[0],
       title: routine.name,
-      sets: activeWorkout.sets || [],
+      sets: [], // Clear out prior sets array for the new routine session
       plannedItems: !isCircuit ? routine.items : null,
       restDuration: routine.restDuration || 90
     };
-    updateActiveWorkoutInCloud(sessionState);
+    
+    await updateActiveWorkoutInCloud(sessionState);
 
     if (routine.type === 'amrap') {
       setTimerInitial(routine.duration);
@@ -724,6 +759,7 @@ export default function App() {
       setTimerActive(false);
     }
 
+    setSessionNotes('');
     setActiveTab('workout');
   };
 
