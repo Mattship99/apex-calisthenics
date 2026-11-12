@@ -537,7 +537,7 @@ export const EXERCISE_GUIDES = {
     engagement: ["Thoracic Spine", "Rotator Cuffs", "Pecs", "Lats"],
     setup: "Hold a resistance band or lightweight dowel with a very wide overhand grip in front of your thighs.",
     execution: [
-      * phase: "Movement", instruction: "Keep your arms straight and slowly sweep the band up and over your head behind your back." },
+      { phase: "Movement", instruction: "Keep your arms straight and slowly sweep the band up and over your head behind your back." },
       { phase: "Return", instruction: "Return the band to the front in a smooth, controlled circular arc." }
     ]
   },
