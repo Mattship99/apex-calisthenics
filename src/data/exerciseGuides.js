@@ -179,7 +179,7 @@ export const EXERCISE_GUIDES = {
   },
   "Elite Straddle-to-Full Press Dragon Flag": {
     engagement: ["Supreme Calisthenics Core", "Full Body Chain"],
-    setup: "Grip your anchor point firmly with your body lying flat on the floor." },
+    setup: "Grip your anchor point firmly with your body lying flat on the floor.",
     execution: [
       { phase: "Ascent", instruction: "Press up into a straddle dragon flag and snap your legs together at the vertical peak." },
       { phase: "Descent", instruction: "Lower your fully closed straight body back down with zero momentum or crashing." },
