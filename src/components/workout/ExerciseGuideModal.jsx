@@ -1,40 +1,42 @@
 import React from 'react';
+import { EXERCISE_GUIDES } from '../../data/exerciseGuides';
 
 export default function ExerciseGuideModal({ exercise, onClose }) {
   if (!exercise) return null;
 
-  // Extract base properties and support both direct fields or nested guide object
-  const {
-    level,
-    name,
-    target,
-    cues = [],
-    pitfalls = [],
-    focus,
-    isIsometric,
-    defaultRest,
-    guide = {}
-  } = exercise;
+  // Look up guide data from the database using exercise.name, with a robust fallback
+  const guide = EXERCISE_GUIDES[exercise.name] || {
+    setup: exercise.guide?.setup || exercise.setup || 'Assume a rigid, controlled starting position. Ensure proper joint stacking, engage core bracing, and establish full tension before initiating movement.',
+    execution: exercise.guide?.execution || exercise.execution || [
+      {
+        title: 'Initiation',
+        description: 'Maintain strict form integrity from the first second. Do not rely on momentum or loose joint angles unless specifically programmed.'
+      },
+      {
+        title: 'Execution / Hold',
+        description: 'Execute through the full active range of motion or hold static tension smoothly, keeping breathing steady and controlled.'
+      },
+      {
+        title: 'Completion',
+        description: 'Return to the starting position safely without dropping abruptly or breaking core rigidity.'
+      }
+    ],
+    engagement: exercise.guide?.engagement || exercise.guide?.primaryMuscles || exercise.primaryMuscles || []
+  };
 
-  // Fallback or resolve from guide object vs top-level exercise props
-  const setupText = guide.setup || exercise.setup || 'Assume a rigid, controlled starting position. Ensure proper joint stacking, engage core bracing, and establish full tension before initiating movement.';
-  
-  const executionSteps = guide.execution || exercise.execution || [
-    {
-      title: 'Initiation',
-      description: 'Maintain strict form integrity from the first second. Do not rely on momentum or loose joint angles unless specifically programmed.'
-    },
-    {
-      title: 'Execution / Hold',
-      description: 'Execute through the full active range of motion or hold static tension smoothly, keeping breathing steady and controlled.'
-    },
-    {
-      title: 'Completion',
-      description: 'Return to the starting position safely without dropping abruptly or breaking core rigidity.'
-    }
-  ];
+  // Extract base properties from exercise, falling back to guide properties if needed
+  const level = exercise.level || guide.level;
+  const name = exercise.name || 'Exercise Guide';
+  const target = exercise.target || guide.target;
+  const isIsometric = exercise.isIsometric ?? guide.isIsometric;
+  const defaultRest = exercise.defaultRest || guide.defaultRest || 90;
+  const focus = exercise.focus || guide.focus;
 
-  const primaryMuscles = guide.engagement || guide.primaryMuscles || exercise.primaryMuscles || [];
+  const cues = exercise.cues || guide.cues || [];
+  const pitfalls = exercise.pitfalls || guide.pitfalls || [];
+  const primaryMuscles = guide.engagement || guide.primaryMuscles || [];
+  const setupText = guide.setup;
+  const executionSteps = guide.execution;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -79,7 +81,7 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
           </div>
           <div>
             <span className="block text-xs font-medium text-zinc-400 uppercase">Default Rest</span>
-            <span className="text-sm font-semibold text-zinc-200">{defaultRest || 90}s</span>
+            <span className="text-sm font-semibold text-zinc-200">{defaultRest}s</span>
           </div>
         </div>
 
