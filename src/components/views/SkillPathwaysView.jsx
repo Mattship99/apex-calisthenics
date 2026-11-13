@@ -29,16 +29,24 @@ export default function SkillPathwaysView({
   // State for the Exercise Guide Modal
   const [guideExercise, setGuideExercise] = useState(null);
 
-  // Jump to and expand a specific pathway card (normalizes pillar names to track IDs)
-  const handleJumpToPathway = (identifier) => {
-    console.log("🔍 [Debug] Button clicked with identifier:", identifier);
+  // Jump to and expand a specific pathway card (maps incoming pillar names to actual DOM track IDs)
+  const handleJumpToPathway = (pillarName) => {
+    console.log("🔍 [Debug] Button clicked with pillar:", pillarName);
     
-    // Let's check all available pathway IDs currently rendered on the page
-    const availableIds = displayedPathways.map(t => t.id);
-    console.log("📋 [Debug] Available pathway IDs in DOM right now:", availableIds);
+    // Map human-readable pillars or categories to your actual MASTER_PATHWAYS track IDs
+    const pillarToTrackMap = {
+      'horizontal pull': 'pulling',
+      'vertical pull': 'pulling',
+      'horizontal push': 'pushing',
+      'vertical push': 'pushing',
+      'leg power': 'pistol_squat', 
+      'core': 'lsit_core'
+    };
 
-    const trackId = identifier.toLowerCase().trim().replace(/\s+/g, '-');
-    console.log("🎯 [Debug] Formatted search ID:", trackId);
+    const normalizedKey = pillarName.toLowerCase().trim();
+    const trackId = pillarToTrackMap[normalizedKey] || normalizedKey.replace(/\s+/g, '-');
+    
+    console.log("🎯 [Debug] Resolved to track ID:", trackId);
 
     setExpandedPathway(trackId);
     setSelectedCategory('All'); 
