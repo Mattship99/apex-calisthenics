@@ -101,8 +101,6 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
         const now = Date.now();
         const sevenDaysAgoTime = now - (7 * 24 * 60 * 60 * 1000);
-        const fourteenDaysAgoTime = now - (14 * 24 * 60 * 60 * 1000);
-        const thirtyDaysAgoTime = now - (30 * 24 * 60 * 60 * 1000);
 
         const getWorkoutDate = (w) => {
           if (w.date?.toDate) return w.date.toDate();
@@ -241,14 +239,7 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      alert("Button was clicked!"); // Bypasses console to test if click is registering
-                      if (onJumpToPathway) {
-                        onJumpToPathway(item.pillar.toLowerCase().replace(/\s+/g, '-'));
-                      } else {
-                        console.error("onJumpToPathway prop is undefined!");
-                      }
-                    }}
+                    onClick={() => onJumpToPathway && onJumpToPathway(item.pillar)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition-colors shrink-0 shadow-sm cursor-pointer"
                   >
                     <span>View in Pathways</span>
