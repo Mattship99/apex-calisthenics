@@ -30,23 +30,29 @@ export default function SkillPathwaysView({
   const [guideExercise, setGuideExercise] = useState(null);
 
   // Jump to and expand a specific pathway card (normalizes pillar names to track IDs)
-  const handleJumpToPathway = (identifier) => {
-    if (!identifier) return;
+ const handleJumpToPathway = (identifier) => {
+    console.log("🔍 [Debug] Button clicked with identifier:", identifier);
     
-    // Normalize pillar name (e.g., "Horizontal Pull" -> "horizontal-pull") if it doesn't match directly
-    const trackId = identifier.toLowerCase().replace(/\s+/g, '-');
-    
+    // Let's check all available pathway IDs currently rendered on the page
+    const availableIds = displayedPathways.map(t => t.id);
+    console.log("📋 [Debug] Available pathway IDs in DOM right now:", availableIds);
+
+    const trackId = identifier.toLowerCase().trim().replace(/\s+/g, '-');
+    console.log("🎯 [Debug] Formatted search ID:", trackId);
+
     setExpandedPathway(trackId);
-    setSelectedCategory('All'); // Ensure it's not hidden behind active category filters
+    setSelectedCategory('All'); 
     
     setTimeout(() => {
       const element = document.getElementById(trackId);
+      console.log("📍 [Debug] Found element:", element);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        console.warn(`⚠️ [Debug] No element found with id="${trackId}"!`);
       }
     }, 100);
   };
-
   // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
     'All', 
