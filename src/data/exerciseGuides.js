@@ -4,92 +4,92 @@ export const EXERCISE_GUIDES = {
   // ==========================================
   "Wrist Conditioning & Tabletop Decompressions": {
     engagement: ["Wrist Flexors", "Forearm Extensors", "Finger Pointers"],
-    setup: "Kneel on a padded mat with your hands flat on the floor underneath your shoulders, fingers pointing forward or outward. Spread your fingers wide and press the pads of each finger firmly into the ground.",
+    setup: "Kneel comfortably on a padded mat with your hands flat on the floor directly underneath your shoulders. Point your fingers forward or slightly outward, spread your fingers wide like starfish, and press the pads of every finger firmly into the ground.",
     execution: [
-      { phase: "Initiation", instruction: "Lock your elbows completely and distribute your body weight evenly across the entire palm and finger pads." },
-      { phase: "Execution", instruction: "Slowly shift your torso forward past your wrists while maintaining full palm contact to load the joint progressively." },
-      { phase: "Decompression", instruction: "Press the floor away to actively lift the heel of your palm off the floor while keeping your finger joints pinned down, then lower with control." }
+      { phase: "Initiation", instruction: "Lock your elbows completely straight and distribute your upper body weight evenly across your entire palm and all finger pads." },
+      { phase: "Execution", instruction: "Slowly and gently shift your torso forward past your wrists while maintaining full palm contact to progressively load the joint." },
+      { phase: "Decompression", instruction: "Push the floor away to actively lift the heel of your palm off the ground while keeping your finger joints pinned down, then lower with control." }
     ]
   },
   "Hollow Body Holds & Arch Body Rocks": {
     engagement: ["Rectus Abdominis", "Transverse Abdominis", "Hip Flexors", "Glutes"],
-    setup: "Lie flat on your back with arms extended overhead past your ears and legs straight together. Squeeze your glutes and engage a posterior pelvic tilt to flatten your lumbar spine entirely against the floor.",
+    setup: "Lie flat on your back with your arms extended straight overhead past your ears and your legs together. Squeeze your glutes and tuck your tailbone to flatten your lower back completely against the floor with zero gap.",
     execution: [
-      { phase: "Initiation", instruction: "Lift your shoulder blades and straight legs a few inches off the floor, forming a rigid banana shape." },
-      { phase: "Hold / Rock", instruction: "Maintain absolute spinal rigidity; breathe shallowly into your chest while keeping core tension at maximum." },
-      { phase: "Completion", instruction: "Lower smoothly to the floor without letting your lower back arch or pop upward at any point." }
+      { phase: "Initiation", instruction: "Lift your shoulder blades and straight legs a few inches off the floor, shaping your body into a tight, rigid banana curve." },
+      { phase: "Hold / Rock", instruction: "Maintain absolute spinal rigidity; breathe shallowly into your chest while keeping your core tension at maximum." },
+      { phase: "Completion", instruction: "Lower smoothly back to the floor without allowing your lower back to arch or pop upward at any point." }
     ]
   },
   "Crow Pose / Frog Stand": {
     engagement: ["Anterior Deltoids", "Triceps", "Wrist Flexors", "Core"],
-    setup: "Squat down with your feet close together and knees flared wide outside your shoulders. Place your hands flat on the floor shoulder-width apart with fingers spread wide.",
+    setup: "Squat down with your feet close together and your knees flared wide outside your shoulders. Place your hands flat on the floor shoulder-width apart with fingers spread wide for a stable base.",
     execution: [
-      { phase: "Initiation", instruction: "Rest your inner knees high up against the back of your triceps near your armpits, gripping your arms with your legs." },
-      { phase: "Weight Shift", instruction: "Look forward onto the floor 12 inches ahead of your hands and slowly shift your center of gravity forward." },
-      { phase: "Float", instruction: "Lift your feet completely off the floor one by one until balanced entirely on your hands with elbows slightly bent." }
+      { phase: "Initiation", instruction: "Rest your inner knees high up against the back of your triceps near your armpits, gripping your arms tightly with your legs." },
+      { phase: "Weight Shift", instruction: "Look forward onto the floor about 12 inches ahead of your hands and slowly shift your center of gravity forward." },
+      { phase: "Float", instruction: "Lifting your feet completely off the floor one by one until you are balanced entirely on your hands with your elbows slightly bent." }
     ]
   },
   "Chest-to-Wall Handstand Hold": {
     engagement: ["Shoulders", "Upper Traps", "Triceps", "Core", "Upper Back"],
-    setup: "Face away from a sturdy wall, place your hands about 6 inches away, and walk your feet up the wall until your chest and thighs are facing flush against the surface.",
+    setup: "Face away from a sturdy wall, place your hands about 6 inches away from the base, and walk your feet up the wall until your chest and thighs are facing flush against the surface.",
     execution: [
-      { phase: "Alignment", instruction: "Tuck your tailbone under (posterior pelvic tilt) and actively push the floor away by shrugging your shoulders into your ears." },
-      { phase: "Tension", instruction: "Squeeze your glutes, quadriceps, and pointed toes together to lock your entire body into a straight line." },
-      { phase: "Exit", instruction: "Slowly walk your feet down the wall or cartwheel out safely when muscle fatigue compromises your straight line." }
+      { phase: "Alignment", instruction: "Tuck your tailbone under into a posterior tilt and actively push the floor away by shrugging your shoulders up into your ears." },
+      { phase: "Tension", instruction: "Squeeze your glutes, quadriceps, and pointed toes tightly together to lock your entire body into a straight, vertical line." },
+      { phase: "Exit", instruction: "Slowly walk your feet down the wall or cartwheel out safely the moment muscle fatigue compromises your straight body line." }
     ]
   },
   "Freestanding Kick-Up Practice": {
     engagement: ["Full Body", "Shoulders", "Core", "Proprioceptors"],
-    setup: "Stand in a lunge stance with your arms locked overhead next to your ears and your core braced tightly.",
+    setup: "Stand in a confident lunge stance with your arms locked overhead right next to your ears and your core braced tightly.",
     execution: [
-      { phase: "Entry", instruction: "Step forward onto your lead leg, lean your torso downward, and drive your trailing leg upward while kicking off with the front foot." },
-      { phase: "Merge", instruction: "Bring both legs together immediately at the vertical apex above your stacked wrists and shoulders." },
-      { phase: "Balance", instruction: "Use subtle finger pressure and shoulder adjustments to keep your center of mass balanced over your base of support." }
+      { phase: "Entry", instruction: "Step forward onto your lead leg, lean your torso downward, and drive your trailing leg upward while kicking off gently with the front foot." },
+      { phase: "Merge", instruction: "Bring both legs together immediately at the vertical apex directly stacked above your wrists and shoulders." },
+      { phase: "Balance", instruction: "Use subtle finger pressure and minor shoulder adjustments to keep your center of mass balanced over your base of support." }
     ]
   },
   "Pike Push-Ups on Floor": {
     engagement: ["Anterior Deltoids", "Triceps", "Upper Chest", "Core"],
-    setup: "Assume a high push-up plank, then walk your feet forward toward your hands while elevating your hips high into an inverted V-shape.",
+    setup: "Assume a high push-up plank, then walk your feet forward toward your hands while elevating your hips high into an inverted V-shape with straight legs.",
     execution: [
-      { phase: "Descent", instruction: "Lower your head forward of your hands by bending your elbows at a 45-degree angle relative to your torso." },
-      { phase: "Bottom Position", instruction: "Lightly touch the top of your head to the mat while keeping your hips stacked directly over your shoulders." },
-      { phase: "Press", instruction: "Drive the floor away forcefully through your palms, extending your arms to return to the pike apex." }
+      { phase: "Descent", instruction: "Lower your head forward of your hands by bending your elbows at a comfortable 45-degree angle relative to your torso." },
+      { phase: "Bottom Position", instruction: "Lightly touch the very top of your head to the mat while keeping your hips stacked directly over your shoulders." },
+      { phase: "Press", instruction: "Drive the floor away forcefully through your palms, extending your arms fully to return to the pike apex." }
     ]
   },
   "Elevated Feet Pike Push-Ups": {
     engagement: ["Anterior Deltoids", "Upper Chest", "Triceps", "Upper Back"],
     setup: "Place your feet securely on an elevated box or bench and position your hands on the floor, walking your hands inward until your torso is nearly vertical.",
     execution: [
-      { phase: "Descent", instruction: "Keep your torso as vertical as possible and lower your head downward in a straight line ahead of your hands." },
+      { phase: "Descent", instruction: "Keep your torso as vertical as possible and lower your head downward in a straight line just ahead of your hands." },
       { phase: "Turnover", instruction: "Maintain tight core tension to prevent your lower back from arching as you reach the bottom of the press." },
       { phase: "Lockout", instruction: "Press straight up until your elbows are fully locked out and your shoulders shrug upward at the top." }
     ]
   },
   "Wall-Supported Eccentric HSPU": {
     engagement: ["Shoulder Girdle", "Triceps", "Upper Traps", "Core"],
-    setup: "Start in a chest-to-wall handstand with your body completely straight, tight, and aligned.",
+    setup: "Start in a solid chest-to-wall handstand with your body completely straight, tight, and aligned against the vertical surface.",
     execution: [
-      { phase: "Descent", instruction: "Slowly bend your arms to control a 4-second negative descent, keeping your elbows tucked inward." },
-      { phase: "Touch", instruction: "Gently touch your head to the floor while maintaining solid contact with the wall." },
-      { phase: "Reset", instruction: "Step down or walk off the wall to reset between reps rather than forcing a weak concentric press." }
+      { phase: "Descent", instruction: "Slowly bend your arms to control a steady 4-second negative descent, keeping your elbows tucked inward." },
+      { phase: "Touch", instruction: "Gently touch your head to the floor while maintaining solid body contact with the wall." },
+      { phase: "Reset", instruction: "Step down or walk off the wall to rest and reset between repetitions rather than forcing a weak upward press." }
     ]
   },
   "Strict Wall Handstand Push-Ups": {
     engagement: ["Shoulders", "Triceps", "Upper Back", "Core"],
-    setup: "Kick up into a chest-to-wall handstand with your hands positioned slightly wider than shoulder-width apart.",
+    setup: "Kick up into a chest-to-wall handstand with your hands positioned slightly wider than shoulder-width apart for optimal leverage.",
     execution: [
-      { phase: "Descent", instruction: "Lower yourself smoothly to the floor with a 2-second eccentric cadence without losing body tension." },
-      { phase: "Bottom Pause", instruction: "Briefly pause at the bottom without resting your full weight entirely on your head." },
-      { phase: "Concentric Press", instruction: "Press straight upward vertically, driving your head through your arms at lockout." }
+      { phase: "Descent", instruction: "Lower yourself smoothly to the floor with a controlled 2-second eccentric cadence without losing body tension." },
+      { phase: "Bottom Pause", instruction: "Briefly pause at the bottom without resting your full body weight entirely on your head." },
+      { phase: "Concentric Press", instruction: "Press straight upward vertically, driving your head through your arms at the top lockout." }
     ]
   },
   "Freestanding Handstand Push-Ups": {
     engagement: ["Elite Shoulder & Core Chain", "Stabilizers"],
-    setup: "Balance in a clean, stable freestanding handstand in an open space with your hands firmly planted.",
+    setup: "Balance in a clean, stable freestanding handstand in an open space with your hands firmly planted and fingers active.",
     execution: [
-      { phase: "Descent", instruction: "Carefully initiate the descent while maintaining full balance across your palms and fingers." },
+      { phase: "Descent", instruction: "Carefully initiate the descent while maintaining full balance and tension across your palms and fingers." },
       { phase: "Press", instruction: "Drive upward while making minute finger and wrist corrections to keep your balance point secure overhead." },
-      { phase: "Lockout", instruction: "Finish with a firm arm lockout and active shoulder elevation." }
+      { phase: "Lockout", instruction: "Finish with a firm arm lockout and active shoulder elevation toward your ears." }
     ]
   },
 
@@ -98,43 +98,43 @@ export const EXERCISE_GUIDES = {
   // ==========================================
   "Reverse Crunches & Leg Lowers": {
     engagement: ["Lower Abs", "Transverse Abdominis", "Hip Flexors"],
-    setup: "Lie on your back with your hands gripping a stable anchor behind your head or resting flat by your sides.",
+    setup: "Lie flat on your back with your hands gripping a stable anchor behind your head or resting flat by your sides for stability.",
     execution: [
-      { phase: "Crunch", instruction: "Curl your hips off the floor, bringing your knees toward your chest using lower abdominal contraction." },
+      { phase: "Crunch", instruction: "Curl your hips off the floor, bringing your knees toward your chest using a deliberate lower abdominal contraction." },
       { phase: "Extension", instruction: "Slowly extend your straight legs outward at a 45-degree angle while pressing your lower back firmly into the mat." },
-      { phase: "Lower", instruction: "Lower your heels down close to the floor without allowing your lumbar spine to lift or arch." }
+      { phase: "Lower", instruction: "Lower your heels down close to the floor without allowing your lumbar spine to lift or arch upward." }
     ]
   },
   "Hanging Leg Raises": {
     engagement: ["Abs", "Hip Flexors", "Grip Strength", "Lats"],
-    setup: "Hang from a pull-up bar with a dead hang grip, shoulders active down and back, and body completely still.",
+    setup: "Hang from a pull-up bar with a firm overhand grip, shoulders active down and back, and body completely still.",
     execution: [
-      { phase: "Initiation", instruction: "Engage your core and raise your straight legs upward until they are parallel to the floor (or higher to the bar)." },
+      { phase: "Initiation", instruction: "Engage your core and raise your straight legs upward until they are parallel to the floor (or higher toward the bar)." },
       { phase: "Control", instruction: "Pause briefly at the top position without swinging or kipping your torso." },
       { phase: "Descent", instruction: "Lower your legs slowly back down to the dead hang position with zero momentum." }
     ]
   },
   "Tuck Dragon Flag Raises": {
     engagement: ["Rectus Abdominis", "Upper Back", "Shoulders"],
-    setup: "Lie on a bench or floor, gripping a stable overhead anchor with both hands, knees tucked tightly to your chest.",
+    setup: "Lie on a bench or floor, gripping a stable overhead anchor with both hands, with your knees tucked tightly to your chest.",
     execution: [
       { phase: "Raise", instruction: "Press through your upper back and shoulders and lift your entire torso and tucked hips vertically into the air." },
       { phase: "Alignment", instruction: "Keep your weight supported solely on your upper back and shoulder blades, avoiding resting on your neck." },
-      { phase: "Descent", instruction: "Lower your hips and back down to the bench with slow, deliberate control." }
+      { phase: "Descent", instruction: "Lower your hips and back down to the bench with slow, deliberate muscular control." }
     ]
   },
   "Full Dragon Flag Negatives (Lowers)": {
     engagement: ["Full Core", "Lats", "Spinal Erectors", "Glutes"],
     setup: "Anchor your hands firmly behind you on a bench or bar. Start in a vertical straight-body position supported on your upper back.",
     execution: [
-      { phase: "Tension", instruction: "Lock your body into a rigid, straight plank from shoulders to toes with glutes maximally squeezed." },
-      { phase: "Descent", instruction: "Lower your straight body as a single rigid unit toward the bench over a 5-second count." },
+      { phase: "Tension", instruction: "Lock your body into a rigid, straight plank from shoulders to toes with your glutes maximally squeezed." },
+      { phase: "Descent", instruction: "Lower your straight body as a single rigid unit toward the bench over a smooth 5-second count." },
       { phase: "Bottom", instruction: "Resist arching at your hips or lower back until your heels gently touch the surface." }
     ]
   },
   "Full Straight-Body Dragon Flag": {
     engagement: ["Elite Core & Posterior Chain", "Lats"],
-    setup: "Grip a sturdy vertical pole or bench anchor with both hands, body lying flat on the floor.",
+    setup: "Grip a sturdy vertical pole or bench anchor with both hands, with your body lying flat on the floor.",
     execution: [
       { phase: "Ascent", instruction: "Raise your entire straight body as a rigid plank upward until vertical, pivoting only on your upper back." },
       { phase: "Hold", instruction: "Pause briefly at the apex with zero bend at the hips or knees." },
@@ -143,47 +143,47 @@ export const EXERCISE_GUIDES = {
   },
   "Weighted Dragon Flag Negatives": {
     engagement: ["Advanced Core", "Serratus", "Spinal Stabilizers"],
-    setup: "Secure an ankle weight or small dumbbell between your feet, and grip your anchor securely.",
+    setup: "Secure an ankle weight or small dumbbell safely between your feet, and grip your anchor securely behind your head.",
     execution: [
-      { phase: "Start", instruction: "Begin at the vertical top position with the added weight safely secured." },
-      { phase: "Descent", instruction: "Execute an ultra-slow negative lower, fighting the increased rotational leverage." },
-      { phase: "Reset", instruction: "Release or reset safely at the bottom position before starting the next rep." }
+      { phase: "Start", instruction: "Begin at the vertical top position with the added weight safely secured and balanced." },
+      { phase: "Descent", instruction: "Execute an ultra-slow negative lower, fighting the increased rotational leverage on your core." },
+      { phase: "Reset", instruction: "Release or reset safely at the bottom position before starting your next repetition." }
     ]
   },
   "Straddle Dragon Flag Hold": {
     engagement: ["Obliques", "Abdominals", "Adductors", "Core"],
-    setup: "Grip your anchor point and raise your body into a dragon flag position with your legs spread wide into a straddle.",
+    setup: "Grip your anchor point and raise your body into a dragon flag position, spreading your legs wide into a straddle.",
     execution: [
-      { phase: "Setup", instruction: "Open your legs wide to shorten the lever arm slightly while maintaining a straight torso." },
+      { phase: "Setup", instruction: "Open your legs wide to shorten the lever arm slightly while maintaining a straight, rigid torso." },
       { phase: "Hold", instruction: "Hold your body in a rigid horizontal or inclined hover for the prescribed duration." },
       { phase: "Breathe", instruction: "Keep your core braced tight and breathe steadily throughout the isometric hold." }
     ]
   },
   "Single-Leg Dragon Flag Lowers": {
     engagement: ["Unilateral Core Chain", "Obliques"],
-    setup: "Assume the top vertical dragon flag position with straight body alignment.",
+    setup: "Assume the top vertical dragon flag position with straight body alignment and secure hand grip.",
     execution: [
-      { phase: "Asymmetry", instruction: "Keep one leg extended straight while slowly lowering the other leg downward or pulsing it." },
+      { phase: "Asymmetry", instruction: "Keep one leg extended straight while slowly lowering the other leg downward or pulsing it independently." },
       { phase: "Anti-Rotation", instruction: "Resist any twisting or tilting of your pelvis and torso against the uneven load." },
-      { phase: "Switch", instruction: "Alternate legs across sets to build balanced core strength." }
+      { phase: "Switch", instruction: "Alternate working legs across sets to build balanced, symmetrical core strength." }
     ]
   },
   "Dragon Flag Flutter Kicks": {
     engagement: ["Deep Transverse Abdominis", "Hip Flexors", "Core"],
-    setup: "Hold a horizontal or slightly inclined dragon flag position with your body rigid.",
+    setup: "Hold a horizontal or slightly inclined dragon flag position with your entire body rigid and locked.",
     execution: [
       { phase: "Flutter", instruction: "Perform small, controlled vertical flutter kicks with your legs while maintaining total torso stability." },
-      { phase: "Control", instruction: "Ensure your hips do not bounce or sag during the kicking motion." },
-      { phase: "Completion", instruction: "Return to a resting position once time expires." }
+      { phase: "Control", instruction: "Ensure your hips do not bounce, sag, or lose alignment during the kicking motion." },
+      { phase: "Completion", instruction: "Return to a resting position safely once your time interval expires." }
     ]
   },
   "Elite Straddle-to-Full Press Dragon Flag": {
     engagement: ["Supreme Calisthenics Core", "Full Body Chain"],
-    setup: "Grip your anchor point firmly with your body lying flat on the floor.",
+    setup: "Grip your anchor point firmly with your body lying flat on the floor in a straight line.",
     execution: [
-      { phase: "Ascent", instruction: "Press up into a straddle dragon flag and snap your legs together at the vertical peak." },
+      { phase: "Ascent", instruction: "Press up into a straddle dragon flag and snap your legs together powerfully at the vertical peak." },
       { phase: "Descent", instruction: "Lower your fully closed straight body back down with zero momentum or crashing." },
-      { phase: "Control", instruction: "Maintain pristine form from first inch to last." }
+      { phase: "Control", instruction: "Maintain pristine form from the first inch to the last." }
     ]
   },
 
@@ -192,20 +192,20 @@ export const EXERCISE_GUIDES = {
   // ==========================================
   "Incline One-Arm Push-Ups": {
     engagement: ["Chest", "Anterior Deltoid", "Core Obliques", "Triceps"],
-    setup: "Place your working hand flat on an elevated bench or sturdy bar. Set your feet wide apart (tripod base) to resist rotation.",
+    setup: "Place your working hand flat on an elevated bench or sturdy bar. Set your feet wide apart into a stable tripod base to resist twisting.",
     execution: [
-      { phase: "Descent", instruction: "Tuck your non-working hand behind your back and lower your chest toward your working hand." },
-      { phase: "Elbow Tracking", instruction: "Keep your working elbow tracking at a 45-degree angle rather than flaring out wide." },
-      { phase: "Press", instruction: "Drive through your palm to extend your arm while keeping your hips square to the bench." }
+      { phase: "Descent", instruction: "Tuck your non-working hand behind your back and lower your chest toward your working hand with control." },
+      { phase: "Elbow Tracking", instruction: "Keep your working elbow tracking at a comfortable 45-degree angle rather than flaring straight out wide." },
+      { phase: "Press", instruction: "Drive through your palm to extend your arm while keeping your hips completely square to the bench." }
     ]
   },
   "Archer Push-Ups (Floor)": {
     engagement: ["Chest", "Triceps", "Serratus Anterior", "Core"],
-    setup: "Assume a wide push-up stance with your hands placed significantly wider than shoulder-width apart.",
+    setup: "Assume a wide push-up stance with your hands placed significantly wider than shoulder-width apart on the floor.",
     execution: [
       { phase: "Descent", instruction: "Shift your torso toward one side, bending that arm while keeping the opposite arm completely straight." },
       { phase: "Bottom", instruction: "Your chest should descend close to your working hand while the straight arm provides stability and minor assistance." },
-      { phase: "Press", instruction: "Push back up to the center and alternate sides on each repetition." }
+      { phase: "Press", instruction: "Push back up to the center and alternate sides smoothly on each repetition." }
     ]
   },
   "Assisted One-Arm Push-Ups": {
@@ -213,26 +213,26 @@ export const EXERCISE_GUIDES = {
     setup: "Set up in a standard push-up position with your working hand under your shoulder and your opposite hand resting on a stability ball 12 inches to the side.",
     execution: [
       { phase: "Load", instruction: "Bear roughly 85% of your body weight on your working arm, using the ball hand purely for light balance." },
-      { phase: "Descent", instruction: "Lower your chest smoothly to the floor with control." },
-      { phase: "Concentric", instruction: "Press up primarily through the working arm without pushing off the stability ball." }
+      { phase: "Descent", instruction: "Lower your chest smoothly to the floor with complete control." },
+      { phase: "Concentric", instruction: "Press up primarily through the working arm without pushing off the stability ball for power." }
     ]
   },
   "One-Arm Push-Up Negatives": {
     engagement: ["Chest", "Anterior Deltoid", "Rotational Core"],
-    setup: "Assume a top one-arm push-up position with feet wide and free hand tucked behind your back.",
+    setup: "Assume a top one-arm push-up position with your feet wide for stability and your free hand tucked securely behind your back.",
     execution: [
-      { phase: "Descent", instruction: "Control your descent for 4 slow seconds, fighting gravity and rotational collapse." },
-      { phase: "Bottom", instruction: "Touch your chest to the floor softly." },
-      { phase: "Reset", instruction: "Push back up using both hands or drop to your knees to reset for the next negative." }
+      { phase: "Descent", instruction: "Control your descent for 4 slow seconds, fighting gravity and rotational collapse through your core." },
+      { phase: "Bottom", instruction: "Lightly touch your chest to the floor in a soft landing." },
+      { phase: "Reset", instruction: "Push back up using both hands or drop safely to your knees to reset for the next negative." }
     ]
   },
   "Full Freestanding One-Arm Push-Up": {
     engagement: ["Unilateral Pectoral Chain", "Deep Core", "Obliques"],
-    setup: "Place your single working hand directly under your chest. Spread your feet wide for stability and place your non-working hand behind your back or on your glute.",
+    setup: "Place your single working hand directly under your chest. Spread your feet wide for balance and place your non-working hand behind your back or on your glute.",
     execution: [
-      { phase: "Descent", instruction: "Lower your body with control, keeping your hips square and preventing your torso from twisting open." },
-      { phase: "Bottom", instruction: "Lightly touch your chest or chin to the floor." },
-      { phase: "Lockout", instruction: "Drive through your palm to achieve a complete elbow lockout at the top." }
+      { phase: "Descent", instruction: "Lower your body with strict control, keeping your hips square and preventing your torso from twisting open." },
+      { phase: "Bottom", instruction: "Lightly touch your chest or chin to the floor at the bottom of the movement." },
+      { phase: "Lockout", instruction: "Drive powerfully through your palm to achieve a complete elbow lockout at the top." }
     ]
   },
 
