@@ -43,7 +43,7 @@ export default function SkillPathwaysView({
       'core': 'lsit_core'
     };
 
-    const normalizedKey = pillarName.toLowerCase().trim();
+    const normalizedKey = (pillarName || '').toLowerCase().trim().replace(/-/g, ' ');
     const trackId = pillarToTrackMap[normalizedKey] || normalizedKey.replace(/\s+/g, '-');
     
     console.log("🎯 [Debug] Resolved to track ID:", trackId);
