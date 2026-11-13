@@ -1,9 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { BarChart3, TrendingUp, CheckCircle2, Activity, Sparkles } from 'lucide-react';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { BarChart3, TrendingUp, CheckCircle2, Activity, Sparkles, Dumbbell, ArrowRight } from 'lucide-react';
 import { auth, db } from '../../services/firebase';
 
 const PILLARS = ['Vertical Pull', 'Horizontal Pull', 'Vertical Push', 'Horizontal Push', 'Leg Power', 'Core'];
+
+// Comprehensive Master Pathways mapping each pillar to progressive levels, exact exercise names, and targets
+const MASTER_PATHWAYS = {
+  'Vertical Pull': [
+    { level: 1, name: 'Active Hang / Scapular Pulls', target: '3 x 10 reps' },
+    { level: 2, name: 'Negative Pull-Ups', target: '3 x 5 (5s descent)' },
+    { level: 3, name: 'Strict Pull-Ups', target: '3 x 8-12 reps' },
+    { level: 4, name: 'Weighted Pull-Ups', target: '3 x 5 (+10-20% bodyweight)' },
+    { level: 5, name: 'One-Arm Pull-Up Progression', target: '3 x 3 per arm' }
+  ],
+  'Horizontal Pull': [
+    { level: 1, name: 'Inverted Rows (High Incline)', target: '3 x 12 reps' },
+    { level: 2, name: 'Inverted Rows (Parallel / Feet Flat)', target: '3 x 10-12 reps' },
+    { level: 3, name: 'Feet-Elevated Inverted Rows', target: '3 x 10 reps' },
+    { level: 4, name: 'Tuck Front Lever Rows', target: '3 x 6-8 reps' },
+    { level: 5, name: 'Advanced Front Lever Rows', target: '3 x 5 reps' }
+  ],
+  'Vertical Push': [
+    { level: 1, name: 'Pike Push-Ups (Elevated Feet)', target: '3 x 8-10 reps' },
+    { level: 2, name: 'Wall Walk Handstand Hold', target: '3 x 30s hold' },
+    { level: 3, name: 'Box / Frog HSPU Progression', target: '3 x 6-8 reps' },
+    { level: 4, name: 'Free-Standing Handstand Push-Ups', target: '3 x 3-5 reps' },
+    { level: 5, name: 'Deficit Handstand Push-Ups', target: '3 x 3 reps' }
+  ],
+  'Horizontal Push': [
+    { level: 1, name: 'Incline Push-Ups', target: '3 x 15 reps' },
+    { level: 2, name: 'Standard Push-Ups (Strict)', target: '3 x 12-20 reps' },
+    { level: 3, name: 'Decline / Diamond Push-Ups', target: '3 x 12 reps' },
+    { level: 4, name: 'Pseudo Planche Push-Ups', target: '3 x 8-10 reps' },
+    { level: 5, name: 'Tuck Planche Push-Ups', target: '3 x 5 reps' }
+  ],
+  'Leg Power': [
+    { level: 1, name: 'Bodyweight Squats & Lunges', target: '3 x 15 reps' },
+    { level: 2, name: 'Bulgarian Split Squats', target: '3 x 10 per leg' },
+    { level: 3, name: 'Pistol Squat Progressions', target: '3 x 6-8 per leg' },
+    { level: 4, name: 'Full Pistol Squats', target: '3 x 8 per leg' },
+    { level: 5, name: 'Weighted / Explosive Jump Squats', target: '3 x 6 reps' }
+  ],
+  'Core': [
+    { level: 1, name: 'Hollow Body Hold & Planks', target: '3 x 45s hold' },
+    { level: 2, name: 'Hanging Knee Raises', target: '3 x 10-12 reps' },
+    { level: 3, name: 'Strict Hanging Straight Leg Raises', target: '3 x 8-10 reps' },
+    { level: 4, name: 'Toes-to-Bar / Windshield Wipers', target: '3 x 8 reps' },
+    { level: 5, name: 'Front Lever / Human Flag Raises', target: '3 x 3-5 reps' }
+  ]
+};
 
 const categorizeExercise = (name) => {
   const n = (name || '').toLowerCase();
@@ -37,11 +83,20 @@ export default function VolumeSuggestions() {
       }
 
       try {
+        // Fetch sessions and user profile/levels in parallel
         const sessionsRef = collection(db, 'users', user.uid, 'sessions');
-        const snapshot = await getDocs(sessionsRef);
+        const userDocRef = doc(db, 'users', user.uid);
+
+        const [snapshot, userDocSnap] = await Promise.all([
+          getDocs(sessionsRef),
+          getDoc(userDocRef)
+        ]);
         
         const rawWorkouts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('[VolumeSuggestions] Raw workouts fetched from Firestore:', rawWorkouts);
+        const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+        
+        // Extract user levels from user doc (supporting various key formats: userLevels, levels, pathways)
+        const userLevels = userData.userLevels || userData.levels || userData.pathways || {};
 
         if (rawWorkouts.length === 0) {
           setWeeklySuggestions([]);
@@ -61,7 +116,7 @@ export default function VolumeSuggestions() {
           return new Date(w.createdAt || w.date || Date.now());
         };
 
-        // --- 1. 7-DAY ROLLING VOLUME ANALYSIS ---
+        // --- 1. 7-DAY ROLLING VOLUME ANALYSIS & LEVEL-AWARE RECS ---
         const filteredWorkouts = rawWorkouts.filter(w => getWorkoutDate(w).getTime() >= sevenDaysAgoTime);
 
         const pillarVolume = {
@@ -120,24 +175,35 @@ export default function VolumeSuggestions() {
             .sort((a, b) => a.sets - b.sets);
 
           const targetGaps = candidateGaps.filter(p => p.sets === 0);
-          const gapsToRecommend = targetGaps.length > 0 ? targetGaps.slice(0, 2) : candidateGaps.slice(0, 2);
+          const gapsToRecommend = targetGaps.length > 0 ? targetGaps.slice(0, 1) : candidateGaps.slice(0, 1);
 
           if (gapsToRecommend.length > 0) {
-            const gapNames = gapsToRecommend.map(p => p.pillar);
-            const gapText = gapNames.length === 2 ? `${gapNames[0]} or ${gapNames[1]}` : gapNames[0];
-            generatedWeekly.push(
-              `You've been putting in heavy work on ${highest.pillar} this week. Try prioritizing some ${gapText} work next to keep your physique balanced.`
-            );
+            const targetPillar = gapsToRecommend[0].pillar;
+            
+            // Determine user's current level in this pathway (default to Level 1 if unrecorded)
+            const currentLevelNum = Number(userLevels[targetPillar] || userLevels[targetPillar?.toLowerCase()] || 1);
+            const pathwayList = MASTER_PATHWAYS[targetPillar] || MASTER_PATHWAYS['Horizontal Push'];
+            const matchedExercise = pathwayList.find(item => item.level === currentLevelNum) || pathwayList[0];
+
+            generatedWeekly.push({
+              type: 'gap_recommendation',
+              pillar: targetPillar,
+              text: `Heavy focus on ${highest.pillar} detected. Balance your physique by scheduling some ${targetPillar} work.`,
+              exercise: matchedExercise,
+              level: currentLevelNum
+            });
           } else {
-            generatedWeekly.push(
-              `Your training volume is active across all major patterns, led by ${highest.pillar} (${highest.sets} sets). Keep up the consistent work!`
-            );
+            generatedWeekly.push({
+              type: 'balanced',
+              text: `Your training volume is active across all major patterns, led by ${highest.pillar} (${highest.sets} sets). Keep up the consistent work!`
+            });
           }
 
           if (highest.sets >= 10) {
-            generatedWeekly.push(
-              `High cumulative volume detected in ${highest.pillar}. Ensure you schedule adequate rest days before overloading this movement pattern again.`
-            );
+            generatedWeekly.push({
+              type: 'high_volume',
+              text: `High cumulative volume detected in ${highest.pillar} (${highest.sets} sets). Ensure you schedule adequate rest days before overloading this movement pattern again.`
+            });
           }
         }
         setWeeklySuggestions(generatedWeekly);
@@ -240,11 +306,39 @@ export default function VolumeSuggestions() {
             <p className="text-xs text-slate-300">Keep logging sessions to generate your weekly movement balance analysis.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {weeklySuggestions.map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
+          <div className="space-y-3">
+            {weeklySuggestions.map((item, idx) => (
+              <div key={idx} className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {typeof item === 'string' ? item : item.text}
+                  </p>
+                </div>
+
+                {/* Level-Aware Specific Exercise Recommendation Callout */}
+                {item.type === 'gap_recommendation' && item.exercise && (
+                  <div className="mt-2 pt-3 border-t border-slate-800/60 flex items-center justify-between gap-3 bg-slate-900/80 rounded-lg p-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20 shrink-0">
+                        <Dumbbell className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
+                            Level {item.level} {item.pillar}
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-200 truncate mt-0.5">
+                          {item.exercise.name}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Target: <span className="text-slate-300 font-medium">{item.exercise.target}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
