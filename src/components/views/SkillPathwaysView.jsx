@@ -14,7 +14,7 @@ export default function SkillPathwaysView({
   userLevels,
   pathwaySearch,
   setPathwaySearch,
-  selectedCategory = 'All', // Defaulting to 'All'
+  selectedCategory = 'All',
   setSelectedCategory,
   expandedPathway,
   setExpandedPathway,
@@ -24,26 +24,27 @@ export default function SkillPathwaysView({
   setPendingUnlockTrack,
   updateLevel,
   setSelectedExerciseDemo,
-  onAddToCart // Replaced setLoggingExercise with onAddToCart
+  onAddToCart
 }) {
   // State for the Exercise Guide Modal
   const [guideExercise, setGuideExercise] = useState(null);
 
-  // Jump to and expand a specific pathway card by normalizing incoming pillar names into slugified IDs
-  const handleJumpToPathway = (pillarName) => {
-    const trackId = pillarName.toLowerCase().replace(/\s+/g, '-');
-    console.log("🎯 Jumping to pathway ID:", trackId);
+  // Jump to and expand a specific pathway card (normalizes pillar names to track IDs)
+  const handleJumpToPathway = (identifier) => {
+    if (!identifier) return;
+    
+    // Normalize pillar name (e.g., "Horizontal Pull" -> "horizontal-pull") if it doesn't match directly
+    const trackId = identifier.toLowerCase().replace(/\s+/g, '-');
     
     setExpandedPathway(trackId);
+    setSelectedCategory('All'); // Ensure it's not hidden behind active category filters
     
     setTimeout(() => {
       const element = document.getElementById(trackId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        console.warn(`⚠️ No DOM element found with id="${trackId}"`);
       }
-    }, 150); // Increased slightly to ensure DOM expansion completion before scrolling
+    }, 100);
   };
 
   // Dynamically extract categories from PILLAR_MAPPINGS keys
@@ -52,7 +53,7 @@ export default function SkillPathwaysView({
     ...Object.keys(PILLAR_MAPPINGS)
   ];
 
-  // Filter pathways based on selected category (using PILLAR_MAPPINGS) and search input
+  // Filter pathways based on selected category and search input
   const displayedPathways = MASTER_PATHWAYS.filter(track => {
     const matchesCategory = 
       selectedCategory === 'All' || 
@@ -234,7 +235,6 @@ export default function SkillPathwaysView({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Exercise Guide Info Button */}
                       <button
                         onClick={() => setGuideExercise(activeLevelData)}
                         className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2.5 rounded-xl border border-slate-700 transition text-sm"
@@ -252,7 +252,6 @@ export default function SkillPathwaysView({
                         View Animated Demo
                       </button>
 
-                      {/* Add to Cart workflow */}
                       <button
                         onClick={() => onAddToCart({ trackId: track.id, levelData: activeLevelData })}
                         className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
