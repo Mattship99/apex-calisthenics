@@ -29,6 +29,17 @@ export default function SkillPathwaysView({
   // State for the Exercise Guide Modal
   const [guideExercise, setGuideExercise] = useState(null);
 
+  // Jump to and expand a specific pathway card
+  const handleJumpToPathway = (trackId) => {
+    setExpandedPathway(trackId);
+    setTimeout(() => {
+      const element = document.getElementById(trackId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100); // Small timeout ensures the DOM has expanded before scrolling
+  };
+
   // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
     'All', 
@@ -52,7 +63,10 @@ export default function SkillPathwaysView({
     <div className="space-y-6">
       <TendonWarningPill workoutHistory={workoutHistory} />
       <BalanceRadar userProgress={userLevels} />
-      <VolumeSuggestion userProgress={userLevels} />
+      <VolumeSuggestion 
+        userProgress={userLevels} 
+        onViewInPathways={handleJumpToPathway} 
+      />
       
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -125,7 +139,7 @@ export default function SkillPathwaysView({
                                   track.levels1to5?.[0];
 
           return (
-            <div key={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div key={track.id} id={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl scroll-mt-6">
               
               {/* Collapsible Header */}
               <div 
