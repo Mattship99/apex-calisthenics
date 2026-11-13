@@ -240,12 +240,12 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
                   </div>
 
                   <button
-                    onClick={() => onJumpToPathway && onJumpToPathway(item.pillar)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition-colors shrink-0 shadow-sm cursor-pointer"
-                  >
-                    <span>View in Pathways</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                      onClick={() => onJumpToPathway && onJumpToPathway(item.pillar.toLowerCase().replace(/\s+/g, '-'))}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition-colors shrink-0 shadow-sm cursor-pointer"
+                    >
+                      <span>View in Pathways</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                 </div>
               )}
             </div>
