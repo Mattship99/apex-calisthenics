@@ -69,7 +69,7 @@ const categorizeExercise = (name) => {
   return 'Horizontal Push'; // Default fallback
 };
 
-export default function VolumeSuggestions() {
+export default function VolumeSuggestions({ onJumpToPathway }) {
   const [weeklySuggestions, setWeeklySuggestions] = useState([]);
   const [lifestyleReminders, setLifestyleReminders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -316,7 +316,7 @@ export default function VolumeSuggestions() {
                   </p>
                 </div>
 
-                {/* Level-Aware Specific Exercise Recommendation Callout */}
+                {/* Level-Aware Specific Exercise Recommendation Callout with Action Button */}
                 {item.type === 'gap_recommendation' && item.exercise && (
                   <div className="mt-2 pt-3 border-t border-slate-800/60 flex items-center justify-between gap-3 bg-slate-900/80 rounded-lg p-2.5">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -337,6 +337,14 @@ export default function VolumeSuggestions() {
                         </p>
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => onJumpToPathway && onJumpToPathway(item.pillar)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition-colors shrink-0 shadow-sm cursor-pointer"
+                    >
+                      <span>View in Pathways</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )}
               </div>
