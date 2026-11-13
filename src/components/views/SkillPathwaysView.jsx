@@ -30,7 +30,7 @@ export default function SkillPathwaysView({
   const [guideExercise, setGuideExercise] = useState(null);
 
   // Jump to and expand a specific pathway card (normalizes pillar names to track IDs)
- const handleJumpToPathway = (identifier) => {
+  const handleJumpToPathway = (identifier) => {
     console.log("🔍 [Debug] Button clicked with identifier:", identifier);
     
     // Let's check all available pathway IDs currently rendered on the page
@@ -53,6 +53,7 @@ export default function SkillPathwaysView({
       }
     }, 100);
   };
+
   // Dynamically extract categories from PILLAR_MAPPINGS keys
   const uniqueCategories = [
     'All', 
@@ -78,7 +79,7 @@ export default function SkillPathwaysView({
       <BalanceRadar userProgress={userLevels} />
       <VolumeSuggestion 
         userProgress={userLevels} 
-        onViewInPathways={handleJumpToPathway} 
+        onJumpToPathway={handleJumpToPathway} 
       />
       
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
