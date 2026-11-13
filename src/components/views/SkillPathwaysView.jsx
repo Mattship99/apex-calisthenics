@@ -29,15 +29,21 @@ export default function SkillPathwaysView({
   // State for the Exercise Guide Modal
   const [guideExercise, setGuideExercise] = useState(null);
 
-  // Jump to and expand a specific pathway card
-  const handleJumpToPathway = (trackId) => {
+  // Jump to and expand a specific pathway card by normalizing incoming pillar names into slugified IDs
+  const handleJumpToPathway = (pillarName) => {
+    const trackId = pillarName.toLowerCase().replace(/\s+/g, '-');
+    console.log("🎯 Jumping to pathway ID:", trackId);
+    
     setExpandedPathway(trackId);
+    
     setTimeout(() => {
       const element = document.getElementById(trackId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        console.warn(`⚠️ No DOM element found with id="${trackId}"`);
       }
-    }, 100); // Small timeout ensures the DOM has expanded before scrolling
+    }, 150); // Increased slightly to ensure DOM expansion completion before scrolling
   };
 
   // Dynamically extract categories from PILLAR_MAPPINGS keys
