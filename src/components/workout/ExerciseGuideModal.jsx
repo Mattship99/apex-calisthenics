@@ -5,24 +5,7 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
   if (!exercise) return null;
 
   // Look up guide data from the database using exercise.name, with a robust fallback
-  const guide = EXERCISE_GUIDES[exercise.name] || {
-    setup: exercise.guide?.setup || exercise.setup || 'Assume a rigid, controlled starting position. Ensure proper joint stacking, engage core bracing, and establish full tension before initiating movement.',
-    execution: exercise.guide?.execution || exercise.execution || [
-      {
-        title: 'Initiation',
-        description: 'Maintain strict form integrity from the first second. Do not rely on momentum or loose joint angles unless specifically programmed.'
-      },
-      {
-        title: 'Execution / Hold',
-        description: 'Execute through the full active range of motion or hold static tension smoothly, keeping breathing steady and controlled.'
-      },
-      {
-        title: 'Completion',
-        description: 'Return to the starting position safely without dropping abruptly or breaking core rigidity.'
-      }
-    ],
-    engagement: exercise.guide?.engagement || exercise.guide?.primaryMuscles || exercise.primaryMuscles || []
-  };
+  const guide = EXERCISE_GUIDES[exercise.name] || exercise.guide || exercise || {};
 
   // Extract base properties from exercise, falling back to guide properties if needed
   const level = exercise.level || guide.level;
@@ -34,9 +17,9 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
 
   const cues = exercise.cues || guide.cues || [];
   const pitfalls = exercise.pitfalls || guide.pitfalls || [];
-  const primaryMuscles = guide.engagement || guide.primaryMuscles || [];
-  const setupText = guide.setup;
-  const executionSteps = guide.execution;
+  const primaryMuscles = guide.engagement || guide.primaryMuscles || exercise.primaryMuscles || [];
+  const setupText = guide.setup || exercise.setup;
+  const executionSteps = guide.execution || exercise.execution || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -113,38 +96,47 @@ export default function ExerciseGuideModal({ exercise, onClose }) {
         )}
 
         {/* Setup & Positioning */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">
-            1. Setup & Positioning
-          </h3>
-          <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/30 p-3.5 rounded-xl border border-zinc-800/80">
-            {setupText}
-          </p>
-        </div>
+        {setupText && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">
+              1. Setup & Positioning
+            </h3>
+            <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/30 p-3.5 rounded-xl border border-zinc-800/80">
+              {setupText}
+            </p>
+          </div>
+        )}
 
-        {/* Step-by-Step Execution */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">
-            2. Step-by-Step Execution
-          </h3>
-          <ol className="space-y-2.5 text-sm text-zinc-300">
-            {executionSteps.map((step, index) => {
-              const stepTitle = typeof step === 'object' && step.title ? step.title : `Step ${index + 1}`;
-              const stepDesc = typeof step === 'object' ? (step.description || step.text || '') : step;
-              
-              return (
-                <li key={index} className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
-                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">
-                    {index + 1}
-                  </span>
-                  <span>
-                    <strong className="text-white">{stepTitle}:</strong> {stepDesc}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+        {/* Step-by-Step Execution (Rendered Dynamically) */}
+        {executionSteps.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">
+              2. Step-by-Step Execution
+            </h3>
+            <ol className="space-y-2.5 text-sm text-zinc-300">
+              {executionSteps.map((step, index) => {
+                const stepTitle = typeof step === 'object' && (step.phase || step.title) 
+                  ? (step.phase || step.title) 
+                  : `Step ${index + 1}`;
+                
+                const stepDesc = typeof step === 'object' 
+                  ? (step.instruction || step.text || step.description || '') 
+                  : step;
+                
+                return (
+                  <li key={index} className="flex items-start bg-zinc-800/30 p-3 rounded-xl border border-zinc-800/80">
+                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-zinc-800 text-amber-400 font-bold text-xs rounded-full mr-3 mt-0.5">
+                      {index + 1}
+                    </span>
+                    <span>
+                      <strong className="text-white">{stepTitle}:</strong> {stepDesc}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
 
         {/* Form Cues & Common Pitfalls Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
