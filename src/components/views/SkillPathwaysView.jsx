@@ -50,6 +50,12 @@ export default function SkillPathwaysView({
 
     setExpandedPathway(trackId);
     setSelectedCategory('All'); 
+
+    // Automatically determine and set the correct phase tab based on the user's current level in this track
+    const currentLevel = (userLevels || {})[trackId] || 1;
+    if (setActivePhaseTab) {
+      setActivePhaseTab(currentLevel > 5 ? '6-10' : '1-5');
+    }
     
     setTimeout(() => {
       const element = document.getElementById(trackId);
