@@ -164,7 +164,27 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
           if (gapsToRecommend.length > 0) {
             const targetPillar = gapsToRecommend[0].pillar;
-            const currentLevelNum = Number(userLevels[targetPillar] || userLevels[targetPillar?.toLowerCase()] || 1);
+
+            // Map pillars to their respective track IDs used in userLevels
+            const pillarToTrackKeyMap = {
+              'vertical pull': 'pulling',
+              'horizontal pull': 'pulling',
+              'vertical push': 'pushing',
+              'horizontal push': 'pushing',
+              'leg power': 'pistol_squat',
+              'core': 'lsit_core'
+            };
+
+            const trackKey = pillarToTrackKeyMap[targetPillar.toLowerCase()] || targetPillar.toLowerCase();
+
+            // Check userLevels across multiple possible key variations
+            const currentLevelNum = Number(
+              userLevels[targetPillar] || 
+              userLevels[targetPillar.toLowerCase()] || 
+              userLevels[trackKey] || 
+              1
+            );
+
             const pathwayList = MASTER_PATHWAYS[targetPillar] || MASTER_PATHWAYS['Horizontal Push'];
             const matchedExercise = pathwayList.find(item => item.level === currentLevelNum) || pathwayList[0];
 
