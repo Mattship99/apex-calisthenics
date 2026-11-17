@@ -7,6 +7,7 @@ import {
   User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar, Clock
 } from 'lucide-react';
 import { LADDER_RUNGS, MASTER_PATHWAYS } from '../../data/constants';
+import { checkIsPR } from '../utils/prCalculator';
 
 export default function ActiveWorkoutView({
   activeWorkout,
@@ -36,7 +37,8 @@ export default function ActiveWorkoutView({
   setSessionNotes,
   setEditingSet,
   removeSet,
-  setActiveTab
+  setActiveTab,
+  pastWorkouts = []
 }) {
   const getCurrentLocalDate = () => {
     const now = new Date();
@@ -280,7 +282,7 @@ export default function ActiveWorkoutView({
               <span>Completed Rounds:</span>
               <span className="text-base font-black text-emerald-300">
                 {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
-              </span>
+            </span>
             </div>
           </div>
 
@@ -326,40 +328,40 @@ export default function ActiveWorkoutView({
                     </div>
                   );
                 })}
-              </div>
-            </>
-          )}
+            </div>
+          </>
+        )}
 
-          {/* 2-Step Non-Destructive Routine Clearing Confirmation */}
-          <div className="flex gap-3 pt-2">
-            {!confirmingClearRoutine ? (
+        {/* 2-Step Non-Destructive Routine Clearing Confirmation */}
+        <div className="flex gap-3 pt-2">
+          {!confirmingClearRoutine ? (
+            <button
+              onClick={() => setConfirmingClearRoutine(true)}
+              className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Clear Routine
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 w-full">
               <button
-                onClick={() => setConfirmingClearRoutine(true)}
-                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+                onClick={handleConfirmClearRoutine}
+                className="flex-1 py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
               >
-                <X className="w-4 h-4" />
-                Clear Routine
+                <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                Confirm Clear Routine?
               </button>
-            ) : (
-              <div className="flex items-center gap-2 w-full">
-                <button
-                  onClick={handleConfirmClearRoutine}
-                  className="flex-1 py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
-                >
-                  <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-                  Confirm Clear Routine?
-                </button>
-                <button
-                  onClick={() => setConfirmingClearRoutine(false)}
-                  className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold rounded-xl transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
+              <button
+                onClick={() => setConfirmingClearRoutine(false)}
+                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+    )}
 
       {/* Planned Routine Checklist / Workout Cart (for standard workouts) */}
       {!activeCircuit && (
@@ -573,7 +575,11 @@ export default function ActiveWorkoutView({
                       )}
                         
                       <div className="space-y-2">
-                        {group.sets.map((set, sIdx) => (
+                        {group.sets.map((set, sIdx) => {
+                          const { isRepsPR, isWeightPR } = checkIsPR(group.exerciseName, set, pastWorkouts);
+                          const hasPR = isRepsPR || isWeightPR;
+
+                          return (
                           <div key={set.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <span className="w-6 h-6 rounded-full bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center border border-slate-800">
@@ -587,64 +593,74 @@ export default function ActiveWorkoutView({
                                     {set.notes}
                                   </p>
                                 )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-5">
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
-                                <span className="text-xs font-bold text-emerald-400">{set.repsOrHold}</span>
-                              </div>
-
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
-                                <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
-                              </div>
-
-                              <div className="text-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
-                                <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
-                                  {set.formRating}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => setEditingSet(set)}
-                                  className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
-                                  title="Edit Set"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => removeSet(set.id)}
-                                  className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                                  title="Delete Set"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
 
-            <div className="p-4 bg-slate-950/40">
-              <input
-                type="text"
-                placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+                          <div className="flex items-center gap-5">
+                            <div className="text-center flex items-center">
+                              {hasPR && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold rounded shadow-sm animate-pulse mr-2" title="Personal Record!">
+                                  ⭐ PR
+                                </span>
+                              )}
+                              <div>
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
+                                <span className="text-xs font-bold text-emerald-400">
+                                  {set.repsOrHold}
+                                  {set.addedWeight > 0 && ` (+${set.addedWeight} lbs)`}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
+                              <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
+                            </div>
+
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
+                              <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
+                                {set.formRating}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setEditingSet(set)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
+                                title="Edit Set"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => removeSet(set.id)}
+                                className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                                title="Delete Set"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                          );
+                        })}
+                      </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="p-4 bg-slate-950/40">
+            <input
+              type="text"
+              placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Bottom Full-Width Finish & Save Session Action Section */}
