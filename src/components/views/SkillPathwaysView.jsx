@@ -195,9 +195,9 @@ export default function SkillPathwaysView({
                   </div>
                   <h3 className="text-xl font-bold text-slate-100 mt-2">{track.title}</h3>
                   {!isExpanded && <p className="text-sm text-slate-400 mt-1 truncate max-w-lg">{track.description}</p>}
-                </div>
+              </div>
 
-                <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800" onClick={(e) => e.stopPropagation()}>
                     <span className="text-xs font-semibold text-slate-400 px-2 hidden md:inline">Set Level:</span>
                     {activeList?.map((lvl) => {
@@ -207,216 +207,230 @@ export default function SkillPathwaysView({
                           key={lvl.level}
                           onClick={() => {
                             if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                            else setPendingUnlockTrack(track);
-                          }}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
+                          else setPendingUnlockTrack(track);
+                        }}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center ${
                             (userLevels || {})[track.id] === lvl.level
                               ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                              : isLocked 
-                              ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                          }`}
-                        >
-                          {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                            : isLocked 
+                            ? 'bg-slate-950/50 text-slate-600 cursor-not-allowed'
+                          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      }`}
+                      >
+                        {isLocked ? <LockIcon className="w-3 h-3" /> : lvl.level}
+                      </button>
+                    );
+                  })}
                 </div>
+                <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </div>
+
+            {/* Collapsible Content Body */}
+            {isExpanded && activeLevelData && (
+              <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
+                <p className="text-sm text-slate-400 mb-6">{track.description}</p>
+
+                {/* Phase Switcher for 10-Level Tracks */}
+              {has10Levels && (
+                <div className="flex gap-2 mb-6 border-b border-slate-800 pb-4">
+                  <button 
+                    onClick={() => setActivePhaseTab('1-5')} 
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePhaseTab === '1-5' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
+                  >
+                    {track.levels1to5Title || 'Phase 1 (1-5)'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (!isPhase2Unlocked) {
+                        setPendingUnlockTrack(track);
+                      } else {
+                        setActivePhaseTab('6-10');
+                      }
+                    }} 
+                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${activePhaseTab === '6-10' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
+                  >
+                    {!isPhase2Unlocked && <LockIcon className="w-3.5 h-3.5 text-amber-400" />} {track.levels6to10Title || 'Phase 2 (6-10)'}
+                  </button>
+              </div>
+            )}
+                
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <h4 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                      {activeLevelData.name}
+                    </h4>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {activeLevelData.pillar && (
+                        <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 text-[10px] font-semibold rounded-md border border-emerald-500/20">
+                          {activeLevelData.pillar}
+                        </span>
+                      )}
+                      {activeLevelData.secondaryPillars && activeLevelData.secondaryPillars.map((sec, idx) => (
+                        <span key={idx} className="px-1.5 py-0.5 bg-slate-800/60 text-slate-400 text-[9px] font-medium rounded-md border border-slate-700">
+                          + {sec}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
+                    <Target className="w-3.5 h-3.5" />
+                    Mastery Standard: {activeLevelData.target}
+                  </div>
               </div>
 
-              {/* Collapsible Content Body */}
-              {isExpanded && activeLevelData && (
-                <div className="p-6 bg-slate-900/40 border-t border-slate-800/50">
-                  <p className="text-sm text-slate-400 mb-6">{track.description}</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setGuideExercise(activeLevelData)}
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                    title="Exercise Guide"
+                  >
+                    <Info className="w-4 h-4 text-cyan-400" />
+                    <span className="hidden sm:inline">Guide</span>
+                  </button>
 
-                  {/* Phase Switcher for 10-Level Tracks */}
-                  {has10Levels && (
-                    <div className="flex gap-2 mb-6 border-b border-slate-800 pb-4">
-                      <button 
-                        onClick={() => setActivePhaseTab('1-5')} 
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition ${activePhaseTab === '1-5' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
-                      >
-                        {track.levels1to5Title || 'Phase 1 (1-5)'}
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (!isPhase2Unlocked) {
-                            setPendingUnlockTrack(track);
-                          } else {
-                            setActivePhaseTab('6-10');
-                          }
-                        }} 
-                        className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${activePhaseTab === '6-10' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
-                      >
-                        {!isPhase2Unlocked && <LockIcon className="w-3.5 h-3.5 text-amber-400" />} {track.levels6to10Title || 'Phase 2 (6-10)'}
-                      </button>
-                    </div>
-                  )}
-                   
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <button
+                    onClick={() => setSelectedExerciseDemo(activeLevelData)}
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
+                  >
+                    <Eye className="w-4 h-4 text-amber-400" />
+                    View Animated Demo
+                  </button>
+
+                  <button
+                    onClick={() => onAddToCart({ trackId: track.id, levelData: activeLevelData })}
+                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    Add to Workout
+                  </button>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 mt-6">
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  Non-Negotiable Form Cues
+                </div>
+                <ul className="space-y-2 text-xs text-slate-300">
+                  {activeLevelData.cues?.map((cue, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">•</span>
+                      <span>{cue}</span>
+                    </li>
+                  ))}
+                </ul>
+            </div>
+
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-400" />
+                  Common Pitfalls to Avoid
+                </div>
+                <ul className="space-y-2 text-xs text-slate-300">
+                  {activeLevelData.pitfalls?.map((pit, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-amber-400 font-bold">•</span>
+                      <span>{pit}</span>
+                    </li>
+                  ))}
+                </ul>
+            </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-slate-800/80">
+              <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {activeList?.map((lvl) => {
+                  const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                  const isCurrent = lvl.level === currentLevel;
+                  const isPassed = lvl.level < currentLevel;
+
+                  return (
+                    <div
+                      key={lvl.level}
+                    onClick={() => {
+                      if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                      else setPendingUnlockTrack(track);
+                    }}
+                    className={`p-2.5 rounded-xl border cursor-pointer transition relative flex flex-col justify-between ${
+                      isLocked 
+                        ? 'opacity-50 bg-slate-950 border-slate-800'
+                      : isCurrent
+                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                    : isPassed
+                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                  }`}
+                  >
                     <div>
-                      <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
-                      <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <h4 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                          {activeLevelData.name}
-                        </h4>
-                        {activeLevelData.pillar && (
-                          <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 text-[10px] font-semibold rounded-md border border-emerald-500/20">
-                            {activeLevelData.pillar}
-                          </span>
-                        )}
-                      </div>
-                      <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
-                        <Target className="w-3.5 h-3.5" />
-                        Mastery Standard: {activeLevelData.target}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setGuideExercise(activeLevelData)}
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2.5 rounded-xl border border-slate-700 transition text-sm"
-                        title="Exercise Guide"
-                      >
-                        <Info className="w-4 h-4 text-cyan-400" />
-                        <span className="hidden sm:inline">Guide</span>
-                      </button>
-
-                      <button
-                        onClick={() => setSelectedExerciseDemo(activeLevelData)}
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2.5 rounded-xl border border-slate-700 transition text-sm"
-                      >
-                        <Eye className="w-4 h-4 text-amber-400" />
-                        View Animated Demo
-                      </button>
-
-                      <button
-                        onClick={() => onAddToCart({ trackId: track.id, levelData: activeLevelData })}
-                        className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 text-sm whitespace-nowrap"
-                      >
-                        <Plus className="w-4 h-4 stroke-[3]" />
-                        Add to Workout
-                      </button>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4 mt-6">
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-400" />
-                      Non-Negotiable Form Cues
-                    </div>
-                    <ul className="space-y-2 text-xs text-slate-300">
-                      {activeLevelData.cues?.map((cue, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-emerald-400 font-bold">•</span>
-                          <span>{cue}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                      <ShieldAlert className="w-4 h-4 text-amber-400" />
-                      Common Pitfalls to Avoid
-                    </div>
-                    <ul className="space-y-2 text-xs text-slate-300">
-                      {activeLevelData.pitfalls?.map((pit, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-amber-400 font-bold">•</span>
-                          <span>{pit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-800/80">
-                  <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {activeList?.map((lvl) => {
-                      const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                      const isCurrent = lvl.level === currentLevel;
-                      const isPassed = lvl.level < currentLevel;
-
-                      return (
-                        <div
-                          key={lvl.level}
-                          onClick={() => {
-                            if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                            else setPendingUnlockTrack(track);
-                          }}
-                          className={`p-2.5 rounded-xl border cursor-pointer transition relative flex flex-col justify-between ${
-                            isLocked 
-                              ? 'opacity-50 bg-slate-950 border-slate-800'
-                              : isCurrent
-                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                              : isPassed
-                              ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                              {isLocked ? (
-                                <LockIcon className="w-3 h-3 text-amber-400" />
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setGuideExercise(lvl);
-                                    }}
-                                    className="text-slate-400 hover:text-cyan-300"
-                                    title="Exercise Guide"
-                                  >
-                                    <Info className="w-3 h-3" />
-                                  </button>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedExerciseDemo(lvl);
-                                    }}
-                                    className="text-slate-400 hover:text-amber-300"
-                                    title="Animated Demo"
-                                  >
-                                    <Eye className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                        </div>
-                        {lvl.pillar && (
-                          <div className="mt-2">
-                            <span className="inline-block px-1.5 py-0.5 bg-slate-900 text-emerald-400 text-[9px] font-semibold rounded border border-emerald-500/20 truncate max-w-full">
-                              {lvl.pillar}
-                            </span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
+                        {isLocked ? (
+                          <LockIcon className="w-3 h-3 text-amber-400" />
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGuideExercise(lvl);
+                              }}
+                              className="text-slate-400 hover:text-cyan-300"
+                              title="Exercise Guide"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedExerciseDemo(lvl);
+                              }}
+                              className="text-slate-400 hover:text-amber-300"
+                              title="Animated Demo"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </button>
                           </div>
                         )}
                       </div>
-                      );
-                    })}
+                      <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                   </div>
-                </div>
+                  {(lvl.pillar || (lvl.secondaryPillars && lvl.secondaryPillars.length > 0)) && (
+                    <div className="mt-2 flex items-center gap-1 flex-wrap">
+                      {lvl.pillar && (
+                        <span className="inline-block px-1.5 py-0.5 bg-slate-900 text-emerald-400 text-[9px] font-semibold rounded border border-emerald-500/20 truncate max-w-full">
+                          {lvl.pillar}
+                        </span>
+                      )}
+                      {lvl.secondaryPillars?.map((sec, sIdx) => (
+                        <span key={sIdx} className="inline-block px-1 py-0.5 bg-slate-900/60 text-slate-400 text-[8px] font-medium rounded border border-slate-800 truncate max-w-full">
+                          + {sec}
+                        </span>
+                      ))}
+                    </div>
+                )}
               </div>
-            )}
+                );
+              })}
           </div>
-        );
-      })
-      )}
+            </div>
+          </div>
+        )}
+      </div>
+      );
+    })
+  )}
 
       {/* Exercise Guide Modal */}
       {guideExercise && (
-        <ExerciseGuideModal
-          exercise={guideExercise}
-          onClose={() => setGuideExercise(null)}
-        />
-      )}
+    <ExerciseGuideModal
+      exercise={guideExercise}
+      onClose={() => setGuideExercise(null)}
+      />
+    )}
     </div>
   );
 }
