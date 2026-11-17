@@ -177,11 +177,21 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
             const trackKey = pillarToTrackKeyMap[targetPillar.toLowerCase()] || targetPillar.toLowerCase();
 
-            // Look up the level using track ID first, then fallback to pillar name, and finally 1
+            // Calculate an average/fallback experience level from other populated pillars if unrecorded
+            const recordedLevelValues = Object.values(userLevels)
+              .map(val => Number(val))
+              .filter(val => !isNaN(val) && val > 0);
+            
+            const generalExperienceLevel = recordedLevelValues.length > 0
+              ? Math.round(recordedLevelValues.reduce((sum, v) => sum + v, 0) / recordedLevelValues.length)
+              : 1;
+
+            // Look up the level using track ID first, then pillar name variations, then general user experience, and finally 1
             const currentLevelNum = Number(
               userLevels[trackKey] || 
               userLevels[targetPillar] || 
               userLevels[targetPillar.toLowerCase()] || 
+              generalExperienceLevel ||
               1
             );
 
