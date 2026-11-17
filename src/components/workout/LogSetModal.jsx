@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell, Clock, Pause, Shield } from 'lucide-react';
+import { X, ArrowRight, RotateCcw, Play, Square, Timer, Dumbbell, Clock, Pause, Shield, Scale } from 'lucide-react';
 
 export default function LogSetModal({ 
   levelData, 
@@ -70,6 +70,7 @@ export default function LogSetModal({
 
   const [mode, setMode] = useState('reps'); // 'reps' | 'stopwatch' | 'timer'
   const [reps, setReps] = useState(getInitialReps);
+  const [addedWeight, setAddedWeight] = useState(initialSetData ? (initialSetData.addedWeight || '') : '');
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
   const [setNote, setSetNote] = useState(initialSetData ? (initialSetData.notes || '') : '');
@@ -243,6 +244,7 @@ export default function LogSetModal({
       trackId: trackId || (initialSetData ? initialSetData.trackId : ''),
       exerciseName: activeExercise?.name || initialSetData?.exerciseName || 'Custom Exercise',
       repsOrHold: finalReps,
+      addedWeight: addedWeight !== '' ? Number(addedWeight) : 0,
       rpe,
       formRating: formQuality,
       notes: setNote,
@@ -521,6 +523,22 @@ export default function LogSetModal({
               </div>
             </div>
           )}
+
+          {/* Added Weight Input Section */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Scale className="w-3.5 h-3.5 text-emerald-400" />
+              <label className="text-xs font-semibold text-slate-300">Added Weight (lbs / kg):</label>
+            </div>
+            <input
+              type="number"
+              step="any"
+              placeholder="0 (Bodyweight)"
+              value={addedWeight}
+              onChange={(e) => setAddedWeight(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-bold placeholder-slate-600"
+            />
+          </div>
 
           {/* Assistance / Band Toggle Section */}
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
