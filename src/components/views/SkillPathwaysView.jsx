@@ -32,7 +32,7 @@ export default function SkillPathwaysView({
   // Jump to and expand a specific pathway card (maps incoming pillar names to actual DOM track IDs)
   const handleJumpToPathway = (pillarName) => {
     console.log("🔍 [Debug] Button clicked with pillar:", pillarName);
-    
+     
     // Map human-readable pillars or categories to your actual MASTER_PATHWAYS track IDs
     const pillarToTrackMap = {
       'horizontal pull': 'pulling',
@@ -45,7 +45,7 @@ export default function SkillPathwaysView({
 
     const normalizedKey = (pillarName || '').toLowerCase().trim().replace(/-/g, ' ');
     const trackId = pillarToTrackMap[normalizedKey] || normalizedKey.replace(/\s+/g, '-');
-    
+     
     console.log("🎯 [Debug] Resolved to track ID:", trackId);
 
     setExpandedPathway(trackId);
@@ -56,7 +56,7 @@ export default function SkillPathwaysView({
     if (setActivePhaseTab) {
       setActivePhaseTab(currentLevel > 5 ? '6-10' : '1-5');
     }
-    
+     
     setTimeout(() => {
       const element = document.getElementById(trackId);
       console.log("📍 [Debug] Found element:", element);
@@ -79,11 +79,11 @@ export default function SkillPathwaysView({
     const matchesCategory = 
       selectedCategory === 'All' || 
       (PILLAR_MAPPINGS[selectedCategory] && PILLAR_MAPPINGS[selectedCategory].includes(track.id));
-      
+       
     const matchesSearch = !pathwaySearch || 
       track.title?.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
       track.description?.toLowerCase().includes(pathwaySearch.toLowerCase());
-      
+       
     return matchesCategory && matchesSearch;
   });
 
@@ -95,7 +95,7 @@ export default function SkillPathwaysView({
         userProgress={userLevels} 
         onJumpToPathway={handleJumpToPathway} 
       />
-      
+       
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -157,18 +157,18 @@ export default function SkillPathwaysView({
         displayedPathways.map((track) => {
           const currentLevel = (userLevels || {})[track.id] || 1;
           const isExpanded = expandedPathway === track.id;
-          
+           
           const has10Levels = track.levels6to10 && track.levels6to10.length > 0;
           const isPhase2Unlocked = !has10Levels || (unlockedPhases || {})[track.id] || currentLevel > 5;
           const activeList = has10Levels && activePhaseTab === '6-10' ? track.levels6to10 : track.levels1to5;
-          
+           
           const activeLevelData = track.levels1to5?.find(l => l.level === currentLevel) || 
                                   track.levels6to10?.find(l => l.level === currentLevel) || 
                                   track.levels1to5?.[0];
 
           return (
             <div key={track.id} id={track.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl scroll-mt-6">
-              
+               
               {/* Collapsible Header */}
               <div 
                 onClick={() => setExpandedPathway(isExpanded ? null : track.id)}
@@ -242,7 +242,7 @@ export default function SkillPathwaysView({
                       </button>
                     </div>
                   )}
-                  
+                   
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
