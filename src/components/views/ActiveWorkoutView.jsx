@@ -7,7 +7,7 @@ import {
   User as UserIcon, Search, HeartPulse, Send, Lock as LockIcon, ShieldAlert, Calendar, Clock
 } from 'lucide-react';
 import { LADDER_RUNGS, MASTER_PATHWAYS } from '../../data/constants';
-import { checkIsPR } from '../utils/prCalculator';
+import { checkIsPR } from '../../utils/prCalculator';
 
 export default function ActiveWorkoutView({
   activeWorkout,
@@ -148,8 +148,6 @@ export default function ActiveWorkoutView({
     setConfirmingClearRoutine(false);
   };
 
-  // Safely resolve the items. If there's an active routine/workout plan, use it. 
-  // Otherwise default to the dynamic draft workout cart items.
   const hasActiveRoutineItems = Boolean(activeWorkout?.plannedItems && activeWorkout.plannedItems.length > 0);
   const plannedItems = hasActiveRoutineItems
     ? activeWorkout.plannedItems
@@ -166,7 +164,6 @@ export default function ActiveWorkoutView({
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Friendly Date Picker */}
           <div className="relative group">
             <div className="flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition shadow-inner">
               <Calendar className="w-4 h-4 text-emerald-400 mr-2.5 shrink-0" />
@@ -185,7 +182,6 @@ export default function ActiveWorkoutView({
             </div>
           </div>
 
-          {/* Time-of-Day Picker with 12-Hour Friendly Display */}
           <div className="relative group">
             <div className="flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus-within:border-emerald-500 transition shadow-inner">
               <Clock className="w-4 h-4 text-amber-400 mr-2.5 shrink-0" />
@@ -219,7 +215,6 @@ export default function ActiveWorkoutView({
         </div>
       </div>
 
-      {/* Rest Timer Panel */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
@@ -270,7 +265,6 @@ export default function ActiveWorkoutView({
         </div>
       </div>
 
-      {/* Active Circuit Tracker & Fractional Round Calculator */}
       {activeCircuit && activeCircuit.items && (
         <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -282,7 +276,7 @@ export default function ActiveWorkoutView({
               <span>Completed Rounds:</span>
               <span className="text-base font-black text-emerald-300">
                 {(roundTally + ((activeCircuit.items || []).filter(i => i.completed).length / Math.max(1, (activeCircuit.items || []).length))).toFixed(2)}
-            </span>
+              </span>
             </div>
           </div>
 
@@ -328,42 +322,40 @@ export default function ActiveWorkoutView({
                     </div>
                   );
                 })}
-            </div>
-          </>
-        )}
-
-        {/* 2-Step Non-Destructive Routine Clearing Confirmation */}
-        <div className="flex gap-3 pt-2">
-          {!confirmingClearRoutine ? (
-            <button
-              onClick={() => setConfirmingClearRoutine(true)}
-              className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Clear Routine
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 w-full">
-              <button
-                onClick={handleConfirmClearRoutine}
-                className="flex-1 py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
-              >
-                <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-                Confirm Clear Routine?
-              </button>
-              <button
-                onClick={() => setConfirmingClearRoutine(false)}
-                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold rounded-xl transition"
-              >
-                Cancel
-              </button>
-            </div>
+              </div>
+            </>
           )}
-        </div>
-      </div>
-    )}
 
-      {/* Planned Routine Checklist / Workout Cart (for standard workouts) */}
+          <div className="flex gap-3 pt-2">
+            {!confirmingClearRoutine ? (
+              <button
+                onClick={() => setConfirmingClearRoutine(true)}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Clear Routine
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  onClick={handleConfirmClearRoutine}
+                  className="flex-1 py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5"
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                  Confirm Clear Routine?
+                </button>
+                <button
+                  onClick={() => setConfirmingClearRoutine(false)}
+                  className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {!activeCircuit && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -429,7 +421,6 @@ export default function ActiveWorkoutView({
           ) : (
             <div className="grid gap-3 pt-2">
               {plannedItems.map((item, idx) => {
-                // Use item.id as fallback for trackId since some formats use `id` for the root track identifier
                 const trackIdFallback = item?.trackId || item?.id;
                 const track = MASTER_PATHWAYS.find(t => t.id === trackIdFallback);
                 
@@ -439,7 +430,6 @@ export default function ActiveWorkoutView({
                 
                 const levelData = track?.levels1to5?.find(l => l.level === exerciseLevel) || track?.levels6to10?.find(l => l.level === exerciseLevel);
                 
-                // Resolve the specific rest duration for this exercise in the queue
                 const currentRest = item?.restDuration !== undefined 
                   ? item.restDuration 
                   : (item?.defaultRest !== undefined ? item.defaultRest : (activeWorkout?.restDuration || 90));
@@ -471,7 +461,6 @@ export default function ActiveWorkoutView({
                     </div>
 
                     <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2.5 self-end xl:self-auto w-full xl:w-auto border-t border-slate-800/50 xl:border-0 pt-3 xl:pt-0">
-                      {/* Exercise-specific Rest Timer Adjuster */}
                       <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-inner">
                         <TimerIcon className="w-4 h-4 text-amber-500/70 ml-1.5 mr-1" />
                         <button
@@ -489,7 +478,6 @@ export default function ActiveWorkoutView({
                         </button>
                       </div>
 
-                      {/* Always render the Log Set button even if track mapping fails to prevent being stuck */}
                       <button
                         onClick={() => setLoggingExercise({ trackId: track?.id || trackIdFallback, levelData: levelData || item, customRestTime: currentRest })}
                         className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 flex-1 sm:flex-initial whitespace-nowrap flex items-center justify-center gap-1.5"
@@ -497,7 +485,6 @@ export default function ActiveWorkoutView({
                         <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Set
                       </button>
 
-                      {/* Remove individual exercise from Workout Cart */}
                       <button
                         onClick={() => onRemoveFromCart && onRemoveFromCart(idx)}
                         className="p-2.5 bg-slate-900 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 rounded-xl transition shrink-0"
@@ -514,7 +501,6 @@ export default function ActiveWorkoutView({
         </div>
       )}
 
-      {/* Grouped Exercise Set Log (Accordion UI) */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <h3 className="font-bold text-slate-200 text-sm">Session Set Log</h3>
@@ -573,7 +559,7 @@ export default function ActiveWorkoutView({
                           </button>
                         </div>
                       )}
-                        
+                      
                       <div className="space-y-2">
                         {group.sets.map((set, sIdx) => {
                           const { isRepsPR, isWeightPR } = checkIsPR(group.exerciseName, set, pastWorkouts);
@@ -593,77 +579,77 @@ export default function ActiveWorkoutView({
                                     {set.notes}
                                   </p>
                                 )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-5">
-                            <div className="text-center flex items-center">
-                              {hasPR && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold rounded shadow-sm animate-pulse mr-2" title="Personal Record!">
-                                  ⭐ PR
-                                </span>
-                              )}
-                              <div>
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
-                                <span className="text-xs font-bold text-emerald-400">
-                                  {set.repsOrHold}
-                                  {set.addedWeight > 0 && ` (+${set.addedWeight} lbs)`}
-                                </span>
                               </div>
                             </div>
 
-                            <div className="text-center">
-                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
-                              <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
-                            </div>
+                            <div className="flex items-center gap-5">
+                              <div className="text-center flex items-center">
+                                {hasPR && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold rounded shadow-sm animate-pulse mr-2" title="Personal Record!">
+                                    ⭐ PR
+                                  </span>
+                                )}
+                                <div>
+                                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Reps/Hold</span>
+                                  <span className="text-xs font-bold text-emerald-400">
+                                    {set.repsOrHold}
+                                    {set.addedWeight > 0 && ` (+${set.addedWeight} lbs)`}
+                                  </span>
+                                </div>
+                              </div>
 
-                            <div className="text-center">
-                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
-                              <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
-                                {set.formRating}
-                              </span>
-                            </div>
+                              <div className="text-center">
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">RPE</span>
+                                <span className="text-xs font-bold text-amber-400">{set.rpe}/10</span>
+                              </div>
 
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => setEditingSet(set)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
-                                title="Edit Set"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => removeSet(set.id)}
-                                className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                                title="Delete Set"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="text-center">
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Form</span>
+                                <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20">
+                                  {set.formRating}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => setEditingSet(set)}
+                                  className="p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition"
+                                  title="Edit Set"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => removeSet(set.id)}
+                                  className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                                  title="Delete Set"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
                           );
                         })}
                       </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
-          <div className="p-4 bg-slate-950/40">
-            <input
-              type="text"
-              placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
-              value={sessionNotes}
-              onChange={(e) => setSessionNotes(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-            />
+            <div className="p-4 bg-slate-950/40">
+              <input
+                type="text"
+                placeholder="Add session notes (e.g. felt great on scapular pulls, wrist slightly tight)..."
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Bottom Full-Width Finish & Save Session Action Section */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <button
           onClick={handleFinish}
