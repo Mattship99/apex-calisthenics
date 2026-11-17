@@ -259,7 +259,11 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
                   <button
                     type="button"
-                    onClick={() => onJumpToPathway && onJumpToPathway(item.pillar)}
+                    onClick={() => {
+                      if (onJumpToPathway) {
+                        onJumpToPathway(item.pillar, item.level);
+                      }
+                    }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition-colors shrink-0 shadow-sm cursor-pointer"
                   >
                     <span>View in Pathways</span>
