@@ -121,32 +121,49 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
           if (gapsToRecommend.length > 0) {
             const targetPillar = gapsToRecommend[0].pillar;
 
-            // Map pillars to their respective track IDs used in userLevels / MASTER_PATHWAYS
-            const pillarToTrackKeyMap = {
-              'vertical pull': 'pulling',
-              'horizontal pull': 'pulling', // Or update if you have a separate horizontal track ID in constants
-              'vertical push': 'pushing',
-              'horizontal push': 'pushing',
-              'leg power': 'pistol_squat',
-              'core': 'lsit_core'
-            };
+            // Gather all exercises across all master pathways that match the target pillar
+            const matchingExercises = [];
+            MASTER_PATHWAYS.forEach(track => {
+              const trackLevels = [...(track.levels1to5 || []), ...(track.levels6to10 || [])];
+              trackLevels.forEach(ex => {
+                if (ex.pillar === targetPillar) {
+                  matchingExercises.push({
+                    ...ex,
+                    trackId: track.id
+                  });
+                }
+              });
+            });
 
-            const trackKey = pillarToTrackKeyMap[targetPillar.toLowerCase()] || targetPillar.toLowerCase();
-
-            // Find the corresponding track definition from your app's global MASTER_PATHWAYS constant
-            const globalTrack = MASTER_PATHWAYS.find(t => t.id === trackKey);
-
-            // Calculate user's current level for this track
-            const currentLevelNum = Number(
-              userLevels[trackKey] || 
+            // Fallback user level evaluation
+            const defaultLevelNum = Number(
               userLevels[targetPillar] || 
               userLevels[targetPillar.toLowerCase()] || 
               1
             );
 
-            // Pull the exact exercise data from the global track's levels array
-            const levelsList = globalTrack ? [...(globalTrack.levels1to5 || []), ...(globalTrack.levels6to10 || [])] : [];
-            const matchedExercise = levelsList.find(item => item.level === currentLevelNum) || levelsList[0] || { name: targetPillar, target: '3 x 10 reps' };
+            // Find the highest level the user has reached/unlocked for this specific pillar
+            let matchedExercise = null;
+            let currentLevelNum = defaultLevelNum;
+
+            if (matchingExercises.length > 0) {
+              // Sort matching exercises by level ascending
+              matchingExercises.sort((a, b) => a.level - b.level);
+
+              // Find the highest exercise level where level <= user's stored level for this pillar/track, 
+              // or default to the highest available matching exercise up to user's level
+              const eligibleExercises = matchingExercises.filter(ex => ex.level <= defaultLevelNum);
+              if (eligibleExercises.length > 0) {
+                matchedExercise = eligibleExercises[eligibleExercises.length - 1];
+                currentLevelNum = matchedExercise.level;
+              } else {
+                matchedExercise = matchingExercises[0];
+                currentLevelNum = matchedExercise.level;
+              }
+            } else {
+              matchedExercise = { name: targetPillar, target: '3 x 10 reps', level: 1 };
+              currentLevelNum = 1;
+            }
 
             generatedWeekly.push({
               type: 'gap_recommendation',
