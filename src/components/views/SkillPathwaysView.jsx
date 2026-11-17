@@ -29,7 +29,7 @@ export default function SkillPathwaysView({
   // State for the Exercise Guide Modal
   const [guideExercise, setGuideExercise] = useState(null);
 
-  // Jump to and expand a specific pathway card (maps incoming pillar names and target level to actual DOM track IDs and phase tabs)
+  // Jump to and expand a specific pathway card and force-update to the target level
   const handleJumpToPathway = (pillarName, targetLevel) => {
     console.log("🔍 [Debug] Button clicked with pillar:", pillarName, "and level:", targetLevel);
      
@@ -51,13 +51,16 @@ export default function SkillPathwaysView({
     setExpandedPathway(trackId);
     setSelectedCategory('All'); 
 
-    // If a target level was passed, ensure the correct phase tab (1-5 vs 6-10) is active
+    // Find the track definition to check if it has 10 levels
+    const targetTrack = MASTER_PATHWAYS.find(t => t.id === trackId);
+    const has10Levels = targetTrack?.levels6to10 && targetTrack.levels6to10.length > 0;
+
+    // If a target level was passed, force-update it and set the appropriate phase tab
     if (targetLevel) {
-      if (targetLevel > 5) {
-        setActivePhaseTab('6-10');
-      } else {
-        setActivePhaseTab('1-5');
+      if (updateLevel) {
+        updateLevel(trackId, targetLevel, has10Levels);
       }
+      setActivePhaseTab(targetLevel > 5 ? '6-10' : '1-5');
     } else {
       // Fallback to user's current level if no target level is specified
       const currentLevel = (userLevels || {})[trackId] || 1;
@@ -88,11 +91,11 @@ export default function SkillPathwaysView({
     const matchesCategory = 
       selectedCategory === 'All' || 
       (PILLAR_MAPPINGS[selectedCategory] && PILLAR_MAPPINGS[selectedCategory].includes(track.id));
-       
+        
     const matchesSearch = !pathwaySearch || 
       track.title?.toLowerCase().includes(pathwaySearch.toLowerCase()) ||
       track.description?.toLowerCase().includes(pathwaySearch.toLowerCase());
-       
+        
     return matchesCategory && matchesSearch;
   });
 
@@ -104,7 +107,7 @@ export default function SkillPathwaysView({
         userProgress={userLevels} 
         onJumpToPathway={handleJumpToPathway} 
       />
-       
+        
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -289,97 +292,97 @@ export default function SkillPathwaysView({
                         <Plus className="w-4 h-4 stroke-[3]" />
                         Add to Workout
                       </button>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4 mt-6">
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-400" />
-                      Non-Negotiable Form Cues
                     </div>
-                    <ul className="space-y-2 text-xs text-slate-300">
-                      {activeLevelData.cues?.map((cue, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-emerald-400 font-bold">•</span>
-                          <span>{cue}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
 
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                      <ShieldAlert className="w-4 h-4 text-amber-400" />
-                      Common Pitfalls to Avoid
+                  <div className="grid md:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        Non-Negotiable Form Cues
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {activeLevelData.cues?.map((cue, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-emerald-400 font-bold">•</span>
+                            <span>{cue}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-2 text-xs text-slate-300">
-                      {activeLevelData.pitfalls?.map((pit, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-amber-400 font-bold">•</span>
-                          <span>{pit}</span>
-                        </li>
-                      ))}
-                    </ul>
+
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-400" />
+                        Common Pitfalls to Avoid
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {activeLevelData.pitfalls?.map((pit, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-amber-400 font-bold">•</span>
+                            <span>{pit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-800/80">
-                  <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {activeList?.map((lvl) => {
-                      const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                      const isCurrent = lvl.level === currentLevel;
-                      const isPassed = lvl.level < currentLevel;
+                  <div className="mt-6 pt-6 border-t border-slate-800/80">
+                    <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {activeList?.map((lvl) => {
+                        const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                        const isCurrent = lvl.level === currentLevel;
+                        const isPassed = lvl.level < currentLevel;
 
-                      return (
-                        <div
-                          key={lvl.level}
-                          onClick={() => {
-                            if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                            else setPendingUnlockTrack(track);
-                          }}
-                          className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
-                            isLocked 
-                              ? 'opacity-50 bg-slate-950 border-slate-800'
-                              : isCurrent
-                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                              : isPassed
-                              ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
-                            {isLocked ? (
-                              <LockIcon className="w-3 h-3 text-amber-400" />
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setGuideExercise(lvl);
-                                  }}
-                                  className="text-slate-400 hover:text-cyan-300"
-                                  title="Exercise Guide"
-                                >
-                                  <Info className="w-3 h-3" />
-                                </button>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedExerciseDemo(lvl);
-                                  }}
-                                  className="text-slate-400 hover:text-amber-300"
-                                  title="Animated Demo"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </button>
+                        return (
+                          <div
+                            key={lvl.level}
+                            onClick={() => {
+                              if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                              else setPendingUnlockTrack(track);
+                            }}
+                            className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
+                              isLocked 
+                                ? 'opacity-50 bg-slate-950 border-slate-800'
+                                : isCurrent
+                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                : isPassed
+                                ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                                : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
+                              {isLocked ? (
+                                <LockIcon className="w-3 h-3 text-amber-400" />
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setGuideExercise(lvl);
+                                    }}
+                                    className="text-slate-400 hover:text-cyan-300"
+                                    title="Exercise Guide"
+                                  >
+                                    <Info className="w-3 h-3" />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedExerciseDemo(lvl);
+                                    }}
+                                    className="text-slate-400 hover:text-amber-300"
+                                    title="Animated Demo"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            )}
+                            <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
                           </div>
-                          <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
-                        </div>
                         );
                       })}
                     </div>
@@ -398,6 +401,6 @@ export default function SkillPathwaysView({
           onClose={() => setGuideExercise(null)}
         />
       )}
-  </div>
+    </div>
   );
 }
