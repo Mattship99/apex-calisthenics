@@ -2,53 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { BarChart3, TrendingUp, CheckCircle2, Activity, Sparkles, Dumbbell, ArrowRight } from 'lucide-react';
 import { auth, db } from '../../services/firebase';
+import { MASTER_PATHWAYS, PILLAR_MAPPINGS } from '../../data/constants';
 
 const PILLARS = ['Vertical Pull', 'Horizontal Pull', 'Vertical Push', 'Horizontal Push', 'Leg Power', 'Core'];
-
-const MASTER_PATHWAYS = {
-  'Vertical Pull': [
-    { level: 1, name: 'Active Hang / Scapular Pulls', target: '3 x 10 reps' },
-    { level: 2, name: 'Negative Pull-Ups', target: '3 x 5 (5s descent)' },
-    { level: 3, name: 'Strict Pull-Ups', target: '3 x 8-12 reps' },
-    { level: 4, name: 'Weighted Pull-Ups', target: '3 x 5 (+10-20% bodyweight)' },
-    { level: 5, name: 'One-Arm Pull-Up Progression', target: '3 x 3 per arm' }
-  ],
-  'Horizontal Pull': [
-    { level: 1, name: 'Inverted Rows (High Incline)', target: '3 x 12 reps' },
-    { level: 2, name: 'Inverted Rows (Parallel / Feet Flat)', target: '3 x 10-12 reps' },
-    { level: 3, name: 'Feet-Elevated Inverted Rows', target: '3 x 10 reps' },
-    { level: 4, name: 'Tuck Front Lever Rows', target: '3 x 6-8 reps' },
-    { level: 5, name: 'Advanced Front Lever Rows', target: '3 x 5 reps' }
-  ],
-  'Vertical Push': [
-    { level: 1, name: 'Pike Push-Ups (Elevated Feet)', target: '3 x 8-10 reps' },
-    { level: 2, name: 'Wall Walk Handstand Hold', target: '3 x 30s hold' },
-    { level: 3, name: 'Box / Frog HSPU Progression', target: '3 x 6-8 reps' },
-    { level: 4, name: 'Free-Standing Handstand Push-Ups', target: '3 x 3-5 reps' },
-    { level: 5, name: 'Deficit Handstand Push-Ups', target: '3 x 3 reps' }
-  ],
-  'Horizontal Push': [
-    { level: 1, name: 'Incline Push-Ups', target: '3 x 15 reps' },
-    { level: 2, name: 'Standard Push-Ups (Strict)', target: '3 x 12-20 reps' },
-    { level: 3, name: 'Decline / Diamond Push-Ups', target: '3 x 12 reps' },
-    { level: 4, name: 'Pseudo Planche Push-Ups', target: '3 x 8-10 reps' },
-    { level: 5, name: 'Tuck Planche Push-Ups', target: '3 x 5 reps' }
-  ],
-  'Leg Power': [
-    { level: 1, name: 'Bodyweight Squats & Lunges', target: '3 x 15 reps' },
-    { level: 2, name: 'Bulgarian Split Squats', target: '3 x 10 per leg' },
-    { level: 3, name: 'Pistol Squat Progressions', target: '3 x 6-8 per leg' },
-    { level: 4, name: 'Full Pistol Squats', target: '3 x 8 per leg' },
-    { level: 5, name: 'Weighted / Explosive Jump Squats', target: '3 x 6 reps' }
-  ],
-  'Core': [
-    { level: 1, name: 'Hollow Body Hold & Planks', target: '3 x 45s hold' },
-    { level: 2, name: 'Hanging Knee Raises', target: '3 x 10-12 reps' },
-    { level: 3, name: 'Strict Hanging Straight Leg Raises', target: '3 x 8-10 reps' },
-    { level: 4, name: 'Toes-to-Bar / Windshield Wipers', target: '3 x 8 reps' },
-    { level: 5, name: 'Front Lever / Human Flag Raises', target: '3 x 3-5 reps' }
-  ]
-};
 
 const categorizeExercise = (name) => {
   const n = (name || '').toLowerCase();
@@ -165,10 +121,10 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
           if (gapsToRecommend.length > 0) {
             const targetPillar = gapsToRecommend[0].pillar;
 
-            // Map pillars to their respective track IDs used in userLevels
+            // Map pillars to their respective track IDs used in userLevels / MASTER_PATHWAYS
             const pillarToTrackKeyMap = {
               'vertical pull': 'pulling',
-              'horizontal pull': 'pulling',
+              'horizontal pull': 'pulling', // Or update if you have a separate horizontal track ID in constants
               'vertical push': 'pushing',
               'horizontal push': 'pushing',
               'leg power': 'pistol_squat',
@@ -177,26 +133,20 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
             const trackKey = pillarToTrackKeyMap[targetPillar.toLowerCase()] || targetPillar.toLowerCase();
 
-            // Calculate an average/fallback experience level from other populated pillars if unrecorded
-            const recordedLevelValues = Object.values(userLevels)
-              .map(val => Number(val))
-              .filter(val => !isNaN(val) && val > 0);
-            
-            const generalExperienceLevel = recordedLevelValues.length > 0
-              ? Math.round(recordedLevelValues.reduce((sum, v) => sum + v, 0) / recordedLevelValues.length)
-              : 1;
+            // Find the corresponding track definition from your app's global MASTER_PATHWAYS constant
+            const globalTrack = MASTER_PATHWAYS.find(t => t.id === trackKey);
 
-            // Look up the level using track ID first, then pillar name variations, then general user experience, and finally 1
+            // Calculate user's current level for this track
             const currentLevelNum = Number(
               userLevels[trackKey] || 
               userLevels[targetPillar] || 
               userLevels[targetPillar.toLowerCase()] || 
-              generalExperienceLevel ||
               1
             );
 
-            const pathwayList = MASTER_PATHWAYS[targetPillar] || MASTER_PATHWAYS['Horizontal Push'];
-            const matchedExercise = pathwayList.find(item => item.level === currentLevelNum) || pathwayList[0];
+            // Pull the exact exercise data from the global track's levels array
+            const levelsList = globalTrack ? [...(globalTrack.levels1to5 || []), ...(globalTrack.levels6to10 || [])] : [];
+            const matchedExercise = levelsList.find(item => item.level === currentLevelNum) || levelsList[0] || { name: targetPillar, target: '3 x 10 reps' };
 
             generatedWeekly.push({
               type: 'gap_recommendation',
