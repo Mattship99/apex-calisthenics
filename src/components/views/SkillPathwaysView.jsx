@@ -31,7 +31,7 @@ export default function SkillPathwaysView({
 
   // Jump to and expand a specific pathway card and force-update to the target level
   const handleJumpToPathway = (pillarName, targetLevel) => {
-    console.log("🔍 [Debug] Button clicked with pillar:", pillarName, "and level:", targetLevel);
+    console.log("🔍 [Debug] Button clicked with pillar/track:", pillarName, "and level:", targetLevel);
      
     // Map human-readable pillars or categories to your actual MASTER_PATHWAYS track IDs
     const pillarToTrackMap = {
@@ -48,19 +48,22 @@ export default function SkillPathwaysView({
      
     console.log("🎯 [Debug] Resolved to track ID:", trackId);
 
-    setExpandedPathway(trackId);
-    setSelectedCategory('All'); 
-
     // Find the track definition to check if it has 10 levels
     const targetTrack = MASTER_PATHWAYS.find(t => t.id === trackId);
     const has10Levels = targetTrack?.levels6to10 && targetTrack.levels6to10.length > 0;
+
+    // Expand pathway and reset category filter so the card is visible
+    setExpandedPathway(trackId);
+    setSelectedCategory('All'); 
 
     // If a target level was passed, force-update it and set the appropriate phase tab
     if (targetLevel) {
       if (updateLevel) {
         updateLevel(trackId, targetLevel, has10Levels);
       }
-      setActivePhaseTab(targetLevel > 5 ? '6-10' : '1-5');
+      if (setActivePhaseTab) {
+        setActivePhaseTab(targetLevel > 5 ? '6-10' : '1-5');
+      }
     } else {
       // Fallback to user's current level if no target level is specified
       const currentLevel = (userLevels || {})[trackId] || 1;
@@ -69,6 +72,7 @@ export default function SkillPathwaysView({
       }
     }
      
+    // Scroll smoothly to the element after DOM updates
     setTimeout(() => {
       const element = document.getElementById(trackId);
       console.log("📍 [Debug] Found element:", element);
