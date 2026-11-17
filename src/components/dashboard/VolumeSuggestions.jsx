@@ -177,11 +177,11 @@ export default function VolumeSuggestions({ onJumpToPathway }) {
 
             const trackKey = pillarToTrackKeyMap[targetPillar.toLowerCase()] || targetPillar.toLowerCase();
 
-            // Check userLevels across multiple possible key variations
+            // Look up the level using track ID first, then fallback to pillar name, and finally 1
             const currentLevelNum = Number(
+              userLevels[trackKey] || 
               userLevels[targetPillar] || 
               userLevels[targetPillar.toLowerCase()] || 
-              userLevels[trackKey] || 
               1
             );
 
