@@ -31,7 +31,7 @@ export default function SkillPathwaysView({
 
   // Jump to and expand a specific pathway card and force-update to the target level
   const handleJumpToPathway = (pillarName, targetLevel) => {
-    console.log("🔍 [Debug] Button clicked with pillar/track:", pillarName, "and level:", targetLevel);
+    console.log("🔍 [Debug] Button clicked with pillar:", pillarName, "and level:", targetLevel);
      
     // Map human-readable pillars or categories to your actual MASTER_PATHWAYS track IDs
     const pillarToTrackMap = {
@@ -48,22 +48,19 @@ export default function SkillPathwaysView({
      
     console.log("🎯 [Debug] Resolved to track ID:", trackId);
 
+    setExpandedPathway(trackId);
+    setSelectedCategory('All'); 
+
     // Find the track definition to check if it has 10 levels
     const targetTrack = MASTER_PATHWAYS.find(t => t.id === trackId);
     const has10Levels = targetTrack?.levels6to10 && targetTrack.levels6to10.length > 0;
-
-    // Expand pathway and reset category filter so the card is visible
-    setExpandedPathway(trackId);
-    setSelectedCategory('All'); 
 
     // If a target level was passed, force-update it and set the appropriate phase tab
     if (targetLevel) {
       if (updateLevel) {
         updateLevel(trackId, targetLevel, has10Levels);
       }
-      if (setActivePhaseTab) {
-        setActivePhaseTab(targetLevel > 5 ? '6-10' : '1-5');
-      }
+      setActivePhaseTab(targetLevel > 5 ? '6-10' : '1-5');
     } else {
       // Fallback to user's current level if no target level is specified
       const currentLevel = (userLevels || {})[trackId] || 1;
@@ -72,7 +69,6 @@ export default function SkillPathwaysView({
       }
     }
      
-    // Scroll smoothly to the element after DOM updates
     setTimeout(() => {
       const element = document.getElementById(trackId);
       console.log("📍 [Debug] Found element:", element);
@@ -262,9 +258,16 @@ export default function SkillPathwaysView({
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">Current Target Drill</div>
-                      <h4 className="text-lg font-bold text-slate-100 mt-1 flex items-center gap-2">
-                        {activeLevelData.name}
-                      </h4>
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
+                        <h4 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                          {activeLevelData.name}
+                        </h4>
+                        {activeLevelData.pillar && (
+                          <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 text-[10px] font-semibold rounded-md border border-emerald-500/20">
+                            {activeLevelData.pillar}
+                          </span>
+                        )}
+                      </div>
                       <div className="inline-flex items-center gap-2 bg-slate-800/80 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold mt-2 border border-slate-700">
                         <Target className="w-3.5 h-3.5" />
                         Mastery Standard: {activeLevelData.target}
@@ -296,66 +299,67 @@ export default function SkillPathwaysView({
                         <Plus className="w-4 h-4 stroke-[3]" />
                         Add to Workout
                       </button>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 mt-6">
+                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      Non-Negotiable Form Cues
                     </div>
+                    <ul className="space-y-2 text-xs text-slate-300">
+                      {activeLevelData.cues?.map((cue, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-emerald-400 font-bold">•</span>
+                          <span>{cue}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mt-6">
-                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                        <CheckCircle className="w-4 h-4 text-emerald-400" />
-                        Non-Negotiable Form Cues
-                      </div>
-                      <ul className="space-y-2 text-xs text-slate-300">
-                        {activeLevelData.cues?.map((cue, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-emerald-400 font-bold">•</span>
-                            <span>{cue}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
+                      <ShieldAlert className="w-4 h-4 text-amber-400" />
+                      Common Pitfalls to Avoid
                     </div>
-
-                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                      <div className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2">
-                        <ShieldAlert className="w-4 h-4 text-amber-400" />
-                        Common Pitfalls to Avoid
-                      </div>
-                      <ul className="space-y-2 text-xs text-slate-300">
-                        {activeLevelData.pitfalls?.map((pit, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-amber-400 font-bold">•</span>
-                            <span>{pit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <ul className="space-y-2 text-xs text-slate-300">
+                      {activeLevelData.pitfalls?.map((pit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-amber-400 font-bold">•</span>
+                          <span>{pit}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-800/80">
-                    <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                      {activeList?.map((lvl) => {
-                        const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
-                        const isCurrent = lvl.level === currentLevel;
-                        const isPassed = lvl.level < currentLevel;
+                <div className="mt-6 pt-6 border-t border-slate-800/80">
+                  <div className="text-xs font-semibold text-slate-400 mb-3">Progression Continuum (Phase {activePhaseTab}):</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {activeList?.map((lvl) => {
+                      const isLocked = has10Levels && lvl.level > 5 && !isPhase2Unlocked;
+                      const isCurrent = lvl.level === currentLevel;
+                      const isPassed = lvl.level < currentLevel;
 
-                        return (
-                          <div
-                            key={lvl.level}
-                            onClick={() => {
-                              if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
-                              else setPendingUnlockTrack(track);
-                            }}
-                            className={`p-2.5 rounded-xl border cursor-pointer transition relative ${
-                              isLocked 
-                                ? 'opacity-50 bg-slate-950 border-slate-800'
-                                : isCurrent
-                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                : isPassed
-                                ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
-                                : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
-                            }`}
-                          >
+                      return (
+                        <div
+                          key={lvl.level}
+                          onClick={() => {
+                            if (!isLocked) updateLevel(track.id, lvl.level, has10Levels);
+                            else setPendingUnlockTrack(track);
+                          }}
+                          className={`p-2.5 rounded-xl border cursor-pointer transition relative flex flex-col justify-between ${
+                            isLocked 
+                              ? 'opacity-50 bg-slate-950 border-slate-800'
+                              : isCurrent
+                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                              : isPassed
+                              ? 'bg-slate-800/40 border-slate-700/50 text-slate-400'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                          }`}
+                        >
+                          <div>
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-bold uppercase tracking-wider">Lvl {lvl.level}</span>
                               {isLocked ? (
@@ -385,17 +389,25 @@ export default function SkillPathwaysView({
                                 </div>
                               )}
                             </div>
-                            <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
+                          <div className="text-xs font-medium truncate mt-1">{lvl.name}</div>
+                        </div>
+                        {lvl.pillar && (
+                          <div className="mt-2">
+                            <span className="inline-block px-1.5 py-0.5 bg-slate-900 text-emerald-400 text-[9px] font-semibold rounded border border-emerald-500/20 truncate max-w-full">
+                              {lvl.pillar}
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })
+              </div>
+            )}
+          </div>
+        );
+      })
       )}
 
       {/* Exercise Guide Modal */}
