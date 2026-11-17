@@ -70,7 +70,7 @@ export default function LogSetModal({
 
   const [mode, setMode] = useState('reps'); // 'reps' | 'stopwatch' | 'timer'
   const [reps, setReps] = useState(getInitialReps);
-  const [addedWeight, setAddedWeight] = useState(initialSetData ? (initialSetData.addedWeight || '') : '');
+  const [addedWeight, setAddedWeight] = useState(initialSetData ? (initialSetData.addedWeight ?? '') : '');
   const [rpe, setRpe] = useState(initialSetData ? initialSetData.rpe : '8');
   const [formQuality, setFormQuality] = useState(initialSetData ? initialSetData.formRating : 'Clean');
   const [setNote, setSetNote] = useState(initialSetData ? (initialSetData.notes || '') : '');
